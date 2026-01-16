@@ -1,0 +1,322 @@
+﻿version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: galeri-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-galeri_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-galeri_password}
+      POSTGRES_DB: ${POSTGRES_DB:-galeri_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - galeri-network
+    restart: unless-stopped
+
+  postgres-replica:
+    image: postgres:15-alpine
+    container_name: galeri-postgres-replica
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-galeri_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-galeri_password}
+      POSTGRES_DB: ${POSTGRES_DB:-galeri_db}
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+    networks:
+      - galeri-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: galeri-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - galeri-network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: galeri-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-galeri_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-galeri_password}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-galeri}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - galeri-network
+    restart: unless-stopped
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.5
+    container_name: galeri-meilisearch
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_MASTER_KEY:-master_key_change_in_production}
+      MEILI_ENV: ${NODE_ENV:-development}
+    volumes:
+      - meilisearch_data:/meili_data
+    ports:
+      - "7700:7700"
+    networks:
+      - galeri-network
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: galeri-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - galeri-network
+    restart: unless-stopped
+
+  traefik:
+    image: traefik:v2.11
+    container_name: galeri-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - galeri-network
+    restart: unless-stopped
+
+  landing-frontend:
+    build:
+      context: ../frontend/landing
+      dockerfile: Dockerfile.dev
+    container_name: galeri-landing
+    environment:
+      NODE_ENV: development
+      NUXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    networks:
+      - galeri-network
+    depends_on:
+      - traefik
+    restart: unless-stopped
+
+  admin-frontend:
+    build:
+      context: ../frontend/admin
+      dockerfile: Dockerfile.dev
+    container_name: galeri-admin
+    environment:
+      NODE_ENV: development
+      NUXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3001:3000"
+    networks:
+      - galeri-network
+    depends_on:
+      - traefik
+    restart: unless-stopped
+
+  panel-frontend:
+    build:
+      context: ../frontend/panel
+      dockerfile: Dockerfile.dev
+    container_name: galeri-panel
+    environment:
+      NODE_ENV: development
+      NUXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3002:3000"
+    networks:
+      - galeri-network
+    depends_on:
+      - traefik
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: backend/services/api-gateway/Dockerfile.dev
+    container_name: galeri-api-gateway
+    environment:
+      NODE_ENV: development
+      PORT: 8000
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-galeri_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-galeri_password}
+      POSTGRES_DB: ${POSTGRES_DB:-galeri_db}
+      AUTH_SERVICE_URL: http://auth-service:3001
+      INVENTORY_SERVICE_URL: http://inventory-service:3003
+      CHAT_SERVICE_URL: http://chat-service:3005
+      OFFER_SERVICE_URL: http://offer-service:3004
+      GALLERY_SERVICE_URL: http://gallery-service:3006
+    ports:
+      - "8000:8000"
+    networks:
+      - galeri-network
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: backend/services/auth-service/Dockerfile.dev
+    container_name: galeri-auth-service
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-galeri_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-galeri_password}
+      POSTGRES_DB: ${POSTGRES_DB:-galeri_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+    ports:
+      - "3007:3001"
+    networks:
+      - galeri-network
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  inventory-service:
+    build:
+      context: ..
+      dockerfile: backend/services/inventory-service/Dockerfile.dev
+    container_name: galeri-inventory-service
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-galeri_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-galeri_password}
+      POSTGRES_DB: ${POSTGRES_DB:-galeri_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-galeri_user}:${RABBITMQ_PASSWORD:-galeri_password}@rabbitmq:5672/${RABBITMQ_VHOST:-galeri}
+    ports:
+      - "3003:3003"
+    networks:
+      - galeri-network
+    depends_on:
+      - redis
+      - postgres
+      - rabbitmq
+    restart: unless-stopped
+
+  chat-service:
+    build:
+      context: ..
+      dockerfile: backend/services/chat-service/Dockerfile.dev
+    container_name: galeri-chat-service
+    environment:
+      NODE_ENV: development
+      PORT: 3005
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-galeri_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-galeri_password}
+      POSTGRES_DB: ${POSTGRES_DB:-galeri_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CORS_ORIGIN: http://localhost:3000,http://localhost:3002
+    ports:
+      - "3005:3005"
+    networks:
+      - galeri-network
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  offer-service:
+    build:
+      context: ..
+      dockerfile: backend/services/offer-service/Dockerfile.dev
+    container_name: galeri-offer-service
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-galeri_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-galeri_password}
+      POSTGRES_DB: ${POSTGRES_DB:-galeri_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-galeri_user}:${RABBITMQ_PASSWORD:-galeri_password}@rabbitmq:5672/${RABBITMQ_VHOST:-galeri}
+    ports:
+      - "3004:3004"
+    networks:
+      - galeri-network
+    depends_on:
+      - redis
+      - postgres
+      - rabbitmq
+    restart: unless-stopped
+
+  gallery-service:
+    build:
+      context: ..
+      dockerfile: backend/services/gallery-service/Dockerfile.dev
+    container_name: galeri-gallery-service
+    environment:
+      NODE_ENV: development
+      PORT: 3006
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-galeri_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-galeri_password}
+      POSTGRES_DB: ${POSTGRES_DB:-galeri_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3006:3006"
+    networks:
+      - galeri-network
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  postgres_replica_data:
+  redis_data:
+  rabbitmq_data:
+  meilisearch_data:
+  minio_data:
+
+networks:
+  galeri-network:
+    driver: bridge

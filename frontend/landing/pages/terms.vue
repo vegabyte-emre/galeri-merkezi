@@ -1,0 +1,141 @@
+<template>
+  <div class="py-12">
+    <div class="container-custom max-w-4xl">
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          Kullanım Koşulları
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">
+          Son güncelleme: {{ lastUpdated }}
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 md:p-12 space-y-8">
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">1. Genel Hükümler</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Bu kullanım koşulları, Galeri Merkezi platformunu kullanırken geçerlidir. 
+            Platformu kullanarak, bu koşulları kabul etmiş sayılırsınız.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">2. Hesap Sorumluluğu</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+            Hesabınızın güvenliğinden siz sorumlusunuz:
+          </p>
+          <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400 ml-4">
+            <li>Şifrenizi güvenli tutmak</li>
+            <li>Hesap bilgilerinizin doğruluğunu sağlamak</li>
+            <li>Yetkisiz erişimleri derhal bildirmek</li>
+            <li>Hesabınız altında yapılan tüm işlemlerden sorumlu olmak</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">3. Kullanım Kuralları</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+            Platformu kullanırken aşağıdaki kurallara uymalısınız:
+          </p>
+          <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400 ml-4">
+            <li>Yanlış veya yanıltıcı bilgi paylaşmamak</li>
+            <li>Başkalarının haklarını ihlal etmemek</li>
+            <li>Spam veya zararlı içerik paylaşmamak</li>
+            <li>Platformun güvenliğini tehdit edecek eylemlerde bulunmamak</li>
+            <li>Telif haklarını ihlal etmemek</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">4. Hizmet Kullanımı</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Platform, B2B oto galeri işlemleri için tasarlanmıştır. Ticari amaçlı kullanım 
+            için uygundur. Kişisel kullanım için platforma erişim sağlanmamaktadır.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">5. Ödeme ve Faturalandırma</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+            Ödeme koşulları:
+          </p>
+          <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400 ml-4">
+            <li>Abonelik ücretleri önceden tahsil edilir</li>
+            <li>İptal işlemleri dönem sonuna kadar geçerlidir</li>
+            <li>Ücret iadesi yalnızca özel durumlarda yapılır</li>
+            <li>Tüm fiyatlar KDV dahildir</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">6. Fikri Mülkiyet</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Platform içeriği, tasarımı ve yazılımı Galeri Merkezi'ne aittir. İzinsiz kopyalama, 
+            dağıtma veya kullanım yasaktır.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">7. Hizmet Kesintileri</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Platform, bakım, güncelleme veya teknik sorunlar nedeniyle geçici olarak 
+            kesintiye uğrayabilir. Bu durumlardan kaynaklanan zararlardan sorumlu değiliz.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">8. İptal ve Fesih</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Hesabınızı istediğiniz zaman iptal edebilirsiniz. Koşulları ihlal eden hesaplar 
+            uyarı verilmeksizin askıya alınabilir veya kapatılabilir.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">9. Değişiklikler</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Bu kullanım koşullarını istediğimiz zaman güncelleyebiliriz. Önemli değişiklikler 
+            e-posta ile bildirilir.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">10. İletişim</h2>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Sorularınız için bizimle iletişime geçebilirsiniz:
+          </p>
+          <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <p class="text-gray-700 dark:text-gray-300">
+              <strong>E-posta:</strong> legal@galerimerkezi.com<br />
+              <strong>Adres:</strong> Maslak Mahallesi, Büyükdere Caddesi No:123, Sarıyer, İstanbul
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+useHead({
+  title: 'Kullanım Koşulları - Galeri Merkezi'
+})
+
+const lastUpdated = '1 Ocak 2024'
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

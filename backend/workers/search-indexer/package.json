@@ -1,0 +1,37 @@
+{
+  "name": "@galeri/search-indexer",
+  "version": "1.0.0",
+  "description": "Search indexer worker for Meilisearch integration",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "meilisearch": "^0.36.0",
+    "@galeri/shared": "*"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.4",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

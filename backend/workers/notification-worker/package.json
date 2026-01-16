@@ -1,0 +1,40 @@
+{
+  "name": "@galeri/notification-worker",
+  "version": "1.0.0",
+  "description": "Notification worker for SMS, email, and push notifications",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "axios": "^1.6.2",
+    "nodemailer": "^6.9.7",
+    "ioredis": "^5.3.2",
+    "@galeri/shared": "*"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.4",
+    "@types/nodemailer": "^6.4.14",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

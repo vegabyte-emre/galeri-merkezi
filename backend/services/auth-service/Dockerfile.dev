@@ -1,0 +1,37 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies
+RUN apk add --no-cache git
+
+# Copy root package.json (workspace config)
+COPY package.json ./
+
+# Copy all backend structure (needed for workspace resolution)
+COPY backend/ ./backend/
+
+# Install all dependencies (workspace dependencies will be resolved)
+RUN npm install
+
+WORKDIR /app/backend/services/auth-service
+
+EXPOSE 3001
+
+ENV NODE_ENV=development
+ENV PORT=3001
+
+CMD ["npm", "run", "dev"]
+
+
+
+
+
+
+
+
+
+
+
+
+

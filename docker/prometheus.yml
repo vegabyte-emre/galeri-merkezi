@@ -1,0 +1,52 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3000']
+  
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:3001']
+  
+  - job_name: 'gallery-service'
+    static_configs:
+      - targets: ['gallery-service:3002']
+  
+  - job_name: 'inventory-service'
+    static_configs:
+      - targets: ['inventory-service:3003']
+  
+  - job_name: 'offer-service'
+    static_configs:
+      - targets: ['offer-service:3004']
+  
+  - job_name: 'chat-service'
+    static_configs:
+      - targets: ['chat-service:3005']
+  
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+  
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

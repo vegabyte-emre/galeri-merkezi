@@ -1,0 +1,24 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies
+RUN apk add --no-cache git python3 make g++
+
+# Copy root package.json (workspace config)
+COPY package.json ./
+
+# Copy all backend structure (needed for workspace resolution)
+COPY backend/ ./backend/
+
+# Install all dependencies (workspace dependencies will be resolved)
+RUN npm install
+
+WORKDIR /app/backend/services/api-gateway
+
+EXPOSE 8000
+
+ENV NODE_ENV=development
+ENV PORT=8000
+
+CMD ["npm", "run", "dev"]

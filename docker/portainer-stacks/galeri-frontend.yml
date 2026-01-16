@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  landing:
+    build:
+      context: ../../frontend/landing
+      dockerfile: Dockerfile
+    container_name: galeri-landing
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      NUXT_PUBLIC_API_URL: ${API_GATEWAY_URL}
+    networks:
+      - galeri-services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landing.rule=Host(`${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.tls.certresolver=letsencrypt"
+      - "traefik.http.services.landing.loadbalancer.server.port=3000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  admin:
+    build:
+      context: ../../frontend/admin
+      dockerfile: Dockerfile
+    container_name: galeri-admin
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      NUXT_PUBLIC_API_URL: ${API_GATEWAY_URL}
+    networks:
+      - galeri-services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=Host(`admin.${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.admin.entrypoints=websecure"
+      - "traefik.http.routers.admin.tls.certresolver=letsencrypt"
+      - "traefik.http.services.admin.loadbalancer.server.port=3000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  panel:
+    build:
+      context: ../../frontend/panel
+      dockerfile: Dockerfile
+    container_name: galeri-panel
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      NUXT_PUBLIC_API_URL: ${API_GATEWAY_URL}
+      NUXT_PUBLIC_WS_URL: ${WS_URL:-wss://ws.${TRAEFIK_DOMAIN}}
+    networks:
+      - galeri-services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.panel.rule=Host(`panel.${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.panel.entrypoints=websecure"
+      - "traefik.http.routers.panel.tls.certresolver=letsencrypt"
+      - "traefik.http.services.panel.loadbalancer.server.port=3000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  galeri-services:
+    external: true
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

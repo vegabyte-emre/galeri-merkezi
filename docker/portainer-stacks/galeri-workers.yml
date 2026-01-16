@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  notification-worker:
+    build:
+      context: ../../backend/workers/notification-worker
+      dockerfile: Dockerfile
+    container_name: galeri-notification-worker
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      SMS_PROVIDER: ${SMS_PROVIDER}
+      NETGSM_USERNAME: ${NETGSM_USERNAME}
+      NETGSM_PASSWORD: ${NETGSM_PASSWORD}
+      NETGSM_MSG_HEADER: ${NETGSM_MSG_HEADER}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY}
+    networks:
+      - galeri-infra
+    labels:
+      - "traefik.enable=false"
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+      replicas: 2
+
+  media-worker:
+    build:
+      context: ../../backend/workers/media-worker
+      dockerfile: Dockerfile
+    container_name: galeri-media-worker
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      CDN_ENABLED: ${CDN_ENABLED:-false}
+      CDN_PROVIDER: ${CDN_PROVIDER}
+      CDN_ACCOUNT_ID: ${CDN_ACCOUNT_ID}
+      CDN_API_TOKEN: ${CDN_API_TOKEN}
+    networks:
+      - galeri-infra
+    labels:
+      - "traefik.enable=false"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - minio
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+      replicas: 2
+
+  search-indexer:
+    build:
+      context: ../../backend/workers/search-indexer
+      dockerfile: Dockerfile
+    container_name: galeri-search-indexer
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      MEILISEARCH_HOST: ${MEILISEARCH_HOST}
+      MEILISEARCH_MASTER_KEY: ${MEILISEARCH_MASTER_KEY}
+    networks:
+      - galeri-infra
+    labels:
+      - "traefik.enable=false"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - meilisearch
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  galeri-infra:
+    external: true
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

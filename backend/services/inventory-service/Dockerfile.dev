@@ -1,0 +1,16 @@
+﻿FROM node:18-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache git python3 make g++
+
+COPY package.json ./
+COPY backend/ ./backend/
+
+RUN npm install && npm install -g tsx
+
+WORKDIR /app/backend/services/inventory-service
+
+EXPOSE 3003
+
+CMD ["tsx", "watch", "src/index.ts"]

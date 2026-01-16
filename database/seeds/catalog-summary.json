@@ -1,0 +1,86 @@
+{
+  "classes": [
+    "Otomobil"
+  ],
+  "brands": [
+    {
+      "name": "Abarth",
+      "isPopular": false
+    },
+    {
+      "name": "Aion",
+      "isPopular": false
+    },
+    {
+      "name": "Alfa Romeo",
+      "isPopular": true
+    },
+    {
+      "name": "Alpine",
+      "isPopular": false
+    },
+    {
+      "name": "Anadol",
+      "isPopular": false
+    },
+    {
+      "name": "Arora",
+      "isPopular": false
+    },
+    {
+      "name": "Aston Martin",
+      "isPopular": false
+    },
+    {
+      "name": "Audi",
+      "isPopular": true
+    },
+    {
+      "name": "BYD",
+      "isPopular": false
+    },
+    {
+      "name": "Bentley",
+      "isPopular": false
+    },
+    {
+      "name": "Buick",
+      "isPopular": false
+    },
+    {
+      "name": "Cadillac",
+      "isPopular": false
+    },
+    {
+      "name": "Chery",
+      "isPopular": false
+    },
+    {
+      "name": "Chevrolet",
+      "isPopular": true
+    }
+  ],
+  "fuelTypes": [
+    "Benzin",
+    "Benzin + LPG",
+    "Dizel",
+    "Elektrik",
+    "Hibrit"
+  ],
+  "transmissions": [
+    "Manuel",
+    "Otomatik"
+  ],
+  "bodyTypes": [
+    "Cabrio",
+    "Coupe",
+    "Hatchback 3 Kapı",
+    "Hatchback 5 Kapı",
+    "MPV",
+    "Roadster",
+    "Sedan",
+    "Statino Wagon",
+    "Station Wagon"
+  ],
+  "totalVehicles": 497
+}
