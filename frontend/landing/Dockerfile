@@ -1,3 +1,4 @@
+# Build stage
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -6,25 +7,32 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-# Copy source files
+# Copy source code
 COPY . .
 
 # Build the application
+ENV NODE_ENV=production
+ENV NUXT_PUBLIC_API_URL=https://api.otobia.com/api/v1
+ENV NUXT_PUBLIC_WS_URL=wss://ws.otobia.com
 RUN npm run build
 
-FROM node:20-alpine
+# Production stage
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Copy built output
-COPY --from=builder /app/.output ./
+# Copy built application
+COPY --from=builder /app/.output /app/.output
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV NUXT_PUBLIC_API_URL=https://api.otobia.com/api/v1
+ENV NUXT_PUBLIC_WS_URL=wss://ws.otobia.com
 
 EXPOSE 3000
 
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOST=0.0.0.0
-
-CMD ["node", "server/index.mjs"]
+CMD ["node", ".output/server/index.mjs"]
