@@ -91,72 +91,13 @@ services:
     restart: unless-stopped
 
   # ==================== FRONTEND APPLICATIONS ====================
-  # Landing Page - Pre-built static site
   landing:
     image: nginx:alpine
     container_name: otobia-landing
-    volumes:
-      - landing_html:/usr/share/nginx/html
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.landing.rule=Host(`otobia.com`) || Host(`www.otobia.com`)"
-      - "traefik.http.routers.landing.entrypoints=websecure"
-      - "traefik.http.routers.landing.tls.certresolver=letsencrypt"
-      - "traefik.http.services.landing.loadbalancer.server.port=80"
-    networks:
-      - otobia-network
-    depends_on:
-      - traefik
-    restart: unless-stopped
-
-  # Admin Panel
-  admin:
-    image: nginx:alpine
-    container_name: otobia-admin
-    volumes:
-      - admin_html:/usr/share/nginx/html
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.admin.rule=Host(`admin.otobia.com`)"
-      - "traefik.http.routers.admin.entrypoints=websecure"
-      - "traefik.http.routers.admin.tls.certresolver=letsencrypt"
-      - "traefik.http.services.admin.loadbalancer.server.port=80"
-    networks:
-      - otobia-network
-    depends_on:
-      - traefik
-    restart: unless-stopped
-
-  # Gallery Panel
-  panel:
-    image: nginx:alpine
-    container_name: otobia-panel
-    volumes:
-      - panel_html:/usr/share/nginx/html
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.panel.rule=Host(`panel.otobia.com`)"
-      - "traefik.http.routers.panel.entrypoints=websecure"
-      - "traefik.http.services.panel.loadbalancer.server.port=80"
-      - "traefik.http.routers.panel.tls.certresolver=letsencrypt"
-    networks:
-      - otobia-network
-    depends_on:
-      - traefik
-    restart: unless-stopped
-
-  # Init container to populate volumes with default content
-  init-frontend:
-    image: alpine
-    container_name: otobia-init
-    volumes:
-      - landing_html:/landing
-      - admin_html:/admin
-      - panel_html:/panel
-    command: |
-      sh -c '
-        # Landing page
-        cat > /landing/index.html << "LANDING"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /usr/share/nginx/html/index.html << 'EOF'
         <!DOCTYPE html>
         <html lang="tr">
         <head>
@@ -213,7 +154,7 @@ services:
                     <div class="feature"><div class="feature-icon">📱</div><div class="feature-text">Oto Shorts</div></div>
                     <div class="feature"><div class="feature-icon">🔗</div><div class="feature-text">Entegrasyonlar</div></div>
                 </div>
-                <a href="https://panel.otobia.com" class="btn">Galeri Paneline Git →</a>
+                <a href="https://panel.otobia.com" class="btn">Galeri Paneline Git</a>
                 <div class="links">
                     <a href="https://admin.otobia.com">Yonetici Paneli</a>
                     <a href="mailto:info@otobia.com">Iletisim</a>
@@ -221,10 +162,27 @@ services:
             </div>
         </body>
         </html>
-        LANDING
-        
-        # Admin page
-        cat > /admin/index.html << "ADMIN"
+        EOF
+        nginx -g 'daemon off;'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landing.rule=Host(`otobia.com`) || Host(`www.otobia.com`)"
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.tls.certresolver=letsencrypt"
+      - "traefik.http.services.landing.loadbalancer.server.port=80"
+    networks:
+      - otobia-network
+    depends_on:
+      - traefik
+    restart: unless-stopped
+
+  admin:
+    image: nginx:alpine
+    container_name: otobia-admin
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /usr/share/nginx/html/index.html << 'EOF'
         <!DOCTYPE html>
         <html lang="tr">
         <head>
@@ -234,13 +192,14 @@ services:
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: Inter, sans-serif; min-height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; }
+                body { font-family: Inter, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; align-items: center; justify-content: center; }
                 .container { text-align: center; padding: 2rem; }
-                .logo { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 1rem; }
-                .badge { display: inline-block; padding: 0.5rem 1rem; background: #3b82f6; color: white; border-radius: 20px; font-size: 0.875rem; margin-bottom: 2rem; }
-                h1 { color: white; font-size: 1.5rem; margin-bottom: 1rem; }
-                p { color: #64748b; margin-bottom: 2rem; }
-                .btn { display: inline-block; padding: 1rem 2rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; }
+                .logo { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
+                .badge { display: inline-block; padding: 0.5rem 1.5rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border-radius: 25px; font-size: 0.875rem; font-weight: 600; margin-bottom: 2rem; }
+                h1 { color: white; font-size: 1.75rem; margin-bottom: 1rem; }
+                p { color: #64748b; margin-bottom: 2rem; font-size: 1.1rem; }
+                .btn { display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); }
+                .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4); }
             </style>
         </head>
         <body>
@@ -248,15 +207,32 @@ services:
                 <div class="logo">Otobia</div>
                 <div class="badge">Superadmin</div>
                 <h1>Yonetici Paneli</h1>
-                <p>Bu panel yakim zamanda aktif olacaktir.</p>
+                <p>Bu panel yakin zamanda aktif olacaktir.</p>
                 <a href="https://otobia.com" class="btn">Ana Sayfaya Don</a>
             </div>
         </body>
         </html>
-        ADMIN
-        
-        # Panel page
-        cat > /panel/index.html << "PANEL"
+        EOF
+        nginx -g 'daemon off;'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=Host(`admin.otobia.com`)"
+      - "traefik.http.routers.admin.entrypoints=websecure"
+      - "traefik.http.routers.admin.tls.certresolver=letsencrypt"
+      - "traefik.http.services.admin.loadbalancer.server.port=80"
+    networks:
+      - otobia-network
+    depends_on:
+      - traefik
+    restart: unless-stopped
+
+  panel:
+    image: nginx:alpine
+    container_name: otobia-panel
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /usr/share/nginx/html/index.html << 'EOF'
         <!DOCTYPE html>
         <html lang="tr">
         <head>
@@ -266,13 +242,14 @@ services:
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: Inter, sans-serif; min-height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; }
+                body { font-family: Inter, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; align-items: center; justify-content: center; }
                 .container { text-align: center; padding: 2rem; }
-                .logo { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 1rem; }
-                .badge { display: inline-block; padding: 0.5rem 1rem; background: #8b5cf6; color: white; border-radius: 20px; font-size: 0.875rem; margin-bottom: 2rem; }
-                h1 { color: white; font-size: 1.5rem; margin-bottom: 1rem; }
-                p { color: #64748b; margin-bottom: 2rem; }
-                .btn { display: inline-block; padding: 1rem 2rem; background: #8b5cf6; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; }
+                .logo { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
+                .badge { display: inline-block; padding: 0.5rem 1.5rem; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border-radius: 25px; font-size: 0.875rem; font-weight: 600; margin-bottom: 2rem; }
+                h1 { color: white; font-size: 1.75rem; margin-bottom: 1rem; }
+                p { color: #64748b; margin-bottom: 2rem; font-size: 1.1rem; }
+                .btn { display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3); }
+                .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(139, 92, 246, 0.4); }
             </style>
         </head>
         <body>
@@ -280,17 +257,24 @@ services:
                 <div class="logo">Otobia</div>
                 <div class="badge">Galeri Paneli</div>
                 <h1>Galeri Yonetim Paneli</h1>
-                <p>Bu panel yakim zamanda aktif olacaktir.</p>
+                <p>Bu panel yakin zamanda aktif olacaktir.</p>
                 <a href="https://otobia.com" class="btn">Ana Sayfaya Don</a>
             </div>
         </body>
         </html>
-        PANEL
-        
-        echo "Frontend pages initialized!"
-      '
+        EOF
+        nginx -g 'daemon off;'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.panel.rule=Host(`panel.otobia.com`)"
+      - "traefik.http.routers.panel.entrypoints=websecure"
+      - "traefik.http.routers.panel.tls.certresolver=letsencrypt"
+      - "traefik.http.services.panel.loadbalancer.server.port=80"
     networks:
       - otobia-network
+    depends_on:
+      - traefik
+    restart: unless-stopped
 
 networks:
   otobia-network:
@@ -303,6 +287,3 @@ volumes:
   meilisearch_data:
   minio_data:
   letsencrypt_data:
-  landing_html:
-  admin_html:
-  panel_html:
