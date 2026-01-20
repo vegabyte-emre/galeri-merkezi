@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import cors from 'cors';
 import helmet from 'helmet';

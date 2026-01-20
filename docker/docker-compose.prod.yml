@@ -109,45 +109,12 @@ services:
       - traefik
     restart: unless-stopped
 
-  # Admin Panel - Placeholder (Backend hazir olunca aktif edilecek)
+  # Admin Panel - Super Admin Nuxt.js Application
   admin:
-    image: nginx:alpine
+    build:
+      context: ..
+      dockerfile: frontend/admin/Dockerfile
     container_name: otobia-admin
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        cat > /usr/share/nginx/html/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html lang="tr">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Superadmin Paneli - Otobia</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: Inter, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; align-items: center; justify-content: center; }
-                .container { text-align: center; padding: 2rem; }
-                .logo { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
-                .badge { display: inline-block; padding: 0.5rem 1.5rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border-radius: 25px; font-size: 0.875rem; font-weight: 600; margin-bottom: 2rem; }
-                h1 { color: white; font-size: 1.75rem; margin-bottom: 1rem; }
-                p { color: #64748b; margin-bottom: 2rem; font-size: 1.1rem; }
-                .btn { display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); }
-                .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4); }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="logo">Otobia</div>
-                <div class="badge">Superadmin</div>
-                <h1>Yonetici Paneli</h1>
-                <p>Bu panel yakin zamanda aktif olacaktir.</p>
-                <a href="https://otobia.com" class="btn">Ana Sayfaya Don</a>
-            </div>
-        </body>
-        </html>
-        EOF
-        nginx -g 'daemon off;'
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin.rule=Host(`admin.otobia.com`)"
@@ -158,47 +125,15 @@ services:
       - otobia-network
     depends_on:
       - traefik
+      - api-gateway
     restart: unless-stopped
 
-  # Gallery Panel - Placeholder (Backend hazir olunca aktif edilecek)
+  # Gallery Panel - Galeri Yonetim Paneli Nuxt.js Application
   panel:
-    image: nginx:alpine
+    build:
+      context: ..
+      dockerfile: frontend/panel/Dockerfile
     container_name: otobia-panel
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        cat > /usr/share/nginx/html/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html lang="tr">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Galeri Paneli - Otobia</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: Inter, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; align-items: center; justify-content: center; }
-                .container { text-align: center; padding: 2rem; }
-                .logo { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
-                .badge { display: inline-block; padding: 0.5rem 1.5rem; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border-radius: 25px; font-size: 0.875rem; font-weight: 600; margin-bottom: 2rem; }
-                h1 { color: white; font-size: 1.75rem; margin-bottom: 1rem; }
-                p { color: #64748b; margin-bottom: 2rem; font-size: 1.1rem; }
-                .btn { display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3); }
-                .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(139, 92, 246, 0.4); }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="logo">Otobia</div>
-                <div class="badge">Galeri Paneli</div>
-                <h1>Galeri Yonetim Paneli</h1>
-                <p>Bu panel yakin zamanda aktif olacaktir.</p>
-                <a href="https://otobia.com" class="btn">Ana Sayfaya Don</a>
-            </div>
-        </body>
-        </html>
-        EOF
-        nginx -g 'daemon off;'
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.panel.rule=Host(`panel.otobia.com`)"
@@ -209,6 +144,7 @@ services:
       - otobia-network
     depends_on:
       - traefik
+      - api-gateway
     restart: unless-stopped
 
   # ==================== BACKEND SERVICES ====================
