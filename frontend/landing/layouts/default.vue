@@ -24,7 +24,7 @@
               <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
             </NuxtLink>
             
-<NuxtLink 
+            <NuxtLink 
               to="/about" 
               class="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors relative group"
             >
@@ -49,7 +49,7 @@
               to="/contact" 
               class="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors relative group"
             >
-              �leti�im
+              Iletisim
               <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
             </NuxtLink>
           </div>
@@ -68,13 +68,13 @@
               to="/register" 
               class="hidden sm:inline-flex px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors"
             >
-              Kay�t Ol
+              Kayit Ol
             </NuxtLink>
             <NuxtLink 
               to="/login" 
               class="px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
             >
-              Giri� Yap
+              Giris Yap
             </NuxtLink>
           </div>
         </div>
@@ -100,7 +100,7 @@
               <span class="text-xl font-bold">Otobia</span>
             </div>
             <p class="text-gray-400 mb-6 leading-relaxed">
-              Oto galerilerini birle�tiren B2B platform. ��inizi b�y�t�n, verimlili�inizi art�r�n.
+              Oto galerilerini birlestiren B2B platform. Isinizi buyutun, verimliligini artirin.
             </p>
             <div class="flex gap-4">
               <a href="#" class="w-10 h-10 rounded-lg bg-white/10 hover:bg-primary-500 flex items-center justify-center transition-colors">
@@ -119,21 +119,21 @@
           </div>
 
           <div>
-            <h4 class="font-bold mb-4 text-lg">H�zl� Linkler</h4>
+            <h4 class="font-bold mb-4 text-lg">Hizli Linkler</h4>
             <ul class="space-y-3 text-gray-400">
               <li><NuxtLink to="/" class="hover:text-white transition-colors">Anasayfa</NuxtLink></li>
               <li><NuxtLink to="/about" class="hover:text-white transition-colors">Kurumsal</NuxtLink></li>
               <li><NuxtLink to="/pricing" class="hover:text-white transition-colors">Fiyatlar</NuxtLink></li>
-              <li><NuxtLink to="/contact" class="hover:text-white transition-colors">�leti�im</NuxtLink></li>
+              <li><NuxtLink to="/contact" class="hover:text-white transition-colors">Iletisim</NuxtLink></li>
             </ul>
           </div>
 
           <div>
             <h4 class="font-bold mb-4 text-lg">Yasal</h4>
             <ul class="space-y-3 text-gray-400">
-              <li><NuxtLink to="/privacy" class="hover:text-white transition-colors">Gizlilik Politikas�</NuxtLink></li>
-              <li><NuxtLink to="/terms" class="hover:text-white transition-colors">Kullan�m Ko�ullar�</NuxtLink></li>
-              <li><NuxtLink to="/cookies" class="hover:text-white transition-colors">�erez Politikas�</NuxtLink></li>
+              <li><NuxtLink to="/privacy" class="hover:text-white transition-colors">Gizlilik Politikasi</NuxtLink></li>
+              <li><NuxtLink to="/terms" class="hover:text-white transition-colors">Kullanim Kosullari</NuxtLink></li>
+              <li><NuxtLink to="/cookies" class="hover:text-white transition-colors">Cerez Politikasi</NuxtLink></li>
               <li><NuxtLink to="/faq" class="hover:text-white transition-colors">SSS</NuxtLink></li>
             </ul>
           </div>
@@ -141,18 +141,18 @@
           <div>
             <h4 class="font-bold mb-4 text-lg">Destek</h4>
             <ul class="space-y-3 text-gray-400">
-              <li><NuxtLink to="/faq" class="hover:text-white transition-colors">Yard�m Merkezi</NuxtLink></li>
-              <li><NuxtLink to="/contact" class="hover:text-white transition-colors">�leti�im</NuxtLink></li>
+              <li><NuxtLink to="/faq" class="hover:text-white transition-colors">Yardim Merkezi</NuxtLink></li>
+              <li><NuxtLink to="/contact" class="hover:text-white transition-colors">Iletisim</NuxtLink></li>
             </ul>
           </div>
         </div>
 
         <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p class="text-gray-400 text-sm">
-            � {{ new Date().getFullYear() }} Otobia. T�m haklar� sakl�d�r.
+            &copy; {{ new Date().getFullYear() }} Otobia. Tum haklari saklidir.
           </p>
           <div class="flex gap-6 text-sm text-gray-400">
-            <button @click="setLanguage('tr')" class="hover:text-white transition-colors" :class="{ 'text-white font-semibold': currentLang === 'tr' }">T�rk�e</button>
+            <button @click="setLanguage('tr')" class="hover:text-white transition-colors" :class="{ 'text-white font-semibold': currentLang === 'tr' }">Turkce</button>
             <button @click="setLanguage('en')" class="hover:text-white transition-colors" :class="{ 'text-white font-semibold': currentLang === 'en' }">English</button>
           </div>
         </div>
