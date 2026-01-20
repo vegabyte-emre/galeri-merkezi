@@ -1,1 +1,0 @@
-import{U as o,q as n,G as a}from"./BjtbWQxw.js";const u=o((e,r)=>{if(e.path==="/login")return;const t=n("auth_token");if(e.path==="/login")return t.value?a("/"):void 0;if(!t.value)return a("/login")});export{u as default};

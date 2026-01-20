@@ -66,12 +66,12 @@
               >
                 <option value="">{{ loadingBrands ? 'Yukleniyor...' : (selectedClassId ? 'Marka Secin' : 'Once sinif secin') }}</option>
                 <optgroup v-if="popularBrands.length > 0" label="Populer Markalar">
-                  <option v-for="brand in popularBrands" :key="brand.id" :value="brand.id">
+                  <option v-for="brand in popularBrands" :key="'pop-' + brand.id" :value="brand.id">
                     {{ brand.name }}
                   </option>
                 </optgroup>
-                <optgroup label="Tum Markalar">
-                  <option v-for="brand in otherBrands" :key="brand.id" :value="brand.id">
+                <optgroup v-if="otherBrands.length > 0" label="Tum Markalar">
+                  <option v-for="brand in otherBrands" :key="'other-' + brand.id" :value="brand.id">
                     {{ brand.name }}
                   </option>
                 </optgroup>
@@ -772,7 +772,7 @@ const loadBrands = async () => {
   loadingBrands.value = true
   try {
     const response = await api.get<{ success: boolean; data: Brand[] }>(`/catalog/brands?classId=${selectedClassId.value}`)
-    if (response.success) {
+    if (response.success && response.data) {
       brands.value = response.data
     }
   } catch (error: any) {
