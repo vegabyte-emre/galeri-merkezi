@@ -2,29 +2,28 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Step 1: Copy root package files
+# Copy root package files
 COPY package.json ./
 COPY package-lock.json* ./
 
-# Step 2: Copy workspace package files (for dependency resolution)
+# Copy workspace package files
 COPY backend/shared/package.json ./backend/shared/
 COPY backend/services/api-gateway/package.json ./backend/services/api-gateway/
 
-# Step 3: Install dependencies (workspace dependencies will be linked)
-RUN npm install
+# Install dependencies
+RUN npm install --legacy-peer-deps || npm install
 
-# Step 4: Copy source files
-COPY tsconfig.json ./
+# Copy source files
 COPY backend/shared ./backend/shared
 COPY backend/services/api-gateway ./backend/services/api-gateway
 
-# Step 5: Build shared first
+# Build shared first
 WORKDIR /app/backend/shared
-RUN npm run build
+RUN npm run build || (echo "Shared build failed" && exit 1)
 
-# Step 6: Build api-gateway
+# Build api-gateway
 WORKDIR /app/backend/services/api-gateway
-RUN npm run build
+RUN npm run build || (echo "API Gateway build failed" && exit 1)
 
 # Production stage
 FROM node:18-alpine
@@ -40,10 +39,8 @@ COPY backend/services/api-gateway/package.json ./backend/services/api-gateway/
 COPY --from=builder /app/backend/shared/dist ./backend/shared/dist
 COPY --from=builder /app/backend/services/api-gateway/dist ./backend/services/api-gateway/dist
 
-# Copy node_modules (includes workspace dependencies)
+# Copy node_modules
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/backend/shared/node_modules ./backend/shared/node_modules 2>/dev/null || true
-COPY --from=builder /app/backend/services/api-gateway/node_modules ./backend/services/api-gateway/node_modules 2>/dev/null || true
 
 WORKDIR /app/backend/services/api-gateway
 

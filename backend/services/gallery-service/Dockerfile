@@ -11,20 +11,19 @@ COPY backend/shared/package.json ./backend/shared/
 COPY backend/services/gallery-service/package.json ./backend/services/gallery-service/
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps || npm install
 
 # Copy source files
-COPY tsconfig.json ./
 COPY backend/shared ./backend/shared
 COPY backend/services/gallery-service ./backend/services/gallery-service
 
 # Build shared first
 WORKDIR /app/backend/shared
-RUN npm run build
+RUN npm run build || (echo "Shared build failed" && exit 1)
 
 # Build gallery-service
 WORKDIR /app/backend/services/gallery-service
-RUN npm run build
+RUN npm run build || (echo "Gallery service build failed" && exit 1)
 
 # Production stage
 FROM node:18-alpine

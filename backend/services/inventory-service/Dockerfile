@@ -11,20 +11,19 @@ COPY backend/shared/package.json ./backend/shared/
 COPY backend/services/inventory-service/package.json ./backend/services/inventory-service/
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps || npm install
 
 # Copy source files
-COPY tsconfig.json ./
 COPY backend/shared ./backend/shared
 COPY backend/services/inventory-service ./backend/services/inventory-service
 
 # Build shared first
 WORKDIR /app/backend/shared
-RUN npm run build
+RUN npm run build || (echo "Shared build failed" && exit 1)
 
 # Build inventory-service
 WORKDIR /app/backend/services/inventory-service
-RUN npm run build
+RUN npm run build || (echo "Inventory service build failed" && exit 1)
 
 # Production stage
 FROM node:18-alpine
