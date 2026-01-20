@@ -176,12 +176,14 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, User, Car, Users, Settings } from 'lucide-vue-next'
+import { ArrowLeft, Car, Users, Settings } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter, navigateTo } from 'vue-router'
+import { useApi } from '~/composables/useApi'
+import { useToast } from '~/composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
@@ -217,7 +219,7 @@ const formatDateTime = (timestamp: string) => {
 
 const editUser = () => {
   // Navigate to edit page or open modal
-  navigateTo(`/users/${user.value?.id}/edit`)
+  router.push(`/users/${user.value?.id}/edit`)
 }
 
 const deleteUser = async () => {
