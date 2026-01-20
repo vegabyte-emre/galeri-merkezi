@@ -91,14 +91,12 @@ services:
     restart: unless-stopped
 
   # ==================== FRONTEND APPLICATIONS ====================
+  # Landing Page - Pre-built static site
   landing:
-    build:
-      context: ..
-      dockerfile: frontend/landing/Dockerfile
+    image: nginx:alpine
     container_name: otobia-landing
-    environment:
-      - NUXT_PUBLIC_API_URL=https://api.otobia.com/api/v1
-      - NUXT_PUBLIC_WS_URL=wss://ws.otobia.com
+    volumes:
+      - landing_html:/usr/share/nginx/html
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.landing.rule=Host(`otobia.com`) || Host(`www.otobia.com`)"
@@ -111,11 +109,12 @@ services:
       - traefik
     restart: unless-stopped
 
+  # Admin Panel
   admin:
-    build:
-      context: ..
-      dockerfile: frontend/admin/Dockerfile
+    image: nginx:alpine
     container_name: otobia-admin
+    volumes:
+      - admin_html:/usr/share/nginx/html
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin.rule=Host(`admin.otobia.com`)"
@@ -128,22 +127,170 @@ services:
       - traefik
     restart: unless-stopped
 
+  # Gallery Panel
   panel:
-    build:
-      context: ..
-      dockerfile: frontend/panel/Dockerfile
+    image: nginx:alpine
     container_name: otobia-panel
+    volumes:
+      - panel_html:/usr/share/nginx/html
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.panel.rule=Host(`panel.otobia.com`)"
       - "traefik.http.routers.panel.entrypoints=websecure"
-      - "traefik.http.routers.panel.tls.certresolver=letsencrypt"
       - "traefik.http.services.panel.loadbalancer.server.port=80"
+      - "traefik.http.routers.panel.tls.certresolver=letsencrypt"
     networks:
       - otobia-network
     depends_on:
       - traefik
     restart: unless-stopped
+
+  # Init container to populate volumes with default content
+  init-frontend:
+    image: alpine
+    container_name: otobia-init
+    volumes:
+      - landing_html:/landing
+      - admin_html:/admin
+      - panel_html:/panel
+    command: |
+      sh -c '
+        # Landing page
+        cat > /landing/index.html << "LANDING"
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Otobia - Oto Galeri B2B Platformu</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: Inter, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); }
+                .bg-pattern { position: absolute; inset: 0; background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0); background-size: 40px 40px; }
+                .glow { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); animation: pulse 4s ease-in-out infinite; }
+                @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; } }
+                .container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; z-index: 10; position: relative; padding: 2rem; }
+                .logo { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+                .logo-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3); }
+                .logo-icon svg { width: 48px; height: 48px; fill: white; }
+                .logo-text { font-size: 3.5rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+                h1 { font-size: 2.5rem; font-weight: 700; color: white; margin-bottom: 1rem; }
+                .highlight { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+                p { font-size: 1.25rem; color: #94a3b8; max-width: 600px; margin: 0 auto 3rem; line-height: 1.8; }
+                .features { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem; }
+                .feature { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem 2rem; backdrop-filter: blur(10px); transition: all 0.3s; }
+                .feature:hover { background: rgba(255,255,255,0.1); transform: translateY(-5px); }
+                .feature-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+                .feature-text { color: #e2e8f0; font-weight: 500; }
+                .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); }
+                .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4); }
+                .links { display: flex; gap: 2rem; margin-top: 2rem; }
+                .links a { color: #64748b; text-decoration: none; font-size: 0.9rem; transition: color 0.3s; }
+                .links a:hover { color: #3b82f6; }
+                @media (max-width: 640px) { .logo-text { font-size: 2.5rem; } h1 { font-size: 1.75rem; } p { font-size: 1rem; } .features { flex-direction: column; align-items: center; } }
+            </style>
+        </head>
+        <body>
+            <div class="bg-pattern"></div>
+            <div class="glow"></div>
+            <div class="container">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+                        </svg>
+                    </div>
+                    <span class="logo-text">Otobia</span>
+                </div>
+                <h1>Oto Galeri <span class="highlight">B2B Platformu</span></h1>
+                <p>Turkiyenin en kapsamli oto galeri platformu. Stok yonetimi, galeriler arasi teklif sistemi ve otomatik ilan aktarimi ile isinizi buyutun.</p>
+                <div class="features">
+                    <div class="feature"><div class="feature-icon">🚗</div><div class="feature-text">Stok Yonetimi</div></div>
+                    <div class="feature"><div class="feature-icon">💰</div><div class="feature-text">Teklif Sistemi</div></div>
+                    <div class="feature"><div class="feature-icon">📱</div><div class="feature-text">Oto Shorts</div></div>
+                    <div class="feature"><div class="feature-icon">🔗</div><div class="feature-text">Entegrasyonlar</div></div>
+                </div>
+                <a href="https://panel.otobia.com" class="btn">Galeri Paneline Git →</a>
+                <div class="links">
+                    <a href="https://admin.otobia.com">Yonetici Paneli</a>
+                    <a href="mailto:info@otobia.com">Iletisim</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        LANDING
+        
+        # Admin page
+        cat > /admin/index.html << "ADMIN"
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Superadmin Paneli - Otobia</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: Inter, sans-serif; min-height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; }
+                .container { text-align: center; padding: 2rem; }
+                .logo { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 1rem; }
+                .badge { display: inline-block; padding: 0.5rem 1rem; background: #3b82f6; color: white; border-radius: 20px; font-size: 0.875rem; margin-bottom: 2rem; }
+                h1 { color: white; font-size: 1.5rem; margin-bottom: 1rem; }
+                p { color: #64748b; margin-bottom: 2rem; }
+                .btn { display: inline-block; padding: 1rem 2rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="logo">Otobia</div>
+                <div class="badge">Superadmin</div>
+                <h1>Yonetici Paneli</h1>
+                <p>Bu panel yakim zamanda aktif olacaktir.</p>
+                <a href="https://otobia.com" class="btn">Ana Sayfaya Don</a>
+            </div>
+        </body>
+        </html>
+        ADMIN
+        
+        # Panel page
+        cat > /panel/index.html << "PANEL"
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Galeri Paneli - Otobia</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: Inter, sans-serif; min-height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; }
+                .container { text-align: center; padding: 2rem; }
+                .logo { font-size: 2rem; font-weight: 800; color: white; margin-bottom: 1rem; }
+                .badge { display: inline-block; padding: 0.5rem 1rem; background: #8b5cf6; color: white; border-radius: 20px; font-size: 0.875rem; margin-bottom: 2rem; }
+                h1 { color: white; font-size: 1.5rem; margin-bottom: 1rem; }
+                p { color: #64748b; margin-bottom: 2rem; }
+                .btn { display: inline-block; padding: 1rem 2rem; background: #8b5cf6; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="logo">Otobia</div>
+                <div class="badge">Galeri Paneli</div>
+                <h1>Galeri Yonetim Paneli</h1>
+                <p>Bu panel yakim zamanda aktif olacaktir.</p>
+                <a href="https://otobia.com" class="btn">Ana Sayfaya Don</a>
+            </div>
+        </body>
+        </html>
+        PANEL
+        
+        echo "Frontend pages initialized!"
+      '
+    networks:
+      - otobia-network
 
 networks:
   otobia-network:
@@ -156,3 +303,6 @@ volumes:
   meilisearch_data:
   minio_data:
   letsencrypt_data:
+  landing_html:
+  admin_html:
+  panel_html:
