@@ -137,22 +137,31 @@
               </select>
             </div>
 
-            <!-- Trim Selection -->
-            <div>
+            <!-- Trim Selection - SADECE Alt Model secildikten sonra ve birden fazla trim varsa goster -->
+            <div v-if="showTrimField">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Trim/Paket
+                Trim/Paket {{ requiresTrimSelection ? '*' : '' }}
               </label>
-              <select 
-                v-model="selectedTrimId" 
-                @change="onTrimChange"
-                class="input-field"
-                :disabled="(!selectedAltModelId && !selectedModelId) || loadingTrims"
-              >
-                <option value="">{{ loadingTrims ? 'Yukleniyor...' : 'Trim Secin (Opsiyonel)' }}</option>
-                <option v-for="t in trims" :key="t.id" :value="t.id">
-                  {{ t.name || 'Standart' }}
-                </option>
-              </select>
+              <template v-if="requiresTrimSelection && trims.length > 0">
+                <select 
+                  v-model="selectedTrimId" 
+                  @change="onTrimChange"
+                  required
+                  class="input-field"
+                  :disabled="loadingTrims"
+                >
+                  <option value="">{{ loadingTrims ? 'Yukleniyor...' : 'Trim Secin' }}</option>
+                  <option v-for="t in trims" :key="t.id" :value="t.id">
+                    {{ t.name || 'Standart' }}
+                  </option>
+                </select>
+              </template>
+              <template v-else>
+                <div class="input-field bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                  Otomatik dolduruldu
+                </div>
+              </template>
             </div>
           </div>
           
@@ -590,6 +599,7 @@ const loadingModels = ref(false)
 const loadingAltModels = ref(false)
 const loadingTrims = ref(false)
 const autoFilledSpecs = ref(false)
+const requiresTrimSelection = ref(false)
 
 // Video upload state
 const videoInput = ref<HTMLInputElement | null>(null)
@@ -672,6 +682,23 @@ const selectedSeries = computed(() => series.value.find(s => s.id === selectedSe
 const selectedModel = computed(() => models.value.find(m => m.id === selectedModelId.value))
 const selectedAltModel = computed(() => altModels.value.find(am => am.id === selectedAltModelId.value))
 const selectedTrim = computed(() => trims.value.find(t => t.id === selectedTrimId.value))
+
+// Trim alanı sadece Alt Model seçildikten sonra (veya model seçilip alt model yoksa) ve specs yüklendiyse gösterilir
+const showTrimField = computed(() => {
+  // Alt model seçildi ve specs yüklendi
+  if (selectedAltModelId.value && autoFilledSpecs.value) {
+    return true
+  }
+  // Model seçildi, alt model yok ve specs yüklendi
+  if (selectedModelId.value && altModels.value.length === 0 && autoFilledSpecs.value) {
+    return true
+  }
+  // Trim seçimi gerekiyorsa her zaman göster
+  if (requiresTrimSelection.value && trims.value.length > 0) {
+    return true
+  }
+  return false
+})
 
 // Ilan numarasi olusturma fonksiyonu
 const generateListingNumber = () => {
@@ -860,6 +887,16 @@ const onModelChange = async () => {
   altModels.value = []
   trims.value = []
   autoFilledSpecs.value = false
+  requiresTrimSelection.value = false
+  
+  // Reset specs when model changes
+  form.bodyType = ''
+  form.fuelType = ''
+  form.transmission = ''
+  form.enginePower = null
+  form.engineCc = null
+  form.altModel = ''
+  form.trim = ''
   
   if (!selectedModelId.value) return
   
@@ -868,9 +905,9 @@ const onModelChange = async () => {
   // Load alt models
   await loadAltModels()
   
-  // If no alt models, load trims directly and auto-fill specs
+  // If no alt models, load specifications directly
+  // This will determine if trim selection is needed and auto-fill specs
   if (altModels.value.length === 0) {
-    await loadTrimsForModel()
     await loadSpecifications()
   }
 }
@@ -896,16 +933,25 @@ const loadAltModels = async () => {
 const onAltModelChange = async () => {
   selectedTrimId.value = ''
   trims.value = []
+  requiresTrimSelection.value = false
+  autoFilledSpecs.value = false
+  
+  // Reset specs when alt model changes
+  form.bodyType = ''
+  form.fuelType = ''
+  form.transmission = ''
+  form.enginePower = null
+  form.engineCc = null
+  form.trim = ''
   
   if (!selectedAltModelId.value) {
-    autoFilledSpecs.value = false
     return
   }
   
   form.altModel = selectedAltModel.value?.name || ''
   
-  // Load trims and auto-fill specs
-  await loadTrimsForAltModel()
+  // Load specifications - this will determine if trim selection is needed
+  // and either auto-fill specs or show trim selection
   await loadSpecifications()
 }
 
@@ -944,6 +990,8 @@ const loadTrimsForModel = async () => {
 }
 
 // Load specifications and auto-fill form
+// Supports both new API format (requires_trim_selection, auto_fill_specs, trims_for_selection)
+// and old API format (bodyType, fuelType, etc.) for backward compatibility
 const loadSpecifications = async () => {
   const altModelId = selectedAltModelId.value
   const modelId = selectedModelId.value
@@ -955,32 +1003,72 @@ const loadSpecifications = async () => {
     const response = await api.get<{ success: boolean; data: any }>(`/catalog/specifications?${params}`)
     
     if (response.success && response.data) {
-      const specs = response.data
+      const result = response.data
       
-      // Auto-fill form fields
-      if (specs.bodyType) form.bodyType = specs.bodyType
-      if (specs.fuelType) form.fuelType = specs.fuelType
-      if (specs.transmission) form.transmission = specs.transmission
-      if (specs.enginePower) form.enginePower = specs.enginePower
-      if (specs.engineDisplacement) form.engineCc = specs.engineDisplacement
+      // Check for new API format (requires_trim_selection) or old format (bodyType)
+      const isNewFormat = 'requires_trim_selection' in result
       
-      autoFilledSpecs.value = true
+      if (isNewFormat) {
+        // New API format
+        requiresTrimSelection.value = result.requires_trim_selection || false
+        
+        if (result.requires_trim_selection) {
+          // User needs to select a trim - populate trims list
+          trims.value = result.trims_for_selection || []
+          selectedTrimId.value = ''
+          autoFilledSpecs.value = false
+        } else {
+          // Auto-fill specs - no trim selection needed
+          const autoFill = result.auto_fill_specs
+          if (autoFill) {
+            if (autoFill.body_type) form.bodyType = autoFill.body_type
+            if (autoFill.fuel_type) form.fuelType = autoFill.fuel_type
+            if (autoFill.transmission) form.transmission = autoFill.transmission
+            if (autoFill.engine_power) form.enginePower = autoFill.engine_power
+            if (autoFill.engine_displacement) form.engineCc = autoFill.engine_displacement
+            if (autoFill.trim_id) selectedTrimId.value = autoFill.trim_id
+            if (autoFill.trim_name) form.trim = autoFill.trim_name
+            autoFilledSpecs.value = true
+          }
+          // Clear trims list since no selection needed
+          trims.value = []
+        }
+      } else {
+        // Old API format - auto-fill directly (backward compatible)
+        requiresTrimSelection.value = false
+        if (result.bodyType) form.bodyType = result.bodyType
+        if (result.fuelType) form.fuelType = result.fuelType
+        if (result.transmission) form.transmission = result.transmission
+        if (result.enginePower) form.enginePower = result.enginePower
+        if (result.engineDisplacement) form.engineCc = result.engineDisplacement
+        autoFilledSpecs.value = true
+        trims.value = []
+      }
     }
   } catch (error: any) {
     console.error('Spesifikasyonlar yuklenemedi:', error)
+    // Fallback to old behavior - load trims normally
+    if (altModelId) {
+      await loadTrimsForAltModel()
+    } else if (modelId) {
+      await loadTrimsForModel()
+    }
   }
 }
 
-// On trim change
+// On trim change - always override ALL specs with selected trim
 const onTrimChange = () => {
-  if (!selectedTrimId.value) return
+  if (!selectedTrimId.value) {
+    autoFilledSpecs.value = false
+    return
+  }
   
   const trim = selectedTrim.value
   if (!trim) return
   
   form.trim = trim.name || ''
   
-  // Override with trim-specific specs if available
+  // Always override ALL specs with trim-specific values
   if (trim.body_type) form.bodyType = trim.body_type
   if (trim.fuel_type) form.fuelType = trim.fuel_type
   if (trim.transmission) form.transmission = trim.transmission
