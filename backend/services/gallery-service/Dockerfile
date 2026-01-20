@@ -18,18 +18,14 @@ COPY backend/services/gallery-service/tsconfig.json ./backend/services/gallery-s
 # Install all dependencies
 RUN npm install --legacy-peer-deps 2>/dev/null || npm install || true
 
-# Copy shared source
+# Copy shared source and build
 COPY backend/shared ./backend/shared
-
-# Build shared
 WORKDIR /app/backend/shared
 RUN npx tsc || true
 
-# Copy service source
+# Copy service source and build
 WORKDIR /app
 COPY backend/services/gallery-service ./backend/services/gallery-service
-
-# Build service
 WORKDIR /app/backend/services/gallery-service
 RUN npx tsc || true
 
@@ -44,11 +40,15 @@ COPY --from=builder /app/backend/shared/package.json ./backend/shared/
 COPY --from=builder /app/backend/services/gallery-service/package.json ./backend/services/gallery-service/
 
 # Copy built files
-COPY --from=builder /app/backend/shared/dist ./backend/shared/dist
+COPY --from=builder /app/backend/shared ./backend/shared
 COPY --from=builder /app/backend/services/gallery-service/dist ./backend/services/gallery-service/dist
 
 # Copy node_modules
 COPY --from=builder /app/node_modules ./node_modules
+
+# Create symlink for @galeri/shared
+RUN mkdir -p /app/node_modules/@galeri && \
+    ln -sf /app/backend/shared /app/node_modules/@galeri/shared
 
 WORKDIR /app/backend/services/gallery-service
 
