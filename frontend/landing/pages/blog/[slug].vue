@@ -163,7 +163,7 @@ const formatDate = (date: string) => {
 }
 
 useHead({
-  title: post.value ? `${post.value.title} - Blog - Galeri Merkezi` : 'Blog - Galeri Merkezi'
+  title: post.value ? `${post.value.title} - Blog - Otobia` : 'Blog - Otobia'
 })
 </script>
 

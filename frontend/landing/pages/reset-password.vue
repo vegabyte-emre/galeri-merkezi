@@ -103,7 +103,7 @@ import { Lock, CheckCircle, X } from 'lucide-vue-next'
 import { reactive, ref, computed } from 'vue'
 
 useHead({
-  title: 'Şifre Sıfırla - Galeri Merkezi'
+  title: 'Şifre Sıfırla - Otobia'
 })
 
 const form = reactive({

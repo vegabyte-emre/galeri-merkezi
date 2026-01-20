@@ -1,4 +1,4 @@
-﻿export default defineNuxtConfig({
+export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
     '@nuxtjs/tailwindcss',
@@ -8,7 +8,7 @@
   css: ['~/assets/styles/main.css'],
   app: {
     head: {
-      title: 'Galeri Paneli - Galeri Merkezi',
+      title: 'Galeri Paneli - Otobia',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' }

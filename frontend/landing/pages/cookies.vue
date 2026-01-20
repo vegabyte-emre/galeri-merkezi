@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 useHead({
-  title: 'Çerez Politikası - Galeri Merkezi'
+  title: 'Çerez Politikası - Otobia'
 })
 
 const lastUpdated = '1 Ocak 2024'

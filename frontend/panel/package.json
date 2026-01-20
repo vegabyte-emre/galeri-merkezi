@@ -1,7 +1,7 @@
 {
   "name": "@galeri/panel",
   "version": "1.0.0",
-  "description": "Gallery panel for Galeri Merkezi platform",
+  "description": "Gallery panel for Otobia platform",
   "private": true,
   "type": "module",
   "scripts": {

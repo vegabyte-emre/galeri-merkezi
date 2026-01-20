@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="min-h-[80vh] flex items-center justify-center py-12 px-4">
     <div class="max-w-md w-full">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
@@ -11,7 +11,7 @@
             Hesabiniza Giris Yapin
           </h2>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            Galeri Merkezi platformuna hos geldiniz
+            Otobia platformuna hos geldiniz
           </p>
         </div>
 
@@ -101,7 +101,7 @@ import { reactive, ref } from 'vue'
 import { useApi } from '~/composables/useApi'
 
 useHead({
-  title: 'Giris Yap - Galeri Merkezi'
+  title: 'Giris Yap - Otobia'
 })
 
 const api = useApi()

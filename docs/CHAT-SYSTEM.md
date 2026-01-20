@@ -2,7 +2,7 @@
 
 ## 📋 Genel Bakış
 
-Galeri Merkezi platformunda galericiler arası mesajlaşma sistemi, **WebSocket (Socket.IO)** tabanlı real-time bir chat sistemidir. Sistem, galericilerin birbirleriyle araç teklifleri, satış süreçleri ve genel iletişim için mesajlaşmasını sağlar.
+Otobia platformunda galericiler arası mesajlaşma sistemi, **WebSocket (Socket.IO)** tabanlı real-time bir chat sistemidir. Sistem, galericilerin birbirleriyle araç teklifleri, satış süreçleri ve genel iletişim için mesajlaşmasını sağlar.
 
 ---
 
@@ -27,7 +27,7 @@ Galeri Merkezi platformunda galericiler arası mesajlaşma sistemi, **WebSocket 
 ### Bağlantı
 
 **Endpoint:** `ws://localhost:3005` (Development)
-**Production:** `wss://api.galerimerkezi.com` (Secure WebSocket)
+**Production:** `wss://api.Otobia.com` (Secure WebSocket)
 
 **Authentication:**
 - JWT token ile authentication
@@ -208,7 +208,7 @@ socket.on('user_stopped_typing', (data) => {
 
 ### Base URL
 - **Development:** `http://localhost:3005`
-- **Production:** `https://api.galerimerkezi.com/api/v1/chats`
+- **Production:** `https://api.Otobia.com/api/v1/chats`
 
 ### Authentication
 Tüm endpoint'ler JWT token gerektirir:

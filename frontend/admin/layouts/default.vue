@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
     <!-- Sidebar -->
     <aside 
@@ -51,7 +51,7 @@
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">Admin User</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">admin@galerimerkezi.com</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">admin@Otobia.com</p>
           </div>
           <div class="flex items-center gap-2">
             <button
@@ -144,13 +144,14 @@ import {
   Sun,
   Moon,
   LogOut,
-  CreditCard
+  CreditCard,
+  Video
 } from 'lucide-vue-next'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApi } from '~/composables/useApi'
 
-const storageKey = 'galeri-admin-theme'
+const storageKey = 'otobia-admin-theme'
 const isDark = ref(false)
 
 const applyTheme = (dark: boolean) => {
@@ -208,18 +209,19 @@ const handleLogout = async () => {
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/galleries', label: 'Galeriler', icon: Building2, badge: '150' },
-  { path: '/users', label: 'Kullanıcılar', icon: Users },
+  { path: '/users', label: 'Kullanicilar', icon: Users },
+  { path: '/oto-shorts', label: 'Oto Shorts', icon: Video, badge: '8' },
   { path: '/subscriptions', label: 'Abonelikler', icon: CreditCard },
-  { path: '/roles', label: 'Roller & İzinler', icon: Shield },
+  { path: '/roles', label: 'Roller & Izinler', icon: Shield },
   { path: '/reports', label: 'Raporlar', icon: BarChart3 },
   { path: '/analytics', label: 'Analitik', icon: BarChart3 },
-  { path: '/logs', label: 'Sistem Logları', icon: FileText },
+  { path: '/logs', label: 'Sistem Loglari', icon: FileText },
   { path: '/system', label: 'Sistem Durumu', icon: Shield },
   { path: '/backup', label: 'Yedekleme', icon: FileText },
   { path: '/integrations', label: 'Entegrasyonlar', icon: Settings },
-  { path: '/email-templates', label: 'E-posta Şablonları', icon: Mail },
-  { path: '/api-docs', label: 'API Dokümantasyonu', icon: FileText },
-  { path: '/splash-config', label: 'Splash Ayarları', icon: Settings },
+  { path: '/email-templates', label: 'E-posta Sablonlari', icon: Mail },
+  { path: '/api-docs', label: 'API Dokumantasyonu', icon: FileText },
+  { path: '/splash-config', label: 'Splash Ayarlari', icon: Settings },
   { path: '/settings', label: 'Ayarlar', icon: Settings },
 ]
 
@@ -227,18 +229,19 @@ const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     '/': 'Dashboard',
     '/galleries': 'Galeriler',
-    '/users': 'Kullanıcılar',
-    '/subscriptions': 'Abonelik Yönetimi',
-    '/roles': 'Roller & İzinler',
+    '/users': 'Kullanicilar',
+    '/oto-shorts': 'Oto Shorts',
+    '/subscriptions': 'Abonelik Yonetimi',
+    '/roles': 'Roller & Izinler',
     '/reports': 'Raporlar',
     '/analytics': 'Analitik',
-    '/logs': 'Sistem Logları',
+    '/logs': 'Sistem Loglari',
     '/system': 'Sistem Durumu',
     '/backup': 'Yedekleme',
     '/integrations': 'Entegrasyonlar',
-    '/email-templates': 'E-posta Şablonları',
-    '/api-docs': 'API Dokümantasyonu',
-    '/splash-config': 'Splash Ayarları',
+    '/email-templates': 'E-posta Sablonlari',
+    '/api-docs': 'API Dokumantasyonu',
+    '/splash-config': 'Splash Ayarlari',
     '/settings': 'Ayarlar',
   }
   return titles[route.path] || 'Dashboard'
@@ -246,23 +249,24 @@ const pageTitle = computed(() => {
 
 const pageSubtitle = computed(() => {
   const subtitles: Record<string, string> = {
-    '/': 'Genel bakış ve istatistikler',
-    '/galleries': 'Tüm galerileri yönetin',
-    '/users': 'Kullanıcı hesaplarını yönetin',
-    '/subscriptions': 'Galeri aboneliklerini yönetin ve ödemeleri takip edin',
-    '/roles': 'Kullanıcı rollerini ve izinlerini yönetin',
-    '/reports': 'Detaylı raporlar ve analitik',
-    '/analytics': 'Platform performansı ve kullanıcı davranışları',
+    '/': 'Genel bakis ve istatistikler',
+    '/galleries': 'Tum galerileri yonetin',
+    '/users': 'Kullanici hesaplarini yonetin',
+    '/oto-shorts': 'Video iceriklerini yonetin ve moderasyon yapin',
+    '/subscriptions': 'Galeri aboneliklerini yonetin ve odemeleri takip edin',
+    '/roles': 'Kullanici rollerini ve izinlerini yonetin',
+    '/reports': 'Detayli raporlar ve analitik',
+    '/analytics': 'Platform performansi ve kullanici davranislari',
     '/logs': 'Sistem aktivitelerini takip edin',
-    '/system': 'Platform sağlığı ve performans metrikleri',
-    '/backup': 'Veritabanı yedeklemelerini yönetin',
-    '/integrations': 'Üçüncü parti servislerle entegrasyonlar',
-    '/email-templates': 'Sistem e-postalarının şablonlarını yönetin',
-    '/api-docs': 'Platform API\'sini kullanarak entegrasyonlar geliştirin',
-    '/splash-config': 'Mobil uygulama açılış ekranını özelleştirin',
-    '/settings': 'Sistem ayarları',
+    '/system': 'Platform sagligi ve performans metrikleri',
+    '/backup': 'Veritabani yedeklemelerini yonetin',
+    '/integrations': 'Ucuncu parti servislerle entegrasyonlar',
+    '/email-templates': 'Sistem e-postalarinin sablonlarini yonetin',
+    '/api-docs': 'Platform API\'sini kullanarak entegrasyonlar gelistirin',
+    '/splash-config': 'Mobil uygulama acilis ekranini ozellestirin',
+    '/settings': 'Sistem ayarlari',
   }
-  return subtitles[route.path] || 'Yönetim paneli'
+  return subtitles[route.path] || 'Yonetim paneli'
 })
 </script>
 

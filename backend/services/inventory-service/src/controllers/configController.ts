@@ -15,7 +15,7 @@ interface SplashConfig {
 }
 
 const DEFAULT_SPLASH_CONFIG: SplashConfig = {
-  title: 'Galeri Merkezi',
+  title: 'Otobia',
   subtitle: 'Araç Yönetim Platformu',
   tagline: 'Galerinizi Dijitalleştirin',
   version: 'v1.0.0',

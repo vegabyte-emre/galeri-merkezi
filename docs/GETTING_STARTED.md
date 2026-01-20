@@ -1,6 +1,6 @@
 # Başlangıç Rehberi
 
-Bu rehber, Galeri Merkezi B2B platformunu yerel ortamda çalıştırmanız için gerekli adımları içerir.
+Bu rehber, Otobia B2B platformunu yerel ortamda çalıştırmanız için gerekli adımları içerir.
 
 ## 📋 Gereksinimler
 

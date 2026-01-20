@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import { query } from '@galeri/shared/database/connection';
 import { logger } from '@galeri/shared/utils/logger';
 import { config } from '@galeri/shared/config';

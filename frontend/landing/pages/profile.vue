@@ -153,7 +153,7 @@
 import { reactive } from 'vue'
 
 useHead({
-  title: 'Profilim - Galeri Merkezi'
+  title: 'Profilim - Otobia'
 })
 
 const profile = reactive({

@@ -1,7 +1,7 @@
 {
   "name": "@galeri/admin",
   "version": "1.0.0",
-  "description": "Admin panel for Galeri Merkezi platform",
+  "description": "Admin panel for Otobia platform",
   "private": true,
   "type": "module",
   "scripts": {

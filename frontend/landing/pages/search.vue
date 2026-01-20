@@ -236,7 +236,7 @@ import { Search, Grid, List, Car } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
 
 useHead({
-  title: 'Araç Ara - Galeri Merkezi'
+  title: 'Araç Ara - Otobia'
 })
 
 const viewMode = ref<'grid' | 'list'>('grid')

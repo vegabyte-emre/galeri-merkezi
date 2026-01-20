@@ -89,7 +89,7 @@ import { Search, ChevronDown } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
 
 useHead({
-  title: 'SSS - Galeri Merkezi'
+  title: 'SSS - Otobia'
 })
 
 const searchQuery = ref('')
@@ -102,8 +102,8 @@ const faqs = ref([
   {
     id: 1,
     category: 'Genel',
-    question: 'Galeri Merkezi nedir?',
-    answer: 'Galeri Merkezi, oto galerileri arasında stok yönetimi, teklif/pazarlık, mesajlaşma ve pazar yerlerine ilan aktarımı yapabilen B2B bir platformdur. Galeriler, platform üzerinden birbirleriyle iş yapabilir ve stoklarını yönetebilirler.'
+    question: 'Otobia nedir?',
+    answer: 'Otobia, oto galerileri arasında stok yönetimi, teklif/pazarlık, mesajlaşma ve pazar yerlerine ilan aktarımı yapabilen B2B bir platformdur. Galeriler, platform üzerinden birbirleriyle iş yapabilir ve stoklarını yönetebilirler.'
   },
   {
     id: 2,

@@ -100,7 +100,7 @@ import { FileText } from 'lucide-vue-next'
 import { ref } from 'vue'
 
 useHead({
-  title: 'Blog - Galeri Merkezi'
+  title: 'Blog - Otobia'
 })
 
 const featuredPost = ref({

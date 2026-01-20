@@ -16,7 +16,7 @@
         <section>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">1. Veri Toplama</h2>
           <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-            Galeri Merkezi olarak, hizmetlerimizi sunabilmek için aşağıdaki kişisel verileri topluyoruz:
+            Otobia olarak, hizmetlerimizi sunabilmek için aşağıdaki kişisel verileri topluyoruz:
           </p>
           <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400 ml-4">
             <li>Ad, soyad, e-posta adresi ve telefon numarası</li>
@@ -87,7 +87,7 @@
           </p>
           <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p class="text-gray-700 dark:text-gray-300">
-              <strong>E-posta:</strong> privacy@galerimerkezi.com<br />
+              <strong>E-posta:</strong> privacy@Otobia.com<br />
               <strong>Adres:</strong> Maslak Mahallesi, Büyükdere Caddesi No:123, Sarıyer, İstanbul
             </p>
           </div>
@@ -99,7 +99,7 @@
 
 <script setup lang="ts">
 useHead({
-  title: 'Gizlilik Politikası - Galeri Merkezi'
+  title: 'Gizlilik Politikası - Otobia'
 })
 
 const lastUpdated = '1 Ocak 2024'

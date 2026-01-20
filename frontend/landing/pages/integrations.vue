@@ -7,7 +7,7 @@
           Entegrasyonlar
         </h1>
         <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-          Galeri Merkezi'ni mevcut sistemlerinizle entegre edin ve iş akışınızı optimize edin
+          Otobia'ni mevcut sistemlerinizle entegre edin ve iş akışınızı optimize edin
         </p>
       </div>
 
@@ -189,9 +189,9 @@
 import { ShoppingBag, Database, Users, CreditCard, Mail, Code, Check } from 'lucide-vue-next'
 
 useHead({
-  title: 'Entegrasyonlar - Galeri Merkezi',
+  title: 'Entegrasyonlar - Otobia',
   meta: [
-    { name: 'description', content: 'Galeri Merkezi entegrasyonları - Pazar yerleri, ERP, CRM ve daha fazlası' }
+    { name: 'description', content: 'Otobia entegrasyonları - Pazar yerleri, ERP, CRM ve daha fazlası' }
   ]
 })
 </script>

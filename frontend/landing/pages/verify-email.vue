@@ -59,7 +59,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 useHead({
-  title: 'E-posta Doğrulama - Galeri Merkezi'
+  title: 'E-posta Doğrulama - Otobia'
 })
 
 const route = useRoute()

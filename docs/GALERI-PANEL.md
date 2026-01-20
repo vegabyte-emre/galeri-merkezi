@@ -600,7 +600,7 @@ http://localhost:8000/api/v1
 
 **Production:**
 ```
-https://api.galerimerkezi.com/api/v1
+https://api.Otobia.com/api/v1
 ```
 
 ### Configuration

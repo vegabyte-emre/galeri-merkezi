@@ -16,7 +16,7 @@
         <div>
           <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Misyonumuz</h2>
           <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-            Galeri Merkezi olarak, Türkiye'deki oto galerilerini dijital bir platformda birleştirerek, 
+            Otobia olarak, Türkiye'deki oto galerilerini dijital bir platformda birleştirerek, 
             sektördeki verimliliği artırmayı ve iş süreçlerini kolaylaştırmayı hedefliyoruz.
           </p>
           <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -93,7 +93,7 @@
 import { Shield, Zap, Heart } from 'lucide-vue-next'
 
 useHead({
-  title: 'Hakkımızda - Galeri Merkezi'
+  title: 'Hakkımızda - Otobia'
 })
 
 const values = [

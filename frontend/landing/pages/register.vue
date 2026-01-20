@@ -346,9 +346,9 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { useTurkiyeAPI, type City, type District, type Neighborhood } from '~/composables/useTurkiyeAPI'
 
 useHead({
-  title: 'Kayıt Ol - Galeri Merkezi',
+  title: 'Kayıt Ol - Otobia',
   meta: [
-    { name: 'description', content: 'Galeri Merkezi platformuna kayıt olun ve oto galeri işinizi büyütün' }
+    { name: 'description', content: 'Otobia platformuna kayıt olun ve oto galeri işinizi büyütün' }
   ]
 })
 

@@ -16,7 +16,7 @@
         <section>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">1. Genel Hükümler</h2>
           <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
-            Bu kullanım koşulları, Galeri Merkezi platformunu kullanırken geçerlidir. 
+            Bu kullanım koşulları, Otobia platformunu kullanırken geçerlidir. 
             Platformu kullanarak, bu koşulları kabul etmiş sayılırsınız.
           </p>
         </section>
@@ -72,7 +72,7 @@
         <section>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">6. Fikri Mülkiyet</h2>
           <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
-            Platform içeriği, tasarımı ve yazılımı Galeri Merkezi'ne aittir. İzinsiz kopyalama, 
+            Platform içeriği, tasarımı ve yazılımı Otobia'ne aittir. İzinsiz kopyalama, 
             dağıtma veya kullanım yasaktır.
           </p>
         </section>
@@ -108,7 +108,7 @@
           </p>
           <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p class="text-gray-700 dark:text-gray-300">
-              <strong>E-posta:</strong> legal@galerimerkezi.com<br />
+              <strong>E-posta:</strong> legal@Otobia.com<br />
               <strong>Adres:</strong> Maslak Mahallesi, Büyükdere Caddesi No:123, Sarıyer, İstanbul
             </p>
           </div>
@@ -120,7 +120,7 @@
 
 <script setup lang="ts">
 useHead({
-  title: 'Kullanım Koşulları - Galeri Merkezi'
+  title: 'Kullanım Koşulları - Otobia'
 })
 
 const lastUpdated = '1 Ocak 2024'

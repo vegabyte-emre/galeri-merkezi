@@ -18,7 +18,7 @@
             <div class="w-24 h-24 rounded-full flex items-center justify-center mb-6" :style="{ background: `linear-gradient(135deg, ${config.gradientColors?.[0] || '#FF6B35'}, ${config.gradientColors?.[1] || '#FF8F5F'})` }">
               <span class="text-5xl">{{ config.logoEmoji || '🚗' }}</span>
             </div>
-            <h3 class="text-2xl font-black text-white text-center mb-2">{{ config.title || 'Galeri Merkezi' }}</h3>
+            <h3 class="text-2xl font-black text-white text-center mb-2">{{ config.title || 'Otobia' }}</h3>
             <p class="text-lg font-medium text-orange-400 text-center mb-2">{{ config.subtitle || 'Araç Yönetim Platformu' }}</p>
             <p class="text-sm text-gray-400 text-center mb-8">{{ config.tagline || 'Galerinizi Dijitalleştirin' }}</p>
             <div class="w-3/4 h-1 bg-gray-700 rounded-full overflow-hidden mb-4">
@@ -34,7 +34,7 @@
             <div class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-400 mb-2">Başlık</label>
-                <input v-model="config.title" type="text" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Galeri Merkezi" />
+                <input v-model="config.title" type="text" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Otobia" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-400 mb-2">Alt Başlık</label>
@@ -121,7 +121,7 @@ const saving = ref(false)
 const lastUpdated = ref<string | null>(null)
 
 const config = ref<SplashConfig>({
-  title: 'Galeri Merkezi',
+  title: 'Otobia',
   subtitle: 'Araç Yönetim Platformu',
   tagline: 'Galerinizi Dijitalleştirin',
   version: 'v1.0.0',

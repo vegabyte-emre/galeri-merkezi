@@ -1,7 +1,7 @@
 {
   "name": "@galeri/chat-service",
   "version": "1.0.0",
-  "description": "Chat service with WebSocket support for Galeri Merkezi platform",
+  "description": "Chat service with WebSocket support for Otobia platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

@@ -1,7 +1,7 @@
 {
   "name": "@galeri/api-gateway",
   "version": "1.0.0",
-  "description": "API Gateway for Galeri Merkezi platform",
+  "description": "API Gateway for Otobia platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

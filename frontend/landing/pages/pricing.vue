@@ -83,7 +83,7 @@
 import { Check } from 'lucide-vue-next'
 
 useHead({
-  title: 'Fiyatlandırma - Galeri Merkezi'
+  title: 'Fiyatlandırma - Otobia'
 })
 
 const plans = [

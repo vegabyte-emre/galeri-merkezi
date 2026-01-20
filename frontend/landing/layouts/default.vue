@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
     <!-- Navigation -->
     <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm">
@@ -10,7 +10,7 @@
               <Car class="w-6 h-6 text-white" />
             </div>
             <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-              Galeri Merkezi
+              Otobia
             </span>
           </NuxtLink>
 
@@ -49,7 +49,7 @@
               to="/contact" 
               class="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors relative group"
             >
-              İletişim
+              �leti�im
               <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
             </NuxtLink>
           </div>
@@ -68,13 +68,13 @@
               to="/register" 
               class="hidden sm:inline-flex px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors"
             >
-              Kayıt Ol
+              Kay�t Ol
             </NuxtLink>
             <NuxtLink 
               to="/login" 
               class="px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
             >
-              Giriş Yap
+              Giri� Yap
             </NuxtLink>
           </div>
         </div>
@@ -97,10 +97,10 @@
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
                 <Car class="w-6 h-6 text-white" />
               </div>
-              <span class="text-xl font-bold">Galeri Merkezi</span>
+              <span class="text-xl font-bold">Otobia</span>
             </div>
             <p class="text-gray-400 mb-6 leading-relaxed">
-              Oto galerilerini birleştiren B2B platform. İşinizi büyütün, verimliliğinizi artırın.
+              Oto galerilerini birle�tiren B2B platform. ��inizi b�y�t�n, verimlili�inizi art�r�n.
             </p>
             <div class="flex gap-4">
               <a href="#" class="w-10 h-10 rounded-lg bg-white/10 hover:bg-primary-500 flex items-center justify-center transition-colors">
@@ -119,21 +119,21 @@
           </div>
 
           <div>
-            <h4 class="font-bold mb-4 text-lg">Hızlı Linkler</h4>
+            <h4 class="font-bold mb-4 text-lg">H�zl� Linkler</h4>
             <ul class="space-y-3 text-gray-400">
               <li><NuxtLink to="/" class="hover:text-white transition-colors">Anasayfa</NuxtLink></li>
               <li><NuxtLink to="/about" class="hover:text-white transition-colors">Kurumsal</NuxtLink></li>
               <li><NuxtLink to="/pricing" class="hover:text-white transition-colors">Fiyatlar</NuxtLink></li>
-              <li><NuxtLink to="/contact" class="hover:text-white transition-colors">İletişim</NuxtLink></li>
+              <li><NuxtLink to="/contact" class="hover:text-white transition-colors">�leti�im</NuxtLink></li>
             </ul>
           </div>
 
           <div>
             <h4 class="font-bold mb-4 text-lg">Yasal</h4>
             <ul class="space-y-3 text-gray-400">
-              <li><NuxtLink to="/privacy" class="hover:text-white transition-colors">Gizlilik Politikası</NuxtLink></li>
-              <li><NuxtLink to="/terms" class="hover:text-white transition-colors">Kullanım Koşulları</NuxtLink></li>
-              <li><NuxtLink to="/cookies" class="hover:text-white transition-colors">Çerez Politikası</NuxtLink></li>
+              <li><NuxtLink to="/privacy" class="hover:text-white transition-colors">Gizlilik Politikas�</NuxtLink></li>
+              <li><NuxtLink to="/terms" class="hover:text-white transition-colors">Kullan�m Ko�ullar�</NuxtLink></li>
+              <li><NuxtLink to="/cookies" class="hover:text-white transition-colors">�erez Politikas�</NuxtLink></li>
               <li><NuxtLink to="/faq" class="hover:text-white transition-colors">SSS</NuxtLink></li>
             </ul>
           </div>
@@ -141,18 +141,18 @@
           <div>
             <h4 class="font-bold mb-4 text-lg">Destek</h4>
             <ul class="space-y-3 text-gray-400">
-              <li><NuxtLink to="/faq" class="hover:text-white transition-colors">Yardım Merkezi</NuxtLink></li>
-              <li><NuxtLink to="/contact" class="hover:text-white transition-colors">İletişim</NuxtLink></li>
+              <li><NuxtLink to="/faq" class="hover:text-white transition-colors">Yard�m Merkezi</NuxtLink></li>
+              <li><NuxtLink to="/contact" class="hover:text-white transition-colors">�leti�im</NuxtLink></li>
             </ul>
           </div>
         </div>
 
         <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p class="text-gray-400 text-sm">
-            © {{ new Date().getFullYear() }} Galeri Merkezi. Tüm hakları saklıdır.
+            � {{ new Date().getFullYear() }} Otobia. T�m haklar� sakl�d�r.
           </p>
           <div class="flex gap-6 text-sm text-gray-400">
-            <button @click="setLanguage('tr')" class="hover:text-white transition-colors" :class="{ 'text-white font-semibold': currentLang === 'tr' }">Türkçe</button>
+            <button @click="setLanguage('tr')" class="hover:text-white transition-colors" :class="{ 'text-white font-semibold': currentLang === 'tr' }">T�rk�e</button>
             <button @click="setLanguage('en')" class="hover:text-white transition-colors" :class="{ 'text-white font-semibold': currentLang === 'en' }">English</button>
           </div>
         </div>
@@ -165,7 +165,7 @@
 import { Car, Store, Sun, Moon } from 'lucide-vue-next'
 import { ref, watch, onMounted } from 'vue'
 
-const storageKey = 'galeri-landing-theme'
+const storageKey = 'otobia-landing-theme'
 const isDark = ref(false)
 
 const applyTheme = (dark: boolean) => {

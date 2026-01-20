@@ -1,7 +1,7 @@
 {
   "name": "@galeri/gallery-service",
   "version": "1.0.0",
-  "description": "Gallery management service for Galeri Merkezi platform",
+  "description": "Gallery management service for Otobia platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

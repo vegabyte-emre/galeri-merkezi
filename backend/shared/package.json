@@ -1,7 +1,7 @@
 {
   "name": "@galeri/shared",
   "version": "1.0.0",
-  "description": "Shared utilities and types for Galeri Merkezi platform",
+  "description": "Shared utilities and types for Otobia platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

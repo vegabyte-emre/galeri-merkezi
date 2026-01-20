@@ -445,7 +445,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Mesajlar - Galeri Merkezi'
+  title: 'Mesajlar - Otobia'
 })
 
 interface Chat {

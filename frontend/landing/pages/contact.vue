@@ -95,8 +95,8 @@
               </div>
               <div>
                 <h3 class="font-bold text-gray-900 dark:text-white mb-1">E-posta</h3>
-                <p class="text-gray-600 dark:text-gray-400">info@galerimerkezi.com</p>
-                <p class="text-gray-600 dark:text-gray-400">destek@galerimerkezi.com</p>
+                <p class="text-gray-600 dark:text-gray-400">info@Otobia.com</p>
+                <p class="text-gray-600 dark:text-gray-400">destek@Otobia.com</p>
               </div>
             </div>
           </div>
@@ -159,7 +159,7 @@ import { Mail, Phone, MapPin } from 'lucide-vue-next'
 import { reactive, ref } from 'vue'
 
 useHead({
-  title: 'İletişim - Galeri Merkezi'
+  title: 'İletişim - Otobia'
 })
 
 const loading = ref(false)

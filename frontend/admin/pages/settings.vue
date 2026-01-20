@@ -186,8 +186,8 @@ const tabs = [
 ]
 
 const settings = ref({
-  platformName: 'Galeri Merkezi',
-  email: 'info@galerimerkezi.com',
+  platformName: 'Otobia',
+  email: 'info@Otobia.com',
   phone: '+90 212 555 0000',
   maintenanceMode: false
 })

@@ -1,7 +1,7 @@
 {
   "name": "@galeri/offer-service",
   "version": "1.0.0",
-  "description": "Offer management service for Galeri Merkezi platform",
+  "description": "Offer management service for Otobia platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

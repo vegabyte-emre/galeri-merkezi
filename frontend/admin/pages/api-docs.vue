@@ -12,7 +12,7 @@
       <div class="space-y-4">
         <div>
           <div class="text-sm text-primary-100 mb-2">Base URL</div>
-          <code class="block px-4 py-2 bg-white/20 rounded-lg font-mono text-sm">https://api.galerimerkezi.com/v1</code>
+          <code class="block px-4 py-2 bg-white/20 rounded-lg font-mono text-sm">https://api.Otobia.com/v1</code>
         </div>
         <div>
           <div class="text-sm text-primary-100 mb-2">Authentication</div>

@@ -1,7 +1,7 @@
 {
-  "name": "galeri-merkezi",
+  "name": "otobia",
   "version": "1.0.0",
-  "description": "Oto Galeri B2B Platform - Multi-tenant B2B platform for auto galleries",
+  "description": "Otobia - Oto Galeri B2B Platform",
   "private": true,
   "workspaces": [
     "backend/services/*",

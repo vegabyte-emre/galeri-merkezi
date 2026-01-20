@@ -1,7 +1,7 @@
 export default defineNuxtPlugin(() => {
   // Client-side only - dark mode initialization
   if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    const storageKey = 'galeri-admin-theme'
+    const storageKey = 'otobia-admin-theme'
     const stored = localStorage.getItem(storageKey)
     
     // Eğer localStorage'da değer varsa uygula

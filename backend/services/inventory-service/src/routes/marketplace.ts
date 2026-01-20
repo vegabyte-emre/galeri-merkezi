@@ -1,4 +1,4 @@
-﻿import { Router, Request, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { query } from '@galeri/shared/database/connection';
 
 const router = Router();

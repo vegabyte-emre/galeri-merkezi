@@ -78,7 +78,7 @@ import { Key, CheckCircle } from 'lucide-vue-next'
 import { reactive, ref } from 'vue'
 
 useHead({
-  title: 'Şifremi Unuttum - Galeri Merkezi'
+  title: 'Şifremi Unuttum - Otobia'
 })
 
 const form = reactive({

@@ -1,0 +1,135 @@
+<template>
+  <section class="py-24 bg-white dark:bg-gray-900 relative overflow-hidden">
+    <!-- Background -->
+    <div class="absolute inset-0 pointer-events-none opacity-50">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-primary-100 dark:from-primary-900/20 to-transparent rounded-full"></div>
+    </div>
+
+    <div class="container-custom relative z-10">
+      <!-- Section Header -->
+      <div class="text-center mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-2 mb-4 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full text-sm font-semibold">
+          <Plug class="w-4 h-4" />
+          Entegrasyonlar
+        </div>
+        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          Tum Pazar Yerleri ile <span class="text-primary-600">Entegre</span>
+        </h2>
+        <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          Araclarinizi tek tiklama ile tum buyuk pazar yerlerinde yayinlayin
+        </p>
+      </div>
+
+      <!-- Main Integration Grid -->
+      <div class="grid md:grid-cols-3 gap-6 mb-12">
+        <!-- Sahibinden -->
+        <div class="group relative bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-3xl p-8 border border-yellow-200 dark:border-yellow-800/50 hover:shadow-2xl hover:shadow-yellow-500/20 transition-all duration-300 hover:-translate-y-2">
+          <div class="absolute top-4 right-4">
+            <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+          </div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform">
+            <span class="text-white font-bold text-2xl">S</span>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Sahibinden.com</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">Turkiye'nin en buyuk ilan sitesine otomatik ilan aktarimi</p>
+          <div class="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-semibold">
+            <CheckCircle class="w-4 h-4" />
+            Aktif Entegrasyon
+          </div>
+        </div>
+
+        <!-- Arabam -->
+        <div class="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-3xl p-8 border border-blue-200 dark:border-blue-800/50 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 hover:-translate-y-2">
+          <div class="absolute top-4 right-4">
+            <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+          </div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform">
+            <span class="text-white font-bold text-2xl">A</span>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Arabam.com</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">Premium arac satislari icin guvenilir platform entegrasyonu</p>
+          <div class="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-semibold">
+            <CheckCircle class="w-4 h-4" />
+            Aktif Entegrasyon
+          </div>
+        </div>
+
+        <!-- Oto Shorts -->
+        <div class="group relative bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20 rounded-3xl p-8 border border-violet-200 dark:border-violet-800/50 hover:shadow-2xl hover:shadow-violet-500/20 transition-all duration-300 hover:-translate-y-2">
+          <div class="absolute top-4 right-4">
+            <div class="px-2 py-1 rounded-full bg-violet-500 text-white text-xs font-bold">YENi</div>
+          </div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-fuchsia-500 flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform">
+            <Video class="w-8 h-8 text-white" />
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Oto Shorts</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">Video tabanli arac tanitim platformu ile viral olun</p>
+          <div class="flex items-center gap-2 text-sm text-violet-600 dark:text-violet-400 font-semibold">
+            <Sparkles class="w-4 h-4" />
+            Yeni Ozellik
+          </div>
+        </div>
+      </div>
+
+      <!-- Secondary Integrations -->
+      <div class="bg-gray-50 dark:bg-gray-800 rounded-3xl p-8 border border-gray-200 dark:border-gray-700">
+        <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-6 text-center">Diger Entegrasyonlar</h4>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+          <div v-for="integration in otherIntegrations" :key="integration.name" 
+               class="group flex flex-col items-center p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 transition-all hover:shadow-lg cursor-pointer">
+            <div class="w-12 h-12 rounded-xl mb-3 flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition-transform"
+                 :class="integration.bg">
+              {{ integration.icon }}
+            </div>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center">{{ integration.name }}</span>
+            <span class="text-xs mt-1 px-2 py-0.5 rounded-full"
+                  :class="integration.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'">
+              {{ integration.status === 'active' ? 'Aktif' : 'Yakinda' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integration Benefits -->
+      <div class="mt-16 grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg">
+            <Clock class="w-7 h-7 text-white" />
+          </div>
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Zaman Tasarrufu</h4>
+          <p class="text-gray-600 dark:text-gray-400">Her platforma ayri ayri ilan girmek yerine tek noktadan yonetin</p>
+        </div>
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg">
+            <RefreshCw class="w-7 h-7 text-white" />
+          </div>
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Otomatik Senkronizasyon</h4>
+          <p class="text-gray-600 dark:text-gray-400">Fiyat ve stok degisiklikleri aninda tum platformlara yansir</p>
+        </div>
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+            <TrendingUp class="w-7 h-7 text-white" />
+          </div>
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Daha Fazla Satis</h4>
+          <p class="text-gray-600 dark:text-gray-400">Tum platformlarda gozukun, daha fazla musteriye ulasin</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script setup lang="ts">
+import { 
+  Plug, CheckCircle, Video, Sparkles, Clock, RefreshCw, TrendingUp 
+} from 'lucide-vue-next'
+
+const otherIntegrations = [
+  { name: 'Letgo', icon: 'L', bg: 'bg-gradient-to-br from-red-400 to-pink-500 text-white', status: 'active' },
+  { name: 'Facebook', icon: 'f', bg: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white', status: 'active' },
+  { name: 'Instagram', icon: 'I', bg: 'bg-gradient-to-br from-pink-500 to-purple-500 text-white', status: 'coming' },
+  { name: 'Google Ads', icon: 'G', bg: 'bg-gradient-to-br from-red-500 to-yellow-500 text-white', status: 'coming' },
+  { name: 'WhatsApp', icon: 'W', bg: 'bg-gradient-to-br from-green-400 to-green-500 text-white', status: 'active' },
+  { name: 'Excel', icon: 'X', bg: 'bg-gradient-to-br from-green-600 to-green-700 text-white', status: 'active' }
+]
+</script>

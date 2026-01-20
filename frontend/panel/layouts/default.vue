@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
     <!-- Sidebar -->
     <aside 
@@ -37,7 +37,9 @@
             item.highlight 
               ? (item.color === 'orange' 
                   ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
-                  : 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]')
+                  : item.color === 'violet'
+                    ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
+                    : 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]')
               : 'text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400'
           ]"
           :active-class="item.highlight ? '' : 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'"
@@ -160,13 +162,14 @@ import {
   Sun,
   Moon,
   Plus,
-  LogOut
+  LogOut,
+  Video
 } from 'lucide-vue-next'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApi } from '~/composables/useApi'
 
-const storageKey = 'galeri-panel-theme'
+const storageKey = 'otobia-panel-theme'
 const isDark = ref(false)
 
 const applyTheme = (dark: boolean) => {
@@ -208,8 +211,9 @@ const api = useApi()
 
 const navItems = ref([
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/marketplace', label: 'Oto Pazarı', icon: Car, highlight: true, color: 'orange' },
-  { path: '/vehicles', label: 'Araçlarım', icon: CarFront, badge: null as string | null },
+  { path: '/shorts', label: 'Oto Shorts', icon: Video, highlight: true, color: 'violet' },
+  { path: '/marketplace', label: 'Oto Pazari', icon: Car, highlight: true, color: 'orange' },
+  { path: '/vehicles', label: 'Araclarim', icon: CarFront, badge: null as string | null },
   { path: '/offers', label: 'Teklifler', icon: Users, badge: null as string | null },
   { path: '/chats', label: 'Mesajlar', icon: MessageSquare, badge: null as string | null },
   { path: '/favorites', label: 'Favoriler', icon: Heart },
@@ -218,7 +222,7 @@ const navItems = ref([
   { path: '/activity', label: 'Aktivite', icon: Activity },
   { path: '/media', label: 'Medya', icon: Image },
   { path: '/notifications', label: 'Bildirimler', icon: Bell, badge: null as string | null },
-  { path: '/help', label: 'Yardım', icon: HelpCircle },
+  { path: '/help', label: 'Yardim', icon: HelpCircle },
   { path: '/settings', label: 'Ayarlar', icon: Settings },
 ])
 
@@ -291,17 +295,18 @@ onMounted(() => {
 const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     '/': 'Dashboard',
-    '/marketplace': 'Oto Pazarı',
-    '/vehicles': 'Araçlarım',
+    '/shorts': 'Oto Shorts',
+    '/marketplace': 'Oto Pazari',
+    '/vehicles': 'Araclarim',
     '/offers': 'Teklifler',
     '/chats': 'Mesajlar',
     '/favorites': 'Favoriler',
     '/reports': 'Raporlar',
     '/channels': 'Kanallar',
-    '/activity': 'Aktivite Geçmişi',
-    '/media': 'Medya Kütüphanesi',
+    '/activity': 'Aktivite Gecmisi',
+    '/media': 'Medya Kutuphanesi',
     '/notifications': 'Bildirimler',
-    '/help': 'Yardım Merkezi',
+    '/help': 'Yardim Merkezi',
     '/settings': 'Ayarlar',
   }
   return titles[route.path] || 'Dashboard'
@@ -309,21 +314,22 @@ const pageTitle = computed(() => {
 
 const pageSubtitle = computed(() => {
   const subtitles: Record<string, string> = {
-    '/': 'Galeri özeti ve istatistikler',
-    '/marketplace': 'Tüm bayilerin araçları',
-    '/vehicles': 'Araç envanterinizi yönetin',
+    '/': 'Galeri ozeti ve istatistikler',
+    '/shorts': 'Kisa videolarla araclari kesfet',
+    '/marketplace': 'Tum bayilerin araclari',
+    '/vehicles': 'Arac envanterinizi yonetin',
     '/offers': 'Gelen ve giden teklifler',
-    '/chats': 'Mesajlaşma ve iletişim',
-    '/favorites': 'Beğendiğiniz araçları yönetin',
-    '/reports': 'Detaylı raporlar ve analitik',
-    '/channels': 'Pazar yeri entegrasyonları',
-    '/activity': 'Tüm işlemlerinizin kaydı',
-    '/media': 'Tüm görsellerinizi yönetin',
-    '/notifications': 'Tüm bildirimlerinizi yönetin',
-    '/help': 'Sık sorulan sorular ve destek kaynakları',
-    '/settings': 'Galeri ayarları',
+    '/chats': 'Mesajlasma ve iletisim',
+    '/favorites': 'Begendiginiz araclari yonetin',
+    '/reports': 'Detayli raporlar ve analitik',
+    '/channels': 'Pazar yeri entegrasyonlari',
+    '/activity': 'Tum islemlerinizin kaydi',
+    '/media': 'Tum gorsellerinizi yonetin',
+    '/notifications': 'Tum bildirimlerinizi yonetin',
+    '/help': 'Sik sorulan sorular ve destek kaynaklari',
+    '/settings': 'Galeri ayarlari',
   }
-  return subtitles[route.path] || 'Galeri yönetim paneli'
+  return subtitles[route.path] || 'Galeri yonetim paneli'
 })
 
 const handleLogout = async () => {

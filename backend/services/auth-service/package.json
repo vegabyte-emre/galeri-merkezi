@@ -1,7 +1,7 @@
 {
   "name": "@galeri/auth-service",
   "version": "1.0.0",
-  "description": "Authentication service for Galeri Merkezi platform",
+  "description": "Authentication service for Otobia platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

@@ -1,6 +1,11 @@
-# Oto Galeri B2B Platform
+# Otobia - Oto Galeri B2B Platform
 
 Çok kiracılı (multi-tenant) B2B oto galeri platformu. Galeriler arası stok yönetimi, teklif/pazarlık, mesajlaşma ve pazar yerlerine ilan aktarımı yapabilen kapsamlı bir sistem.
+
+## 🌐 Domain
+
+- **Production**: https://otobia.com
+- **API**: https://api.otobia.com
 
 ## 🏗️ Mimari
 
@@ -17,15 +22,15 @@
 ## 📁 Proje Yapısı
 
 ```
-galeri-merkezi/
+otobia/
 ├── backend/
 │   ├── services/          # API servisleri
 │   ├── workers/           # Arka plan işlemleri
 │   └── shared/            # Ortak kütüphaneler
 ├── frontend/
-│   ├── landing/           # Landing sayfası
-│   ├── admin/             # Süperadmin paneli
-│   └── panel/             # Galeri paneli
+│   ├── landing/           # Landing sayfası (otobia.com)
+│   ├── admin/             # Süperadmin paneli (admin.otobia.com)
+│   └── panel/             # Galeri paneli (panel.otobia.com)
 ├── database/
 │   └── migrations/        # DB migration dosyaları
 └── docker/
@@ -113,22 +118,27 @@ bash scripts/check-services.sh
 - `check-services.bat` - Servis durumu
 - `reset.bat` - Projeyi sıfırla (dikkatli kullanın!)
 
-**Frontend URL'leri:**
+**Local Development URL'leri:**
 - Landing: http://localhost:3000
-- Admin Panel: http://localhost:3001
+- Süperadmin Panel: http://localhost:3001
 - Galeri Panel: http://localhost:3002
+
+**Production URL'leri:**
+- Landing: https://otobia.com
+- Süperadmin Panel: https://admin.otobia.com
+- Galeri Panel: https://panel.otobia.com
+- API: https://api.otobia.com
 
 ## 📚 Servisler
 
 ### Backend Servisleri
 
-- **API Gateway** (Port: 3000) - Routing, authentication, rate limiting
-- **Auth Service** (Port: 3001) - Kullanıcı kayıt, giriş, JWT
-- **Gallery Service** (Port: 3002) - Galeri yönetimi
+- **API Gateway** (Port: 8000) - Routing, authentication, rate limiting
+- **Auth Service** (Port: 3007) - Kullanıcı kayıt, giriş, JWT
+- **Gallery Service** (Port: 3006) - Galeri yönetimi
 - **Inventory Service** (Port: 3003) - Araç envanteri
 - **Offer Service** (Port: 3004) - Teklif yönetimi
 - **Chat Service** (Port: 3005) - Mesajlaşma (WebSocket)
-- **Channel Connector** (Port: 3006) - Pazar yeri entegrasyonları
 
 ### Worker Servisleri
 
@@ -140,11 +150,11 @@ bash scripts/check-services.sh
 
 Tüm servisler Portainer üzerinden yönetilebilir. Stack dosyaları `docker/portainer-stacks/` klasöründe bulunur:
 
-- `galeri-infrastructure.yml` - Altyapı servisleri
-- `galeri-services.yml` - Backend API servisleri
-- `galeri-workers.yml` - Worker servisleri
-- `galeri-frontend.yml` - Frontend uygulamaları
-- `galeri-monitoring.yml` - İzleme ve loglama
+- `otobia-infrastructure.yml` - Altyapı servisleri
+- `otobia-services.yml` - Backend API servisleri
+- `otobia-workers.yml` - Worker servisleri
+- `otobia-frontend.yml` - Frontend uygulamaları
+- `otobia-monitoring.yml` - İzleme ve loglama
 
 ## 📖 Dokümantasyon
 
@@ -160,5 +170,4 @@ Detaylı teknik dokümantasyon için `docs/` klasörüne bakın.
 
 ## 📄 Lisans
 
-Bu proje özel bir projedir.
-
+Bu proje özel bir projedir. © 2026 Otobia. Tüm hakları saklıdır.
