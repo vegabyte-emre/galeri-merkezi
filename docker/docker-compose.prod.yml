@@ -109,7 +109,7 @@ services:
       - traefik
     restart: unless-stopped
 
-  # Admin Panel - Placeholder
+  # Admin Panel - Placeholder (Backend hazir olunca aktif edilecek)
   admin:
     image: nginx:alpine
     container_name: otobia-admin
@@ -160,7 +160,7 @@ services:
       - traefik
     restart: unless-stopped
 
-  # Gallery Panel - Placeholder
+  # Gallery Panel - Placeholder (Backend hazir olunca aktif edilecek)
   panel:
     image: nginx:alpine
     container_name: otobia-panel
@@ -212,147 +212,9 @@ services:
     restart: unless-stopped
 
   # ==================== BACKEND SERVICES ====================
-  # API Gateway
-  api-gateway:
-    build:
-      context: ..
-      dockerfile: backend/services/api-gateway/Dockerfile
-    container_name: otobia-api-gateway
-    environment:
-      NODE_ENV: production
-      PORT: 8000
-      JWT_SECRET: ${JWT_SECRET:-otobia-jwt-secret-change-in-production-2024}
-      REDIS_URL: redis://otobia-redis:6379
-      AUTH_SERVICE_URL: http://otobia-auth-service:3001
-      GALLERY_SERVICE_URL: http://otobia-gallery-service:3002
-      INVENTORY_SERVICE_URL: http://otobia-inventory-service:3003
-      OFFER_SERVICE_URL: http://otobia-offer-service:3004
-      CHAT_SERVICE_URL: http://otobia-chat-service:3005
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api.otobia.com`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.api.loadbalancer.server.port=8000"
-    networks:
-      - otobia-network
-    depends_on:
-      - redis
-      - auth-service
-    restart: unless-stopped
-
-  # Auth Service
-  auth-service:
-    build:
-      context: ..
-      dockerfile: backend/services/auth-service/Dockerfile
-    container_name: otobia-auth-service
-    environment:
-      NODE_ENV: production
-      PORT: 3001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-otobia_user}:${POSTGRES_PASSWORD:-otobia_password}@otobia-postgres:5432/${POSTGRES_DB:-otobia_db}
-      REDIS_URL: redis://otobia-redis:6379
-      JWT_SECRET: ${JWT_SECRET:-otobia-jwt-secret-change-in-production-2024}
-      JWT_EXPIRES_IN: 7d
-    networks:
-      - otobia-network
-    depends_on:
-      - postgres
-      - redis
-    restart: unless-stopped
-
-  # Gallery Service
-  gallery-service:
-    build:
-      context: ..
-      dockerfile: backend/services/gallery-service/Dockerfile
-    container_name: otobia-gallery-service
-    environment:
-      NODE_ENV: production
-      PORT: 3002
-      DATABASE_URL: postgresql://${POSTGRES_USER:-otobia_user}:${POSTGRES_PASSWORD:-otobia_password}@otobia-postgres:5432/${POSTGRES_DB:-otobia_db}
-      REDIS_URL: redis://otobia-redis:6379
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-otobia_user}:${RABBITMQ_PASSWORD:-otobia_password}@otobia-rabbitmq:5672/${RABBITMQ_VHOST:-otobia}
-    networks:
-      - otobia-network
-    depends_on:
-      - postgres
-      - redis
-      - rabbitmq
-    restart: unless-stopped
-
-  # Inventory Service
-  inventory-service:
-    build:
-      context: ..
-      dockerfile: backend/services/inventory-service/Dockerfile
-    container_name: otobia-inventory-service
-    environment:
-      NODE_ENV: production
-      PORT: 3003
-      DATABASE_URL: postgresql://${POSTGRES_USER:-otobia_user}:${POSTGRES_PASSWORD:-otobia_password}@otobia-postgres:5432/${POSTGRES_DB:-otobia_db}
-      REDIS_URL: redis://otobia-redis:6379
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-otobia_user}:${RABBITMQ_PASSWORD:-otobia_password}@otobia-rabbitmq:5672/${RABBITMQ_VHOST:-otobia}
-      MEILISEARCH_URL: http://otobia-meilisearch:7700
-      MEILISEARCH_API_KEY: ${MEILISEARCH_MASTER_KEY:-master_key_change_in_production}
-      MINIO_ENDPOINT: otobia-minio
-      MINIO_PORT: 9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-    networks:
-      - otobia-network
-    depends_on:
-      - postgres
-      - redis
-      - rabbitmq
-      - meilisearch
-      - minio
-    restart: unless-stopped
-
-  # Offer Service
-  offer-service:
-    build:
-      context: ..
-      dockerfile: backend/services/offer-service/Dockerfile
-    container_name: otobia-offer-service
-    environment:
-      NODE_ENV: production
-      PORT: 3004
-      DATABASE_URL: postgresql://${POSTGRES_USER:-otobia_user}:${POSTGRES_PASSWORD:-otobia_password}@otobia-postgres:5432/${POSTGRES_DB:-otobia_db}
-      REDIS_URL: redis://otobia-redis:6379
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-otobia_user}:${RABBITMQ_PASSWORD:-otobia_password}@otobia-rabbitmq:5672/${RABBITMQ_VHOST:-otobia}
-    networks:
-      - otobia-network
-    depends_on:
-      - postgres
-      - redis
-      - rabbitmq
-    restart: unless-stopped
-
-  # Chat Service
-  chat-service:
-    build:
-      context: ..
-      dockerfile: backend/services/chat-service/Dockerfile
-    container_name: otobia-chat-service
-    environment:
-      NODE_ENV: production
-      PORT: 3005
-      DATABASE_URL: postgresql://${POSTGRES_USER:-otobia_user}:${POSTGRES_PASSWORD:-otobia_password}@otobia-postgres:5432/${POSTGRES_DB:-otobia_db}
-      REDIS_URL: redis://otobia-redis:6379
-      JWT_SECRET: ${JWT_SECRET:-otobia-jwt-secret-change-in-production-2024}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.chat.rule=Host(`chat.otobia.com`)"
-      - "traefik.http.routers.chat.entrypoints=websecure"
-      - "traefik.http.routers.chat.tls.certresolver=letsencrypt"
-      - "traefik.http.services.chat.loadbalancer.server.port=3005"
-    networks:
-      - otobia-network
-    depends_on:
-      - postgres
-      - redis
-    restart: unless-stopped
+  # Backend servisleri icin ayri bir docker-compose dosyasi kullanilacak
+  # veya GitHub Actions ile CI/CD kurulacak
+  # Simdilik backend servisleri devre disi
 
 networks:
   otobia-network:
