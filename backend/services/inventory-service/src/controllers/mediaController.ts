@@ -14,6 +14,7 @@ interface AuthenticatedRequest extends Request {
 
 export class MediaController {
   private presignedUrlService = new PresignedUrlService();
+  private eventPublisher = new EventPublisher();
 
   async getPresignedUrl(req: AuthenticatedRequest, res: Response) {
     const { vehicleId } = req.params;

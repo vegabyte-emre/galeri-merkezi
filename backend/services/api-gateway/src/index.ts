@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -36,8 +36,10 @@ app.get('/health', (req, res) => {
 });
 
 const generalLimiter = rateLimit({
+  // @ts-ignore - RedisStore type compatibility
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args as any),
+    // @ts-ignore
+    sendCommand: (...args: string[]) => redis.call(...args),
     prefix: 'rl:api:'
   }),
   windowMs: 60 * 1000,
@@ -48,8 +50,10 @@ const generalLimiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
+  // @ts-ignore - RedisStore type compatibility
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args as any),
+    // @ts-ignore
+    sendCommand: (...args: string[]) => redis.call(...args),
     prefix: 'rl:auth:'
   }),
   windowMs: 60 * 1000,
@@ -106,7 +110,7 @@ app.use('/api/v1/config', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -144,7 +148,7 @@ app.use('/api/v1/marketplace', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -186,7 +190,7 @@ app.use('/api/v1/vehicles', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -219,7 +223,7 @@ app.use('/api/v1/dashboard', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -240,7 +244,7 @@ app.use('/api/v1/favorites', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -261,7 +265,7 @@ app.use('/api/v1/notifications', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -282,7 +286,7 @@ app.use('/api/v1/activity', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -303,7 +307,7 @@ app.use('/api/v1/reports', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -333,7 +337,7 @@ const chatProxyConfig = {
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 };
 
@@ -364,7 +368,7 @@ app.use('/api/v1/offers', createProxyMiddleware({
       proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
       proxyReq.setHeader('x-user-role', req.user.role || '');
     }
-    fixRequestBody(proxyReq, req, res);
+    fixRequestBody(proxyReq, req as any);
   }
 }));
 
@@ -439,3 +443,4 @@ process.on('SIGTERM', () => {
 app.listen(PORT, () => {
   logger.info(`API Gateway started on port ${PORT}`);
 });
+

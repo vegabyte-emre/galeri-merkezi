@@ -2,8 +2,10 @@ import amqp from 'amqplib';
 import { config } from '../config';
 import { logger } from './logger';
 
-let connection: amqp.Connection | null = null;
-let channel: amqp.Channel | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let connection: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let channel: any = null;
 
 export async function getRabbitMQConnection(): Promise<amqp.Connection> {
   if (!connection) {
@@ -15,7 +17,7 @@ export async function getRabbitMQConnection(): Promise<amqp.Connection> {
       vhost: config.rabbitmq.vhost
     });
     
-    connection.on('error', (err) => {
+    connection.on('error', (err: Error) => {
       logger.error('RabbitMQ connection error', { error: err.message });
       connection = null;
     });
@@ -26,7 +28,7 @@ export async function getRabbitMQConnection(): Promise<amqp.Connection> {
 
 export async function getRabbitMQChannel(): Promise<amqp.Channel> {
   if (!channel) {
-    const conn = await getRabbitMQConnection();
+    const conn: any = await getRabbitMQConnection();
     channel = await conn.createChannel();
   }
   

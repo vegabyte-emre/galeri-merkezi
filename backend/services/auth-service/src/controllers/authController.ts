@@ -436,28 +436,24 @@ export class AuthController {
   }
 
   private generateAccessToken(user: any): string {
-    return jwt.sign(
-      {
-        sub: user.id,
-        gallery_id: user.gallery_id,
-        role: user.role,
-        permissions: [], // TODO: Load from database
-        jti: uuidv4()
-      },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
-    );
+    const payload = {
+      sub: user.id,
+      gallery_id: user.gallery_id,
+      role: user.role,
+      permissions: [], // TODO: Load from database
+      jti: uuidv4()
+    };
+    // @ts-ignore - expiresIn type mismatch with newer jsonwebtoken versions
+    return jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
   }
 
   private generateRefreshToken(user: any): string {
-    return jwt.sign(
-      {
-        sub: user.id,
-        jti: uuidv4()
-      },
-      config.jwt.secret,
-      { expiresIn: config.jwt.refreshExpiresIn }
-    );
+    const payload = {
+      sub: user.id,
+      jti: uuidv4()
+    };
+    // @ts-ignore - expiresIn type mismatch with newer jsonwebtoken versions
+    return jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.refreshExpiresIn });
   }
 }
 
