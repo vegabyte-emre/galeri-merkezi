@@ -150,7 +150,8 @@ const handleLogin = async () => {
       user.value = response.user
       
       // Redirect to panel
-      window.location.href = 'http://localhost:3002'
+      const panelUrl = process.env.NODE_ENV === 'production' ? 'https://panel.otobia.com' : 'http://localhost:3002'
+      window.location.href = panelUrl
     } else {
       throw new Error('Giris basarisiz')
     }

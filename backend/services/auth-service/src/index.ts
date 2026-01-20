@@ -10,18 +10,24 @@ import { errorHandler } from './middleware/errorHandler';
 const app = express();
 const PORT = config.port || 3001;
 
-// CORS configuration - allow all localhost origins
+// CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow all localhost origins
+    // Allow localhost origins
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
       return callback(null, true);
     }
     
-    callback(new Error('Not allowed by CORS'));
+    // Allow otobia.com origins
+    if (origin.endsWith('otobia.com') || origin.includes('.otobia.com')) {
+      return callback(null, true);
+    }
+    
+    // Allow all in production (API Gateway handles CORS)
+    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
