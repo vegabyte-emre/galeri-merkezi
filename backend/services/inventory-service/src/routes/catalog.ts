@@ -459,4 +459,96 @@ router.get('/colors', asyncHandler(async (req: Request, res: Response) => {
   });
 }));
 
+/**
+ * POST /catalog/seed
+ * Seed the catalog with sample data (admin only)
+ */
+router.post('/seed', asyncHandler(async (req: Request, res: Response) => {
+  // Check if catalog is already populated
+  const existingSeriesCount = await query('SELECT COUNT(*) FROM vehicle_catalog_series');
+  if (parseInt(existingSeriesCount.rows[0].count) > 0) {
+    return res.json({
+      success: false,
+      message: 'Catalog already has series data. Skipping seed.',
+      seriesCount: parseInt(existingSeriesCount.rows[0].count)
+    });
+  }
+
+  // Get existing brands
+  const existingBrands = await query('SELECT id, name FROM vehicle_catalog_brands');
+  const brandMap = new Map(existingBrands.rows.map((b: any) => [b.name, b.id]));
+
+  // Sample series data for popular brands
+  const seriesData: { brand: string; series: string[] }[] = [
+    { brand: 'BMW', series: ['1 Serisi', '2 Serisi', '3 Serisi', '4 Serisi', '5 Serisi', '6 Serisi', '7 Serisi', '8 Serisi', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'Z4', 'i3', 'i4', 'i5', 'i7', 'iX', 'iX1', 'iX3'] },
+    { brand: 'Mercedes-Benz', series: ['A Serisi', 'B Serisi', 'C Serisi', 'E Serisi', 'S Serisi', 'CLA', 'CLS', 'GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'AMG GT', 'EQA', 'EQB', 'EQC', 'EQE', 'EQS', 'Maybach'] },
+    { brand: 'Audi', series: ['A1', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'Q2', 'Q3', 'Q4', 'Q5', 'Q7', 'Q8', 'TT', 'R8', 'e-tron', 'e-tron GT', 'RS3', 'RS4', 'RS5', 'RS6', 'RS7', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'] },
+    { brand: 'Volkswagen', series: ['Polo', 'Golf', 'Passat', 'Arteon', 'T-Roc', 'T-Cross', 'Tiguan', 'Touareg', 'ID.3', 'ID.4', 'ID.5', 'ID.7', 'Taigo', 'Caddy', 'Transporter', 'Multivan'] },
+    { brand: 'Toyota', series: ['Yaris', 'Corolla', 'Camry', 'C-HR', 'RAV4', 'Highlander', 'Land Cruiser', 'Prius', 'Supra', 'GR86', 'bZ4X', 'Aygo X', 'Proace', 'Hilux'] },
+    { brand: 'Honda', series: ['Jazz', 'Civic', 'Accord', 'HR-V', 'CR-V', 'ZR-V', 'e:Ny1', 'Honda e'] },
+    { brand: 'Ford', series: ['Fiesta', 'Focus', 'Mondeo', 'Puma', 'Kuga', 'Explorer', 'Mustang', 'Mustang Mach-E', 'Ranger', 'Transit', 'Tourneo'] },
+    { brand: 'Renault', series: ['Clio', 'Megane', 'Talisman', 'Captur', 'Kadjar', 'Koleos', 'Austral', 'Arkana', 'Scenic', 'Kangoo', 'Zoe', 'Megane E-Tech'] },
+    { brand: 'Fiat', series: ['500', '500X', '500L', 'Panda', 'Tipo', 'Egea', 'Doblo', 'Fiorino', '500e'] },
+    { brand: 'Hyundai', series: ['i10', 'i20', 'i30', 'Elantra', 'Sonata', 'Kona', 'Tucson', 'Santa Fe', 'IONIQ 5', 'IONIQ 6', 'Bayon', 'Staria'] },
+    { brand: 'Kia', series: ['Picanto', 'Rio', 'Ceed', 'Cerato', 'Stinger', 'Stonic', 'Sportage', 'Sorento', 'Niro', 'EV6', 'EV9', 'Soul'] },
+    { brand: 'Nissan', series: ['Micra', 'Juke', 'Qashqai', 'X-Trail', 'Leaf', 'Ariya', 'Navara', 'Patrol'] },
+    { brand: 'Peugeot', series: ['208', '308', '408', '508', '2008', '3008', '5008', 'e-208', 'e-2008', 'Rifter', 'Partner', 'Expert'] },
+    { brand: 'Opel', series: ['Corsa', 'Astra', 'Insignia', 'Mokka', 'Crossland', 'Grandland', 'Combo', 'Vivaro', 'Movano'] },
+    { brand: 'Citroen', series: ['C1', 'C3', 'C4', 'C5 X', 'C3 Aircross', 'C5 Aircross', 'Berlingo', 'SpaceTourer', 'e-C4'] },
+    { brand: 'Skoda', series: ['Fabia', 'Scala', 'Octavia', 'Superb', 'Kamiq', 'Karoq', 'Kodiaq', 'Enyaq', 'Enyaq Coupe'] },
+    { brand: 'Seat', series: ['Ibiza', 'Leon', 'Arona', 'Ateca', 'Tarraco', 'Cupra Formentor', 'Cupra Born'] },
+    { brand: 'Volvo', series: ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90', 'C40', 'EX30', 'EX90'] },
+    { brand: 'Mazda', series: ['Mazda2', 'Mazda3', 'Mazda6', 'CX-3', 'CX-30', 'CX-5', 'CX-60', 'MX-5', 'MX-30'] },
+    { brand: 'Suzuki', series: ['Swift', 'Baleno', 'Ignis', 'Vitara', 'S-Cross', 'Jimny', 'Across'] }
+  ];
+
+  let insertedSeries = 0;
+  let insertedModels = 0;
+
+  for (const brandData of seriesData) {
+    const brandId = brandMap.get(brandData.brand);
+    if (!brandId) continue;
+
+    for (const seriesName of brandData.series) {
+      try {
+        // Insert series
+        const seriesResult = await query(
+          'INSERT INTO vehicle_catalog_series (brand_id, name) VALUES ($1, $2) ON CONFLICT (brand_id, name) DO NOTHING RETURNING id',
+          [brandId, seriesName]
+        );
+        
+        if (seriesResult.rows.length > 0) {
+          insertedSeries++;
+          const seriesId = seriesResult.rows[0].id;
+
+          // Insert sample models for each series
+          const sampleModels = ['1.0', '1.2', '1.4', '1.5', '1.6', '2.0', '2.5', '3.0'];
+          for (const modelName of sampleModels) {
+            try {
+              const modelResult = await query(
+                'INSERT INTO vehicle_catalog_models (series_id, name) VALUES ($1, $2) ON CONFLICT (series_id, name) DO NOTHING RETURNING id',
+                [seriesId, modelName]
+              );
+              if (modelResult.rows.length > 0) {
+                insertedModels++;
+              }
+            } catch (e) {
+              // Skip duplicate models
+            }
+          }
+        }
+      } catch (e) {
+        // Skip duplicate series
+      }
+    }
+  }
+
+  res.json({
+    success: true,
+    message: 'Catalog seeded successfully',
+    insertedSeries,
+    insertedModels
+  });
+}));
+
 export default router;
