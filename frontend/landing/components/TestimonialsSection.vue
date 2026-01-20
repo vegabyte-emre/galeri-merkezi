@@ -11,13 +11,13 @@
       <div class="text-center mb-16">
         <div class="inline-flex items-center gap-2 px-4 py-2 mb-4 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-semibold">
           <Star class="w-4 h-4 fill-current" />
-          Musterilerimiz
+          Müşterilerimiz
         </div>
         <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-          <span class="text-primary-600">500+</span> Galeri Bize Guvenior
+          <span class="text-primary-600">500+</span> Galeri Bize Güveniyor
         </h2>
         <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          Gercek kullanici deneyimlerini okuyun ve neden bizi tercih ettiklerini ogrinin
+          Gerçek kullanıcı deneyimlerini okuyun ve neden bizi tercih ettiklerini öğrenin
         </p>
       </div>
 
@@ -91,7 +91,7 @@
           </div>
           <div>
             <div class="text-4xl md:text-5xl font-bold mb-2">%99</div>
-            <div class="text-primary-200 text-sm">Memnuniyet Orani</div>
+            <div class="text-primary-200 text-sm">Memnuniyet Oranı</div>
           </div>
           <div>
             <div class="text-4xl md:text-5xl font-bold mb-2">7/24</div>
@@ -108,41 +108,41 @@ import { Star, Quote, MapPin } from 'lucide-vue-next'
 
 const testimonials = [
   {
-    name: 'Ahmet Yilmaz',
+    name: 'Ahmet Yılmaz',
     role: 'Galeri Sahibi',
-    company: 'Yilmaz Otomotiv',
-    location: 'Istanbul',
+    company: 'Yılmaz Otomotiv',
+    location: 'İstanbul',
     avatarBg: 'bg-gradient-to-br from-primary-500 to-violet-500',
-    content: 'Otobia ile islerimiz inanilmaz hizlandi. Eskiden her platforma ayri ayri ilan giriyorduk, simdi tek tiklama ile hepsine ulasiyoruz. Oto Shorts ozelligi de musterilerimizin dikkatini cekiyor, video goruntulenmeleri 3 kat artti!',
+    content: 'Otobia ile işlerimiz inanılmaz hızlandı. Eskiden her platforma ayrı ayrı ilan giriyorduk, şimdi tek tıklama ile hepsine ulaşıyoruz. Oto Shorts özelliği de müşterilerimizin dikkatini çekiyor, video görüntülenmeleri 3 kat arttı!',
     stats: [
-      { value: '%150', label: 'Satis Artisi' },
-      { value: '45', label: 'Arac/Ay' },
-      { value: '2 Yil', label: 'Uyelik' }
+      { value: '%150', label: 'Satış Artışı' },
+      { value: '45', label: 'Araç/Ay' },
+      { value: '2 Yıl', label: 'Üyelik' }
     ]
   },
   {
     name: 'Mehmet Kaya',
-    role: 'Is Gelistirme Muduru',
+    role: 'İş Geliştirme Müdürü',
     company: 'Kaya Motors',
     location: 'Ankara',
     avatarBg: 'bg-gradient-to-br from-emerald-500 to-teal-500',
-    content: 'Galeriler arasi teklif sistemi muhtesem. Baska galerilerden arac almak cok kolaylasti. Gercek zamanli mesajlasma ile hizli karar alabiliyoruz.'
+    content: 'Galeriler arası teklif sistemi muhteşem. Başka galerilerden araç almak çok kolaylaştı. Gerçek zamanlı mesajlaşma ile hızlı karar alabiliyoruz.'
   },
   {
     name: 'Fatma Demir',
-    role: 'Operasyon Muduru',
+    role: 'Operasyon Müdürü',
     company: 'Demir Galeri',
-    location: 'Izmir',
+    location: 'İzmir',
     avatarBg: 'bg-gradient-to-br from-amber-500 to-orange-500',
-    content: 'Stok yonetimi artik cok basit. Tum araclarimizi tek panelden takip ediyoruz. Raporlama ozellikleri de cok faydali.'
+    content: 'Stok yönetimi artık çok basit. Tüm araçlarımızı tek panelden takip ediyoruz. Raporlama özellikleri de çok faydalı.'
   },
   {
-    name: 'Ali Ozturk',
+    name: 'Ali Öztürk',
     role: 'Galeri Sahibi',
-    company: 'Ozturk Auto',
+    company: 'Öztürk Auto',
     location: 'Bursa',
     avatarBg: 'bg-gradient-to-br from-rose-500 to-pink-500',
-    content: 'Musteri destegi mukemmel! Her sorunumuza aninda cozum buluyorlar. Platform surekli guncelleniyor ve yeni ozellikler ekleniyor.'
+    content: 'Müşteri desteği mükemmel! Her sorunumuza anında çözüm buluyorlar. Platform sürekli güncelleniyor ve yeni özellikler ekleniyor.'
   },
   {
     name: 'Zeynep Arslan',
@@ -150,7 +150,7 @@ const testimonials = [
     company: 'Arslan Otomotiv',
     location: 'Antalya',
     avatarBg: 'bg-gradient-to-br from-blue-500 to-indigo-500',
-    content: 'Sosyal medya entegrasyonlari sayesinde musterilere daha hizli ulasiyoruz. WhatsApp entegrasyonu ozellikle cok isimize yariyor.'
+    content: 'Sosyal medya entegrasyonları sayesinde müşterilere daha hızlı ulaşıyoruz. WhatsApp entegrasyonu özellikle çok işimize yarıyor.'
   }
 ]
 </script>

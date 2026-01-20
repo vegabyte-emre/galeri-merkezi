@@ -15,11 +15,11 @@
             SSS
           </div>
           <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            Sikca Sorulan
+            Sıkça Sorulan
             <span class="text-primary-600">Sorular</span>
           </h2>
           <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Merak ettiginiz her seyin cevabi burada. Bulamazsiniz destek ekibimize ulasin.
+            Merak ettiğiniz her şeyin cevabı burada. Bulamazsanız destek ekibimize ulaşın.
           </p>
 
           <!-- Contact Card -->
@@ -30,13 +30,13 @@
               </div>
               <div>
                 <h4 class="font-bold text-lg">Hala sorunuz mu var?</h4>
-                <p class="text-primary-100 text-sm">7/24 destek ekibimiz size yardimci olsun</p>
+                <p class="text-primary-100 text-sm">7/24 destek ekibimiz size yardımcı olsun</p>
               </div>
             </div>
             <div class="space-y-3">
-              <a href="mailto:destek@Otobia.com" class="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
+              <a href="mailto:destek@otobia.com" class="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
                 <Mail class="w-5 h-5" />
-                <span>destek@Otobia.com</span>
+                <span>destek@otobia.com</span>
               </a>
               <a href="tel:+908508401234" class="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
                 <Phone class="w-5 h-5" />
@@ -44,7 +44,7 @@
               </a>
               <NuxtLink to="/contact" class="flex items-center gap-3 px-4 py-3 bg-white text-primary-700 font-semibold rounded-xl hover:bg-primary-50 transition-colors">
                 <Headphones class="w-5 h-5" />
-                <span>Canli Destek</span>
+                <span>Canlı Destek</span>
               </NuxtLink>
             </div>
           </div>
@@ -120,45 +120,45 @@ const toggleFAQ = (index: number) => {
 const faqs = [
   {
     icon: CreditCard,
-    question: 'Ucretsiz deneme suresi var mi?',
-    answer: 'Evet! 14 gun boyunca tum ozellikleri ucretsiz deneyebilirsiniz. Kredi karti bilgisi gerekmez ve deneme suresi sonunda otomatik ucretlendirme yapilmaz.',
-    link: { text: 'Hemen Ucretsiz Basla', url: '/register' }
+    question: 'Ücretsiz deneme süresi var mı?',
+    answer: 'Evet! 14 gün boyunca tüm özellikleri ücretsiz deneyebilirsiniz. Kredi kartı bilgisi gerekmez ve deneme süresi sonunda otomatik ücretlendirme yapılmaz.',
+    link: { text: 'Hemen Ücretsiz Başla', url: '/register' }
   },
   {
     icon: Clock,
-    question: 'Kayit islemi ne kadar suruyor?',
-    answer: 'Kayit islemi yalnizca 2-3 dakika surmektedir. E-posta adresinizi ve galeri bilgilerinizi girdikten sonra hemen kullanmaya baslayabilirsiniz.'
+    question: 'Kayıt işlemi ne kadar sürüyor?',
+    answer: 'Kayıt işlemi yalnızca 2-3 dakika sürmektedir. E-posta adresinizi ve galeri bilgilerinizi girdikten sonra hemen kullanmaya başlayabilirsiniz.'
   },
   {
     icon: Upload,
-    question: 'Mevcut arac stokumu nasil aktarabilirim?',
-    answer: 'Excel dosyanizi yukleyerek tum araclarinizi toplu olarak aktarabilirsiniz. Sistem, marka, model, yil, fiyat gibi bilgileri otomatik olarak tanir ve eslestirmektedir.'
+    question: 'Mevcut araç stokumu nasıl aktarabilirim?',
+    answer: 'Excel dosyanızı yükleyerek tüm araçlarınızı toplu olarak aktarabilirsiniz. Sistem, marka, model, yıl, fiyat gibi bilgileri otomatik olarak tanır ve eşleştirmektedir.'
   },
   {
     icon: Globe,
     question: 'Hangi pazar yerleri ile entegrasyon var?',
-    answer: 'Sahibinden.com, Arabam.com, Letgo, Facebook Marketplace ve daha bircok platform ile entegrasyonumuz bulunmaktadir. Oto Shorts ile video tabanli ilan da olusturabilirsiniz.'
+    answer: 'Sahibinden.com, Arabam.com, Letgo, Facebook Marketplace ve daha birçok platform ile entegrasyonumuz bulunmaktadır. Oto Shorts ile video tabanlı ilan da oluşturabilirsiniz.'
   },
   {
     icon: Users,
-    question: 'Galeriler arasi teklif sistemi nasil calisiyor?',
-    answer: 'Platformdaki diger galerilerden begendiginiz araca aninda teklif gonderebilirsiniz. Gercek zamanli mesajlasma ile pazarlik yapabilir ve anlastiginiz araclar icin guvenli islem gerceklestirebilirsiniz.'
+    question: 'Galeriler arası teklif sistemi nasıl çalışıyor?',
+    answer: 'Platformdaki diğer galerilerden beğendiğiniz araca anında teklif gönderebilirsiniz. Gerçek zamanlı mesajlaşma ile pazarlık yapabilir ve anlaştığınız araçlar için güvenli işlem gerçekleştirebilirsiniz.'
   },
   {
     icon: Shield,
-    question: 'Verilerim guvenli mi?',
-    answer: 'Tum verileriniz SSL sertifikasi ile sifrelenmekte ve gunluk yedeklenmektedir. KVKK uyumlu altyapimiz ile kisisel verileriniz her zaman koruma altindadir.'
+    question: 'Verilerim güvenli mi?',
+    answer: 'Tüm verileriniz SSL sertifikası ile şifrelenmekte ve günlük yedeklenmektedir. KVKK uyumlu altyapımız ile kişisel verileriniz her zaman koruma altındadır.'
   },
   {
     icon: Zap,
     question: 'Oto Shorts nedir?',
-    answer: 'Oto Shorts, araclarin kisa video formatinda tanitilmasini saglayan yeni ozelligimizdir. TikTok ve Instagram Reels tarzinda 30 saniyelik videolar ile araclarinizi sergileyin ve 3 kat daha fazla goruntulenme alin.',
-    link: { text: 'Oto Shorts Hakkinda', url: '/about' }
+    answer: 'Oto Shorts, araçların kısa video formatında tanıtılmasını sağlayan yeni özelliğimizdir. TikTok ve Instagram Reels tarzında 30 saniyelik videolar ile araçlarınızı sergileyin ve 3 kat daha fazla görüntülenme alın.',
+    link: { text: 'Oto Shorts Hakkında', url: '/about' }
   },
   {
     icon: Settings,
-    question: 'Aboneligimi istedigim zaman iptal edebilir miyim?',
-    answer: 'Evet, aboneliginizi istediginiz zaman iptal edebilirsiniz. Iptal isleminden sonra mevcut doneminin sonuna kadar platformu kullanmaya devam edebilirsiniz. Herhangi bir cayma ucreti yoktur.'
+    question: 'Aboneliğimi istediğim zaman iptal edebilir miyim?',
+    answer: 'Evet, aboneliğinizi istediğiniz zaman iptal edebilirsiniz. İptal işleminden sonra mevcut döneminin sonuna kadar platformu kullanmaya devam edebilirsiniz. Herhangi bir cayma ücreti yoktur.'
   }
 ]
 </script>

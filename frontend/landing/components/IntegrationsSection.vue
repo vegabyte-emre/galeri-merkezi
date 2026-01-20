@@ -13,10 +13,10 @@
           Entegrasyonlar
         </div>
         <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-          Tum Pazar Yerleri ile <span class="text-primary-600">Entegre</span>
+          Tüm Pazar Yerleri ile <span class="text-primary-600">Entegre</span>
         </h2>
         <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          Araclarinizi tek tiklama ile tum buyuk pazar yerlerinde yayinlayin
+          Araçlarınızı tek tıklama ile tüm büyük pazar yerlerinde yayınlayın
         </p>
       </div>
 
@@ -31,7 +31,7 @@
             <span class="text-white font-bold text-2xl">S</span>
           </div>
           <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Sahibinden.com</h3>
-          <p class="text-gray-600 dark:text-gray-400 mb-4">Turkiye'nin en buyuk ilan sitesine otomatik ilan aktarimi</p>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">Türkiye'nin en büyük ilan sitesine otomatik ilan aktarımı</p>
           <div class="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-semibold">
             <CheckCircle class="w-4 h-4" />
             Aktif Entegrasyon
@@ -47,7 +47,7 @@
             <span class="text-white font-bold text-2xl">A</span>
           </div>
           <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Arabam.com</h3>
-          <p class="text-gray-600 dark:text-gray-400 mb-4">Premium arac satislari icin guvenilir platform entegrasyonu</p>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">Premium araç satışları için güvenilir platform entegrasyonu</p>
           <div class="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-semibold">
             <CheckCircle class="w-4 h-4" />
             Aktif Entegrasyon
@@ -57,23 +57,23 @@
         <!-- Oto Shorts -->
         <div class="group relative bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20 rounded-3xl p-8 border border-violet-200 dark:border-violet-800/50 hover:shadow-2xl hover:shadow-violet-500/20 transition-all duration-300 hover:-translate-y-2">
           <div class="absolute top-4 right-4">
-            <div class="px-2 py-1 rounded-full bg-violet-500 text-white text-xs font-bold">YENi</div>
+            <div class="px-2 py-1 rounded-full bg-violet-500 text-white text-xs font-bold">YENİ</div>
           </div>
           <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-fuchsia-500 flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform">
             <Video class="w-8 h-8 text-white" />
           </div>
           <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Oto Shorts</h3>
-          <p class="text-gray-600 dark:text-gray-400 mb-4">Video tabanli arac tanitim platformu ile viral olun</p>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">Video tabanlı araç tanıtım platformu ile viral olun</p>
           <div class="flex items-center gap-2 text-sm text-violet-600 dark:text-violet-400 font-semibold">
             <Sparkles class="w-4 h-4" />
-            Yeni Ozellik
+            Yeni Özellik
           </div>
         </div>
       </div>
 
       <!-- Secondary Integrations -->
       <div class="bg-gray-50 dark:bg-gray-800 rounded-3xl p-8 border border-gray-200 dark:border-gray-700">
-        <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-6 text-center">Diger Entegrasyonlar</h4>
+        <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-6 text-center">Diğer Entegrasyonlar</h4>
         
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
           <div v-for="integration in otherIntegrations" :key="integration.name" 
@@ -85,7 +85,7 @@
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center">{{ integration.name }}</span>
             <span class="text-xs mt-1 px-2 py-0.5 rounded-full"
                   :class="integration.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'">
-              {{ integration.status === 'active' ? 'Aktif' : 'Yakinda' }}
+              {{ integration.status === 'active' ? 'Aktif' : 'Yakında' }}
             </span>
           </div>
         </div>
@@ -98,21 +98,21 @@
             <Clock class="w-7 h-7 text-white" />
           </div>
           <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Zaman Tasarrufu</h4>
-          <p class="text-gray-600 dark:text-gray-400">Her platforma ayri ayri ilan girmek yerine tek noktadan yonetin</p>
+          <p class="text-gray-600 dark:text-gray-400">Her platforma ayrı ayrı ilan girmek yerine tek noktadan yönetin</p>
         </div>
         <div class="text-center">
           <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg">
             <RefreshCw class="w-7 h-7 text-white" />
           </div>
           <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Otomatik Senkronizasyon</h4>
-          <p class="text-gray-600 dark:text-gray-400">Fiyat ve stok degisiklikleri aninda tum platformlara yansir</p>
+          <p class="text-gray-600 dark:text-gray-400">Fiyat ve stok değişiklikleri anında tüm platformlara yansır</p>
         </div>
         <div class="text-center">
           <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
             <TrendingUp class="w-7 h-7 text-white" />
           </div>
-          <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Daha Fazla Satis</h4>
-          <p class="text-gray-600 dark:text-gray-400">Tum platformlarda gozukun, daha fazla musteriye ulasin</p>
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Daha Fazla Satış</h4>
+          <p class="text-gray-600 dark:text-gray-400">Tüm platformlarda gözükün, daha fazla müşteriye ulaşın</p>
         </div>
       </div>
     </div>

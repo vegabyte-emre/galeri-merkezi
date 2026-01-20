@@ -21,20 +21,20 @@
           <!-- Badge -->
           <div class="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-md rounded-full border border-violet-400/30">
             <Sparkles class="w-4 h-4 text-violet-400" />
-            <span class="text-sm font-semibold bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text text-transparent">Yeni Ozellik</span>
+            <span class="text-sm font-semibold bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text text-transparent">Yeni Özellik</span>
           </div>
 
           <!-- Heading -->
           <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            <span class="block text-white">Araclarinizi</span>
+            <span class="block text-white">Araçlarınızı</span>
             <span class="block bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
-              Oto Shorts ile Tanitin
+              Oto Shorts ile Tanıtın
             </span>
           </h2>
 
           <p class="text-xl text-slate-300 mb-8 leading-relaxed max-w-lg">
-            Kisa videolarla araclarinizi sergileyin, daha fazla aliciya ulasin. 
-            TikTok ve Instagram Reels tarzinda video icerikler olusturun.
+            Kısa videolarla araçlarınızı sergileyin, daha fazla alıcıya ulaşın. 
+            TikTok ve Instagram Reels tarzında video içerikler oluşturun.
           </p>
 
           <!-- Features List -->
@@ -45,7 +45,7 @@
               </div>
               <div>
                 <h4 class="font-semibold text-white">30 Saniye Video</h4>
-                <p class="text-sm text-slate-400">Maksimum 30MB, yuksek kalite</p>
+                <p class="text-sm text-slate-400">Maksimum 30MB, yüksek kalite</p>
               </div>
             </div>
 
@@ -54,8 +54,8 @@
                 <TrendingUp class="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 class="font-semibold text-white">%300 Daha Fazla Gorus</h4>
-                <p class="text-sm text-slate-400">Video iceriklerde etkilesim 3 kat fazla</p>
+                <h4 class="font-semibold text-white">%300 Daha Fazla Görüş</h4>
+                <p class="text-sm text-slate-400">Video içeriklerde etkileşim 3 kat fazla</p>
               </div>
             </div>
 
@@ -64,8 +64,8 @@
                 <Zap class="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 class="font-semibold text-white">Otomatik Yayinlama</h4>
-                <p class="text-sm text-slate-400">Arac eklerken video yukle, hemen yayinla</p>
+                <h4 class="font-semibold text-white">Otomatik Yayınlama</h4>
+                <p class="text-sm text-slate-400">Araç eklerken video yükle, hemen yayınla</p>
               </div>
             </div>
           </div>
@@ -101,7 +101,7 @@
                     <div class="text-center">
                       <Car class="w-20 h-20 text-violet-400 mx-auto mb-4 animate-bounce" />
                       <div class="text-white font-bold text-lg">2024 BMW 320i</div>
-                      <div class="text-violet-300 text-sm">850.000 TL</div>
+                      <div class="text-violet-300 text-sm">850.000 ₺</div>
                     </div>
                   </div>
 
@@ -115,17 +115,17 @@
                     <!-- User Info -->
                     <div class="flex items-center gap-3 mb-3">
                       <div class="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold text-sm">
-                        GM
+                        OT
                       </div>
                       <div>
                         <div class="text-white font-semibold text-sm">Otobia</div>
-                        <div class="text-white/60 text-xs">Istanbul, Turkiye</div>
+                        <div class="text-white/60 text-xs">İstanbul, Türkiye</div>
                       </div>
                     </div>
 
                     <!-- Description -->
                     <p class="text-white/80 text-sm mb-4">
-                      2024 Model BMW 320i 🚗 Sifir arac, full donanimli! #otoshorts #bmw #istanbul
+                      2024 Model BMW 320i 🚗 Sıfır araç, full donanımlı! #otoshorts #bmw #istanbul
                     </p>
 
                     <!-- Action Buttons -->
@@ -160,7 +160,7 @@
                 </div>
                 <div>
                   <div class="text-white font-bold">12.5K</div>
-                  <div class="text-white/60 text-xs">Goruntulenme</div>
+                  <div class="text-white/60 text-xs">Görüntülenme</div>
                 </div>
               </div>
             </div>
@@ -172,7 +172,7 @@
                 </div>
                 <div>
                   <div class="text-white font-bold">3.2K</div>
-                  <div class="text-white/60 text-xs">Begeni</div>
+                  <div class="text-white/60 text-xs">Beğeni</div>
                 </div>
               </div>
             </div>

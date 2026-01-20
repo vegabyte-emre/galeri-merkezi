@@ -11,13 +11,13 @@
       <div class="text-center mb-20">
         <div class="inline-flex items-center gap-2 px-4 py-2 mb-4 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-semibold">
           <Route class="w-4 h-4" />
-          Nasil Calisir
+          Nasıl Çalışır
         </div>
         <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-          <span class="bg-gradient-to-r from-primary-600 to-violet-600 bg-clip-text text-transparent">3 Kolay Adimda</span> Baslayin
+          <span class="bg-gradient-to-r from-primary-600 to-violet-600 bg-clip-text text-transparent">3 Kolay Adımda</span> Başlayın
         </h2>
         <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          Dakikalar icinde galerinizi dijitallestirin ve is potansiyelinizi arttirin
+          Dakikalar içinde galerinizi dijitalleştirin ve iş potansiyelinizi artırın
         </p>
       </div>
 
@@ -74,7 +74,7 @@
       <!-- Bottom CTA -->
       <div class="mt-16 text-center">
         <p class="text-lg text-gray-600 dark:text-gray-400 mb-6">
-          Hersey bu kadar basit! Hemen baslayin ve farkini gorun.
+          Her şey bu kadar basit! Hemen başlayın ve farkını görün.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <NuxtLink 
@@ -82,13 +82,13 @@
             class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-500 to-violet-500 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/30 transition-all duration-300 hover:scale-105"
           >
             <Rocket class="w-5 h-5" />
-            Ucretsiz Basla
+            Ücretsiz Başla
           </NuxtLink>
           <NuxtLink 
             to="/pricing" 
             class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300"
           >
-            Fiyatlari Incele
+            Fiyatları İncele
             <ArrowRight class="w-5 h-5" />
           </NuxtLink>
         </div>
@@ -106,41 +106,41 @@ import {
 const steps = [
   {
     icon: UserPlus,
-    title: 'Kayit Olun',
-    description: 'Galerinizi dakikalar icinde kaydedin. Hicbir teknik bilgi gerektirmez.',
+    title: 'Kayıt Olun',
+    description: 'Galerinizi dakikalar içinde kaydedin. Hiçbir teknik bilgi gerektirmez.',
     gradient: 'from-primary-500 to-primary-600',
     iconBg: 'from-primary-100 to-primary-200 dark:from-primary-900/50 dark:to-primary-800/50',
     iconColor: 'text-primary-600 dark:text-primary-400',
     features: [
-      'E-posta ile hizli kayit',
+      'E-posta ile hızlı kayıt',
       'Galeri bilgilerini girin',
-      '2 dakikada tamamlayin'
+      '2 dakikada tamamlayın'
     ]
   },
   {
     icon: Car,
-    title: 'Araclarinizi Ekleyin',
-    description: 'Stok listenizi yukleyin veya tek tek ekleyin. Fotograf ve video destegi.',
+    title: 'Araçlarınızı Ekleyin',
+    description: 'Stok listenizi yükleyin veya tek tek ekleyin. Fotoğraf ve video desteği.',
     gradient: 'from-violet-500 to-violet-600',
     iconBg: 'from-violet-100 to-violet-200 dark:from-violet-900/50 dark:to-violet-800/50',
     iconColor: 'text-violet-600 dark:text-violet-400',
     features: [
-      'Excel ile toplu yukleme',
-      'Oto Shorts video destegi',
-      'Otomatik ilan aktarimi'
+      'Excel ile toplu yükleme',
+      'Oto Shorts video desteği',
+      'Otomatik ilan aktarımı'
     ]
   },
   {
     icon: BadgeDollarSign,
-    title: 'Satis Yapin',
-    description: 'Diger galerilerle teklif alin/verin, pazarlık yapin ve satis gerceklestirin.',
+    title: 'Satış Yapın',
+    description: 'Diğer galerilerle teklif alın/verin, pazarlık yapın ve satış gerçekleştirin.',
     gradient: 'from-fuchsia-500 to-fuchsia-600',
     iconBg: 'from-fuchsia-100 to-fuchsia-200 dark:from-fuchsia-900/50 dark:to-fuchsia-800/50',
     iconColor: 'text-fuchsia-600 dark:text-fuchsia-400',
     features: [
-      'Gercek zamanli mesajlasma',
-      'Guvenli odeme sistemi',
-      'Komisyonsuz islemler'
+      'Gerçek zamanlı mesajlaşma',
+      'Güvenli ödeme sistemi',
+      'Komisyonsuz işlemler'
     ]
   }
 ]

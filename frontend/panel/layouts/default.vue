@@ -14,8 +14,8 @@
             <Car class="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 class="text-lg font-bold text-gray-900 dark:text-white">Galeri Paneli</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Galeri Yönetimi</p>
+            <h1 class="text-lg font-semibold text-gray-900 dark:text-white" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;">Otobia</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Galeri Paneli</p>
           </div>
         </div>
         <button
@@ -212,8 +212,8 @@ const api = useApi()
 const navItems = ref([
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/shorts', label: 'Oto Shorts', icon: Video, highlight: true, color: 'violet' },
-  { path: '/marketplace', label: 'Oto Pazari', icon: Car, highlight: true, color: 'orange' },
-  { path: '/vehicles', label: 'Araclarim', icon: CarFront, badge: null as string | null },
+  { path: '/marketplace', label: 'Oto Pazarı', icon: Car, highlight: true, color: 'orange' },
+  { path: '/vehicles', label: 'Araçlarım', icon: CarFront, badge: null as string | null },
   { path: '/offers', label: 'Teklifler', icon: Users, badge: null as string | null },
   { path: '/chats', label: 'Mesajlar', icon: MessageSquare, badge: null as string | null },
   { path: '/favorites', label: 'Favoriler', icon: Heart },
@@ -222,7 +222,7 @@ const navItems = ref([
   { path: '/activity', label: 'Aktivite', icon: Activity },
   { path: '/media', label: 'Medya', icon: Image },
   { path: '/notifications', label: 'Bildirimler', icon: Bell, badge: null as string | null },
-  { path: '/help', label: 'Yardim', icon: HelpCircle },
+  { path: '/help', label: 'Yardım', icon: HelpCircle },
   { path: '/settings', label: 'Ayarlar', icon: Settings },
 ])
 
@@ -296,17 +296,17 @@ const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     '/': 'Dashboard',
     '/shorts': 'Oto Shorts',
-    '/marketplace': 'Oto Pazari',
-    '/vehicles': 'Araclarim',
+    '/marketplace': 'Oto Pazarı',
+    '/vehicles': 'Araçlarım',
     '/offers': 'Teklifler',
     '/chats': 'Mesajlar',
     '/favorites': 'Favoriler',
     '/reports': 'Raporlar',
     '/channels': 'Kanallar',
-    '/activity': 'Aktivite Gecmisi',
-    '/media': 'Medya Kutuphanesi',
+    '/activity': 'Aktivite Geçmişi',
+    '/media': 'Medya Kütüphanesi',
     '/notifications': 'Bildirimler',
-    '/help': 'Yardim Merkezi',
+    '/help': 'Yardım Merkezi',
     '/settings': 'Ayarlar',
   }
   return titles[route.path] || 'Dashboard'
@@ -314,22 +314,22 @@ const pageTitle = computed(() => {
 
 const pageSubtitle = computed(() => {
   const subtitles: Record<string, string> = {
-    '/': 'Galeri ozeti ve istatistikler',
-    '/shorts': 'Kisa videolarla araclari kesfet',
-    '/marketplace': 'Tum bayilerin araclari',
-    '/vehicles': 'Arac envanterinizi yonetin',
+    '/': 'Galeri özeti ve istatistikler',
+    '/shorts': 'Kısa videolarla araçları keşfet',
+    '/marketplace': 'Tüm bayilerin araçları',
+    '/vehicles': 'Araç envanterinizi yönetin',
     '/offers': 'Gelen ve giden teklifler',
-    '/chats': 'Mesajlasma ve iletisim',
-    '/favorites': 'Begendiginiz araclari yonetin',
-    '/reports': 'Detayli raporlar ve analitik',
-    '/channels': 'Pazar yeri entegrasyonlari',
-    '/activity': 'Tum islemlerinizin kaydi',
-    '/media': 'Tum gorsellerinizi yonetin',
-    '/notifications': 'Tum bildirimlerinizi yonetin',
-    '/help': 'Sik sorulan sorular ve destek kaynaklari',
-    '/settings': 'Galeri ayarlari',
+    '/chats': 'Mesajlaşma ve iletişim',
+    '/favorites': 'Beğendiğiniz araçları yönetin',
+    '/reports': 'Detaylı raporlar ve analitik',
+    '/channels': 'Pazar yeri entegrasyonları',
+    '/activity': 'Tüm işlemlerinizin kaydı',
+    '/media': 'Tüm görsellerinizi yönetin',
+    '/notifications': 'Tüm bildirimlerinizi yönetin',
+    '/help': 'Sık sorulan sorular ve destek kaynakları',
+    '/settings': 'Galeri ayarları',
   }
-  return subtitles[route.path] || 'Galeri yonetim paneli'
+  return subtitles[route.path] || 'Galeri yönetim paneli'
 })
 
 const handleLogout = async () => {
