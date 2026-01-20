@@ -67,6 +67,7 @@ services:
     container_name: otobia-traefik
     command:
       - "--api.insecure=false"
+      - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
@@ -85,6 +86,58 @@ services:
       - letsencrypt_data:/letsencrypt
     networks:
       - otobia-network
+    restart: unless-stopped
+
+  # Geçici Coming Soon Sayfası
+  landing:
+    image: nginx:alpine
+    container_name: otobia-landing
+    volumes:
+      - ./coming-soon:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landing.rule=Host(`otobia.com`) || Host(`www.otobia.com`)"
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.tls.certresolver=letsencrypt"
+      - "traefik.http.services.landing.loadbalancer.server.port=80"
+    networks:
+      - otobia-network
+    depends_on:
+      - traefik
+    restart: unless-stopped
+
+  admin:
+    image: nginx:alpine
+    container_name: otobia-admin
+    volumes:
+      - ./coming-soon:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=Host(`admin.otobia.com`)"
+      - "traefik.http.routers.admin.entrypoints=websecure"
+      - "traefik.http.routers.admin.tls.certresolver=letsencrypt"
+      - "traefik.http.services.admin.loadbalancer.server.port=80"
+    networks:
+      - otobia-network
+    depends_on:
+      - traefik
+    restart: unless-stopped
+
+  panel:
+    image: nginx:alpine
+    container_name: otobia-panel
+    volumes:
+      - ./coming-soon:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.panel.rule=Host(`panel.otobia.com`)"
+      - "traefik.http.routers.panel.entrypoints=websecure"
+      - "traefik.http.routers.panel.tls.certresolver=letsencrypt"
+      - "traefik.http.services.panel.loadbalancer.server.port=80"
+    networks:
+      - otobia-network
+    depends_on:
+      - traefik
     restart: unless-stopped
 
 networks:
