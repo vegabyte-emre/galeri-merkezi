@@ -46,9 +46,9 @@ COPY --from=builder /app/backend/services/api-gateway/dist ./backend/services/ap
 # Copy node_modules
 COPY --from=builder /app/node_modules ./node_modules
 
-# Create symlink for @galeri/shared
+# Copy shared to node_modules/@galeri/shared (as actual copy, not symlink)
 RUN mkdir -p /app/node_modules/@galeri && \
-    ln -sf /app/backend/shared /app/node_modules/@galeri/shared
+    cp -r /app/backend/shared /app/node_modules/@galeri/shared
 
 WORKDIR /app/backend/services/api-gateway
 
