@@ -4,10 +4,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY frontend/admin/package*.json ./
+COPY frontend/admin/package.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY frontend/admin/ .
