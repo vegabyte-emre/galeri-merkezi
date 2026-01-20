@@ -15,6 +15,7 @@ import { activityRoutes } from './routes/activity';
 import { reportRoutes } from './routes/report';
 import { configRoutes } from './routes/config';
 import catalogRoutes from './routes/catalog';
+import { shortsRoutes } from './routes/shorts';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/activity', activityRoutes);
 app.use('/reports', reportRoutes);
 app.use('/config', configRoutes);
 app.use('/catalog', catalogRoutes);
+app.use('/shorts', shortsRoutes);
 
 // Error handler
 app.use(errorHandler);

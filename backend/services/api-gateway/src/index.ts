@@ -170,6 +170,44 @@ app.use('/api/v1/catalog', createProxyMiddleware({
   onProxyReq: fixRequestBody
 }));
 
+// Shorts routes (PUBLIC for GET, authenticated for POST/DELETE)
+app.use('/api/v1/shorts', express.json());
+// Optional auth - don't fail if no token, just set user if available
+app.use('/api/v1/shorts', async (req: any, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production') as any;
+      req.user = decoded;
+    } catch (err: any) {
+      // Token invalid or expired - continue without user for GET requests
+    }
+  }
+  next();
+});
+app.use('/api/v1/shorts', createProxyMiddleware({
+  target: services.inventory,
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/shorts': '/shorts' },
+  onError: (err, req, res) => {
+    logger.error('Shorts proxy error', { error: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Shorts service unavailable' });
+    }
+  },
+  onProxyReq: (proxyReq, req: any, res) => {
+    // Add user headers if authenticated
+    if (req.user) {
+      proxyReq.setHeader('x-user-id', req.user.sub || '');
+      proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
+      proxyReq.setHeader('x-user-role', req.user.role || '');
+    }
+    fixRequestBody(proxyReq, req as any);
+  }
+}));
+
 // ===== PROTECTED ROUTES (Auth required) =====
 app.use('/api/v1', generalLimiter);
 app.use('/api/v1', authMiddleware);
