@@ -2,50 +2,52 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+# Copy root package files
+COPY package.json ./
+COPY package-lock.json* ./
+
+# Copy workspace package files
 COPY backend/shared/package.json ./backend/shared/
 COPY backend/services/inventory-service/package.json ./backend/services/inventory-service/
 
-RUN npm ci
+# Install dependencies
+RUN npm install --legacy-peer-deps
 
+# Copy source files
 COPY tsconfig.json ./
 COPY backend/shared ./backend/shared
 COPY backend/services/inventory-service ./backend/services/inventory-service
 
+# Build shared first
+WORKDIR /app/backend/shared
+RUN npm run build
+
+# Build inventory-service
 WORKDIR /app/backend/services/inventory-service
 RUN npm run build
 
+# Production stage
 FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+# Copy package files
+COPY package.json ./
 COPY backend/shared/package.json ./backend/shared/
 COPY backend/services/inventory-service/package.json ./backend/services/inventory-service/
 
-RUN npm ci --production
-
+# Copy built files
 COPY --from=builder /app/backend/shared/dist ./backend/shared/dist
 COPY --from=builder /app/backend/services/inventory-service/dist ./backend/services/inventory-service/dist
+
+# Copy node_modules
+COPY --from=builder /app/node_modules ./node_modules
 
 WORKDIR /app/backend/services/inventory-service
 
 EXPOSE 3003
 
+ENV PORT=3003
+ENV NODE_ENV=production
+
 CMD ["node", "dist/index.js"]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
