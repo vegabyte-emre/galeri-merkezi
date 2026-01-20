@@ -15,6 +15,9 @@ import { requestLogger } from './middleware/requestLogger';
 const app = express();
 const PORT = config.port || 3000;
 
+// Trust proxy for rate limiting behind reverse proxy (Traefik)
+app.set('trust proxy', 1);
+
 const redis = new Redis({
   host: config.redis.host || 'redis',
   port: config.redis.port || 6379,
