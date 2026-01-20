@@ -93,8 +93,8 @@ services:
   # ==================== FRONTEND APPLICATIONS ====================
   landing:
     build:
-      context: ../frontend/landing
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: frontend/landing/Dockerfile
     container_name: otobia-landing
     environment:
       - NUXT_PUBLIC_API_URL=https://api.otobia.com/api/v1
@@ -113,8 +113,8 @@ services:
 
   admin:
     build:
-      context: ../frontend/admin
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: frontend/admin/Dockerfile
     container_name: otobia-admin
     labels:
       - "traefik.enable=true"
@@ -130,8 +130,8 @@ services:
 
   panel:
     build:
-      context: ../frontend/panel
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: frontend/panel/Dockerfile
     container_name: otobia-panel
     labels:
       - "traefik.enable=true"
