@@ -4,6 +4,19 @@
   "description": "Shared utilities and types for Otobia platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./config": "./dist/config/index.js",
+    "./database/connection": "./dist/database/connection.js",
+    "./database/migrate": "./dist/database/migrate.js",
+    "./utils/logger": "./dist/utils/logger.js",
+    "./utils/errors": "./dist/utils/errors.js",
+    "./utils/validation": "./dist/utils/validation.js",
+    "./utils/rabbitmq": "./dist/utils/rabbitmq.js",
+    "./utils/minio": "./dist/utils/minio.js",
+    "./utils/meilisearch": "./dist/utils/meilisearch.js",
+    "./types": "./dist/types/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
