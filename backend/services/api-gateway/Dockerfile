@@ -29,26 +29,26 @@ COPY backend/services/api-gateway ./backend/services/api-gateway
 WORKDIR /app/backend/services/api-gateway
 RUN npx tsc || true
 
+# Setup @galeri/shared in node_modules
+WORKDIR /app
+RUN mkdir -p node_modules/@galeri/shared && \
+    cp -r backend/shared/* node_modules/@galeri/shared/ 2>/dev/null || \
+    cp -R backend/shared/. node_modules/@galeri/shared/ 2>/dev/null || true
+
 # Production stage
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/backend/shared/package.json ./backend/shared/
-COPY --from=builder /app/backend/services/api-gateway/package.json ./backend/services/api-gateway/
-
-# Copy built files
+# Copy everything from builder
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend/shared ./backend/shared
 COPY --from=builder /app/backend/services/api-gateway/dist ./backend/services/api-gateway/dist
+COPY --from=builder /app/backend/services/api-gateway/package.json ./backend/services/api-gateway/
 
-# Copy node_modules
-COPY --from=builder /app/node_modules ./node_modules
-
-# Copy shared to node_modules/@galeri/shared (as actual copy, not symlink)
-RUN mkdir -p /app/node_modules/@galeri && \
-    cp -r /app/backend/shared /app/node_modules/@galeri/shared
+# Ensure @galeri/shared is in node_modules
+RUN mkdir -p /app/node_modules/@galeri/shared && \
+    cp -r /app/backend/shared/* /app/node_modules/@galeri/shared/ 2>/dev/null || true
 
 WORKDIR /app/backend/services/api-gateway
 
