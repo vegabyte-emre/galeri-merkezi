@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Araç Onayları</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Onay bekleyen araçları yönetin</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Galerilerden gelen araç onay taleplerini yönetin</p>
       </div>
       <div class="flex items-center gap-3">
         <div class="px-4 py-2 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-lg font-semibold">

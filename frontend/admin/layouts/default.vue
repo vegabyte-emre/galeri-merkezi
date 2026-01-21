@@ -32,12 +32,20 @@
           v-for="item in navItems"
           :key="item.path"
           :to="item.path"
-          class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 group"
-          active-class="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+          :class="[
+            'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
+            item.highlight 
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400'
+          ]"
+          :active-class="item.highlight ? '' : 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'"
         >
           <component :is="item.icon" class="w-5 h-5 group-hover:scale-110 transition-transform" />
           <span class="font-medium">{{ item.label }}</span>
-          <span v-if="item.badge" class="ml-auto px-2 py-0.5 text-xs font-semibold bg-primary-500 text-white rounded-full">
+          <span v-if="item.badge" :class="[
+            'ml-auto px-2 py-0.5 text-xs font-semibold rounded-full',
+            item.highlight ? 'bg-white/20 text-white' : 'bg-primary-500 text-white'
+          ]">
             {{ item.badge }}
           </span>
         </NuxtLink>
@@ -145,7 +153,9 @@ import {
   Moon,
   LogOut,
   CreditCard,
-  Video
+  Video,
+  Car,
+  CheckCircle
 } from 'lucide-vue-next'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -206,8 +216,30 @@ const handleLogout = async () => {
   }
 }
 
-const navItems = [
+const pendingApprovalCount = ref<number>(0)
+
+// Load pending approval count
+const loadPendingCount = async () => {
+  try {
+    const api = useApi()
+    const response = await api.get<{ success: boolean; pagination?: { total: number } }>('/vehicles/pending-approval')
+    if (response.success && response.pagination) {
+      pendingApprovalCount.value = response.pagination.total
+    }
+  } catch (e) {
+    console.error('Pending approval count error:', e)
+  }
+}
+
+onMounted(() => {
+  loadPendingCount()
+  // Refresh every 30 seconds
+  setInterval(loadPendingCount, 30000)
+})
+
+const navItems = computed(() => [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/vehicle-approvals', label: 'Araç Onayları', icon: Car, badge: pendingApprovalCount.value > 0 ? pendingApprovalCount.value.toString() : null, highlight: true },
   { path: '/galleries', label: 'Galeriler', icon: Building2, badge: '150' },
   { path: '/users', label: 'Kullanıcılar', icon: Users },
   { path: '/oto-shorts', label: 'Oto Shorts', icon: Video, badge: '8' },
@@ -223,11 +255,12 @@ const navItems = [
   { path: '/api-docs', label: 'API Dokümantasyonu', icon: FileText },
   { path: '/splash-config', label: 'Splash Ayarları', icon: Settings },
   { path: '/settings', label: 'Ayarlar', icon: Settings },
-]
+])
 
 const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     '/': 'Dashboard',
+    '/vehicle-approvals': 'Araç Onayları',
     '/galleries': 'Galeriler',
     '/users': 'Kullanıcılar',
     '/oto-shorts': 'Oto Shorts',
@@ -250,6 +283,7 @@ const pageTitle = computed(() => {
 const pageSubtitle = computed(() => {
   const subtitles: Record<string, string> = {
     '/': 'Genel bakış ve istatistikler',
+    '/vehicle-approvals': 'Galerilerden gelen araç onay taleplerini yönetin',
     '/galleries': 'Tüm galerileri yönetin',
     '/users': 'Kullanıcı hesaplarını yönetin',
     '/oto-shorts': 'Video içeriklerini yönetin ve moderasyon yapın',
