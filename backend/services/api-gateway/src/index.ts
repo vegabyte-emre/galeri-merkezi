@@ -425,7 +425,7 @@ app.use('/api/v1/channels', createProxyMiddleware({
   onProxyReq: fixRequestBody
 }));
 
-// User service
+// User service (self-service)
 app.use('/api/v1/user', createProxyMiddleware({
   target: services.auth,
   changeOrigin: true,
@@ -434,7 +434,33 @@ app.use('/api/v1/user', createProxyMiddleware({
     logger.error('User service proxy error', { error: err.message });
     res.status(500).json({ error: 'User service unavailable' });
   },
-  onProxyReq: fixRequestBody
+  onProxyReq: (proxyReq, req: any, res) => {
+    if (req.user) {
+      proxyReq.setHeader('x-user-id', req.user.sub || '');
+      proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
+      proxyReq.setHeader('x-user-role', req.user.role || '');
+    }
+    fixRequestBody(proxyReq, req as any);
+  }
+}));
+
+// Users management (admin - for superadmin user management)
+app.use('/api/v1/users', createProxyMiddleware({
+  target: services.auth,
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/users': '/users' },
+  onError: (err, req, res) => {
+    logger.error('Users management proxy error', { error: err.message });
+    res.status(500).json({ error: 'User service unavailable' });
+  },
+  onProxyReq: (proxyReq, req: any, res) => {
+    if (req.user) {
+      proxyReq.setHeader('x-user-id', req.user.sub || '');
+      proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
+      proxyReq.setHeader('x-user-role', req.user.role || '');
+    }
+    fixRequestBody(proxyReq, req as any);
+  }
 }));
 
 // Admin routes

@@ -1,6 +1,8 @@
 export const useApi = () => {
   const config = useRuntimeConfig()
-  const apiUrl = config.public.apiUrl || 'http://localhost:3000/api'
+  const baseUrl = config.public.apiUrl || 'http://localhost:3000'
+  // Ensure all API calls go through /api/v1 prefix
+  const apiUrl = baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`
 
   const request = async <T>(
     endpoint: string,
@@ -22,7 +24,12 @@ export const useApi = () => {
       headers['Authorization'] = `Bearer ${token.value}`
     }
     
-    const response = await fetch(`${apiUrl}${endpoint}`, {
+    // Remove leading /api/v1 from endpoint if present (to avoid duplication)
+    const cleanEndpoint = endpoint.startsWith('/api/v1') 
+      ? endpoint.replace('/api/v1', '') 
+      : endpoint
+    
+    const response = await fetch(`${apiUrl}${cleanEndpoint}`, {
       ...fetchOptions,
       headers,
     })
