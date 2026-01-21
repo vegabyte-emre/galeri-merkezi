@@ -101,7 +101,7 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    const response = await api.post<{ success: boolean; accessToken: string; user: any }>('/auth/login', {
+    const response = await api.post<{ success: boolean; accessToken: string; user: any }>('/api/v1/auth/login', {
       email: form.email,
       password: form.password
     })
