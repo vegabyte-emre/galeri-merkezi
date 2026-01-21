@@ -1,5 +1,5 @@
--- Catalog Migration - FIXED Version
--- Date: 2026-01-20T22:23:47.759Z
+-- Catalog Migration - Final Version
+-- Date: 2026-01-21T09:31:55.685Z
 -- Total rows: 497
 
 TRUNCATE TABLE vehicle_catalog_trims CASCADE;
