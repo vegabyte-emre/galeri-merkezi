@@ -1,29 +1,7 @@
-# Multi-stage build for Admin Panel
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Copy package files
-COPY frontend/admin/package*.json ./
-
-# Install dependencies
-RUN npm install --legacy-peer-deps
-
-# Copy source files
-COPY frontend/admin/ ./
-
-# Generate static files
-RUN npm run generate
-
-# Debug: show output structure
-RUN ls -la /app/.output/ || echo "No .output directory"
-RUN ls -la /app/.output/public/ || echo "No public directory"
-
-# Production stage
 FROM nginx:alpine
 
-# Copy generated static files from builder stage
-COPY --from=builder /app/.output/public /usr/share/nginx/html/
+# Copy pre-built static files
+COPY admin-dist/ /usr/share/nginx/html/
 
 # Nginx config for SPA
 RUN echo 'server { \
