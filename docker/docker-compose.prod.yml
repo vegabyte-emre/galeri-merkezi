@@ -112,8 +112,8 @@ services:
   # Admin Panel - Super Admin Nuxt.js Application (Pre-built)
   admin:
     build:
-      context: .
-      dockerfile: Dockerfile.admin-prod
+      context: ..
+      dockerfile: docker/Dockerfile.admin-prod
     container_name: otobia-admin
     labels:
       - "traefik.enable=true"
