@@ -11,7 +11,10 @@ RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY frontend/admin/ .
-COPY frontend/shared/ ../shared/
+
+# Create shared directory and copy shared components
+RUN mkdir -p /shared
+COPY frontend/shared/ /shared/
 
 # Set API URL for build time
 ENV NUXT_PUBLIC_API_URL=https://api.otobia.com
