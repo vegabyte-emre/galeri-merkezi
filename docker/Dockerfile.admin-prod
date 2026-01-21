@@ -12,13 +12,17 @@ RUN npm install --legacy-peer-deps
 # Copy source files
 COPY frontend/admin/ ./
 
-# Build the Nuxt application
-RUN npm run build
+# Generate static files
+RUN npm run generate
+
+# Debug: show output structure
+RUN ls -la /app/.output/ || echo "No .output directory"
+RUN ls -la /app/.output/public/ || echo "No public directory"
 
 # Production stage
 FROM nginx:alpine
 
-# Copy built files from builder stage
+# Copy generated static files from builder stage
 COPY --from=builder /app/.output/public /usr/share/nginx/html/
 
 # Nginx config for SPA
