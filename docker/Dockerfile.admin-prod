@@ -1,6 +1,10 @@
 # Stage 1: Build the Nuxt.js application
 FROM node:20-alpine AS builder
 
+# Build arguments for API URLs
+ARG NUXT_PUBLIC_API_URL=https://api.otobia.com
+ARG NUXT_PUBLIC_WS_URL=wss://ws.otobia.com
+
 WORKDIR /app
 
 # Copy package files
@@ -17,7 +21,8 @@ RUN mkdir -p /shared
 COPY frontend/shared/ /shared/
 
 # Set API URL for build time
-ENV NUXT_PUBLIC_API_URL=https://api.otobia.com
+ENV NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL}
+ENV NUXT_PUBLIC_WS_URL=${NUXT_PUBLIC_WS_URL}
 
 # Build the Nuxt.js application
 RUN npm run generate

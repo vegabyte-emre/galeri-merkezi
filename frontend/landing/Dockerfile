@@ -1,6 +1,10 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+# Build arguments for API URLs
+ARG NUXT_PUBLIC_API_URL=https://api.otobia.com/api/v1
+ARG NUXT_PUBLIC_WS_URL=wss://ws.otobia.com
+
 WORKDIR /app
 
 # Copy package files
@@ -14,8 +18,8 @@ COPY frontend/landing/ .
 
 # Build the application (Static mode)
 ENV NODE_ENV=production
-ENV NUXT_PUBLIC_API_URL=https://api.otobia.com/api/v1
-ENV NUXT_PUBLIC_WS_URL=wss://ws.otobia.com
+ENV NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL}
+ENV NUXT_PUBLIC_WS_URL=${NUXT_PUBLIC_WS_URL}
 RUN npm run generate
 
 # Production stage - serve static files with nginx

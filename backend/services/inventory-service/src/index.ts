@@ -34,6 +34,62 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Banners endpoint (for mobile app)
+app.get('/banners', async (req, res) => {
+  try {
+    // Try to get banners from system_settings
+    const result = await query(
+      `SELECT value FROM system_settings WHERE key = 'mobile_banners' LIMIT 1`
+    );
+    
+    let banners = [];
+    if (result.rows.length > 0) {
+      try {
+        banners = JSON.parse(result.rows[0].value);
+      } catch (e) {
+        // Use defaults
+      }
+    }
+    
+    // Default banners if none configured
+    if (banners.length === 0) {
+      banners = [
+        {
+          id: '1',
+          title: 'Yeni Sezon Kampanyası',
+          subtitle: 'Araçlarınızı öne çıkarın, %50 indirimli!',
+          background_colors: ['#667eea', '#764ba2'],
+          icon: 'megaphone',
+          action_text: 'Detaylar',
+          action_route: '/offer/list',
+        },
+        {
+          id: '2',
+          title: 'Oto Shorts ile Öne Çıkın',
+          subtitle: 'Video paylaşarak daha fazla müşteriye ulaşın',
+          background_colors: ['#f093fb', '#f5576c'],
+          icon: 'videocam',
+          action_text: 'Başla',
+          action_route: '/(tabs)/shorts',
+        },
+        {
+          id: '3',
+          title: 'Premium Üyelik',
+          subtitle: 'Sınırsız araç ekleme ve öncelikli listeleme',
+          background_colors: ['#4facfe', '#00f2fe'],
+          icon: 'diamond',
+          action_text: 'İncele',
+          action_route: '/(tabs)/profile',
+        }
+      ];
+    }
+    
+    res.json(banners);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Routes
 app.use('/vehicles', vehicleRoutes);
 app.use('/vehicles/video', videoRoutes);

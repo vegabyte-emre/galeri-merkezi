@@ -170,6 +170,21 @@ app.use('/api/v1/catalog', createProxyMiddleware({
   onProxyReq: fixRequestBody
 }));
 
+// Banners routes (PUBLIC - for mobile app home screen)
+app.use('/api/v1/banners', express.json());
+app.use('/api/v1/banners', createProxyMiddleware({
+  target: services.inventory,
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/banners': '/banners' },
+  onError: (err, req, res) => {
+    logger.error('Banners proxy error', { error: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Banners service unavailable' });
+    }
+  },
+  onProxyReq: fixRequestBody
+}));
+
 // Shorts routes (PUBLIC for GET, authenticated for POST/DELETE)
 app.use('/api/v1/shorts', express.json());
 // Optional auth - don't fail if no token, just set user if available
@@ -235,16 +250,46 @@ app.use('/api/v1/vehicles', createProxyMiddleware({
   }
 }));
 
-// Gallery service
+// Gallery service - list and get single gallery
 app.use('/api/v1/galleries', createProxyMiddleware({
   target: services.gallery,
   changeOrigin: true,
-  pathRewrite: { '^/api/v1/galleries': '' },
+  pathRewrite: { '^/api/v1/galleries': '/galleries' },
   onError: (err, req, res) => {
     logger.error('Gallery service proxy error', { error: err.message });
-    res.status(500).json({ error: 'Gallery service unavailable' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Gallery service unavailable' });
+    }
   },
-  onProxyReq: fixRequestBody
+  onProxyReq: (proxyReq, req: any, res) => {
+    if (req.user) {
+      proxyReq.setHeader('x-user-id', req.user.sub || '');
+      proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
+      proxyReq.setHeader('x-user-role', req.user.role || '');
+    }
+    fixRequestBody(proxyReq, req as any);
+  }
+}));
+
+// Gallery service - my gallery and settings
+app.use('/api/v1/gallery', createProxyMiddleware({
+  target: services.gallery,
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/gallery': '/galleries' },
+  onError: (err, req, res) => {
+    logger.error('Gallery service proxy error', { error: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Gallery service unavailable' });
+    }
+  },
+  onProxyReq: (proxyReq, req: any, res) => {
+    if (req.user) {
+      proxyReq.setHeader('x-user-id', req.user.sub || '');
+      proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
+      proxyReq.setHeader('x-user-role', req.user.role || '');
+    }
+    fixRequestBody(proxyReq, req as any);
+  }
 }));
 
 // Dashboard (authenticated)

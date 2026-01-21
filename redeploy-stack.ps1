@@ -1,4 +1,4 @@
-﻿add-type @"
+add-type @"
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 public class TrustCerts64 : ICertificatePolicy {
@@ -9,7 +9,7 @@ public class TrustCerts64 : ICertificatePolicy {
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $portainerUrl = "https://72.62.115.27:9443"
-$apiKey = "ptr_JdUVeJJw0jI6Dq8SfFesSLlOonyu8yvUn4eR8SPsD6Y="
+$apiKey = "ptr_akR/jOJE+d7s/QU40cCRbl8W3wydQkX/kBxhxEYI/Gc="
 $endpointId = 3
 $stackId = 3
 
