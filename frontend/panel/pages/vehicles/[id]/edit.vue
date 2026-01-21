@@ -346,20 +346,65 @@
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center justify-end gap-3">
-          <NuxtLink
-            to="/vehicles"
-            class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
-          >
-            İptal
-          </NuxtLink>
-          <button
-            type="submit"
-            :disabled="loading"
-            class="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
-          >
-            {{ loading ? 'Kaydediliyor...' : 'Güncelle' }}
-          </button>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <!-- Status Actions -->
+            <button
+              v-if="vehicleStatus === 'draft'"
+              type="button"
+              @click="publishVehicle"
+              :disabled="loading"
+              class="px-4 py-2.5 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              <Play class="w-4 h-4" />
+              Yayınla
+            </button>
+            <button
+              v-if="vehicleStatus === 'published'"
+              type="button"
+              @click="pauseVehicle"
+              :disabled="loading"
+              class="px-4 py-2.5 bg-yellow-500 text-white font-semibold rounded-xl hover:bg-yellow-600 transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              <Pause class="w-4 h-4" />
+              Duraklat
+            </button>
+            <button
+              v-if="vehicleStatus === 'paused'"
+              type="button"
+              @click="publishVehicle"
+              :disabled="loading"
+              class="px-4 py-2.5 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              <Play class="w-4 h-4" />
+              Tekrar Yayınla
+            </button>
+            <button
+              v-if="vehicleStatus !== 'sold' && vehicleStatus !== 'archived'"
+              type="button"
+              @click="markAsSold"
+              :disabled="loading"
+              class="px-4 py-2.5 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              <Check class="w-4 h-4" />
+              Satıldı
+            </button>
+          </div>
+          <div class="flex items-center gap-3">
+            <NuxtLink
+              to="/vehicles"
+              class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
+            >
+              İptal
+            </NuxtLink>
+            <button
+              type="submit"
+              :disabled="loading"
+              class="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              {{ loading ? 'Kaydediliyor...' : 'Güncelle' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -400,6 +445,21 @@
               <span class="opacity-80">İlan Tarihi:</span>
               <span class="font-semibold">{{ form.listingDate || '-' }}</span>
             </div>
+            <div class="flex justify-between items-center">
+              <span class="opacity-80">Durum:</span>
+              <span 
+                class="px-2 py-1 rounded-full text-xs font-semibold"
+                :class="{
+                  'bg-green-400/30 text-green-100': vehicleStatus === 'published',
+                  'bg-gray-400/30 text-gray-100': vehicleStatus === 'draft',
+                  'bg-yellow-400/30 text-yellow-100': vehicleStatus === 'paused',
+                  'bg-blue-400/30 text-blue-100': vehicleStatus === 'sold',
+                  'bg-red-400/30 text-red-100': vehicleStatus === 'archived'
+                }"
+              >
+                {{ statusLabels[vehicleStatus] || vehicleStatus }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -408,7 +468,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Upload, Car, Settings, FileText, Image as ImageIcon, DollarSign } from 'lucide-vue-next'
+import { ArrowLeft, Upload, Car, Settings, FileText, Image as ImageIcon, DollarSign, Play, Pause, Check } from 'lucide-vue-next'
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '~/composables/useApi'
@@ -450,6 +510,7 @@ const toast = useToast()
 
 const vehicleId = route.params.id as string
 const loading = ref(false)
+const vehicleStatus = ref<string>('draft')
 const loadingBrands = ref(false)
 const loadingYears = ref(false)
 const loadingModels = ref(false)
@@ -466,6 +527,15 @@ const selectedBrandId = ref<number | ''>('')
 const selectedYear = ref<number | ''>('')
 const selectedModelId = ref<number | ''>('')
 const selectedEngineId = ref<number | ''>('')
+
+// Status labels
+const statusLabels: Record<string, string> = {
+  published: 'Yayında',
+  draft: 'Taslak',
+  paused: 'Duraklatıldı',
+  archived: 'Arşivlendi',
+  sold: 'Satıldı'
+}
 
 // Computed properties
 const popularBrands = computed(() => brands.value.filter(b => b.is_popular))
@@ -711,6 +781,7 @@ onMounted(async () => {
         form.heavyDamageRecord = v.heavy_damage_record || false
         form.plateOrigin = v.plate_nationality === 'TR' ? 'Türkiye' : 'Yabancı'
         form.description = v.description || ''
+        vehicleStatus.value = v.status || 'draft'
         
         // Try to set brand and year from existing data
         if (v.brand) {
@@ -751,6 +822,50 @@ const saveVehicle = async () => {
     await api.put(`/vehicles/${vehicleId}`, form)
     toast.success('Araç başarıyla güncellendi')
     router.push('/vehicles')
+  } catch (error: any) {
+    toast.error('Hata: ' + error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Yayınla
+const publishVehicle = async () => {
+  loading.value = true
+  try {
+    await api.post(`/vehicles/${vehicleId}/publish`)
+    vehicleStatus.value = 'published'
+    toast.success('Araç yayınlandı!')
+  } catch (error: any) {
+    toast.error('Hata: ' + error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Duraklat
+const pauseVehicle = async () => {
+  loading.value = true
+  try {
+    await api.post(`/vehicles/${vehicleId}/pause`)
+    vehicleStatus.value = 'paused'
+    toast.success('Araç duraklatıldı')
+  } catch (error: any) {
+    toast.error('Hata: ' + error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Satıldı olarak işaretle
+const markAsSold = async () => {
+  if (!confirm('Bu aracı satıldı olarak işaretlemek istediğinize emin misiniz?')) return
+  
+  loading.value = true
+  try {
+    await api.post(`/vehicles/${vehicleId}/sold`)
+    vehicleStatus.value = 'sold'
+    toast.success('Araç satıldı olarak işaretlendi')
   } catch (error: any) {
     toast.error('Hata: ' + error.message)
   } finally {
