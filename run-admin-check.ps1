@@ -1,11 +1,11 @@
 ﻿add-type @"
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-public class TrustCerts52 : ICertificatePolicy {
+public class TrustCerts56 : ICertificatePolicy {
     public bool CheckValidationResult(ServicePoint sp, X509Certificate cert, WebRequest req, int problem) { return true; }
 }
 "@
-[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustCerts52
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustCerts56
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $portainerUrl = "https://72.62.115.27:9443"
@@ -43,17 +43,11 @@ function Run-Exec($cmd) {
     return $text
 }
 
-# Onay sistemi icin yeni sutunlar ekle
-$sql = @"
-ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP;
-ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS submitted_by UUID;
-ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP;
-ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS approved_by UUID;
-ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMP;
-ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS rejected_by UUID;
-ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
-"@
+$sqlContent = Get-Content "C:\Users\Emre\Desktop\Cursor\GaleriMerkezi\galeri-merkezi\check-admin.sql" -Raw
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($sqlContent)
+$base64 = [Convert]::ToBase64String($bytes)
 
-Write-Host "=== Onay sistemi sutunlari ekleniyor ==="
-$result = Run-Exec "psql -U otobia_user -d otobia_db -c `"$sql`""
+Write-Host "=== Superadmin Detaylari ==="
+$cmd = "echo '$base64' | base64 -d > /tmp/check.sql && psql -U otobia_user -d otobia_db -f /tmp/check.sql"
+$result = Run-Exec $cmd
 Write-Host $result

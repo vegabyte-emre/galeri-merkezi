@@ -1,11 +1,11 @@
 ﻿add-type @"
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-public class TrustCerts50 : ICertificatePolicy {
+public class TrustCerts55 : ICertificatePolicy {
     public bool CheckValidationResult(ServicePoint sp, X509Certificate cert, WebRequest req, int problem) { return true; }
 }
 "@
-[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustCerts50
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustCerts55
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $portainerUrl = "https://72.62.115.27:9443"
@@ -43,7 +43,12 @@ function Run-Exec($cmd) {
     return $text
 }
 
-# Arac ID'sini al
-$result = Run-Exec "psql -U otobia_user -d otobia_db -t -c 'SELECT id, brand, model, status FROM vehicles LIMIT 5;'"
-Write-Host "=== Araclar ==="
+# SQL dosyasini oku ve base64 encode et
+$sqlContent = Get-Content "C:\Users\Emre\Desktop\Cursor\GaleriMerkezi\galeri-merkezi\check-users.sql" -Raw
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($sqlContent)
+$base64 = [Convert]::ToBase64String($bytes)
+
+Write-Host "=== Kullanicilar ==="
+$cmd = "echo '$base64' | base64 -d > /tmp/check.sql && psql -U otobia_user -d otobia_db -f /tmp/check.sql"
+$result = Run-Exec $cmd
 Write-Host $result

@@ -34,17 +34,20 @@ export class VehicleController {
     const galleryId = userInfo.gallery_id;
     const { page = 1, limit = 20, status } = req.query;
 
-    if (!galleryId) {
+    // Superadmin tüm araçları görebilir
+    const isSuperadmin = userInfo.role === 'superadmin';
+
+    if (!galleryId && !isSuperadmin) {
       throw new ValidationError('Gallery ID not found');
     }
 
     const offset = (Number(page) - 1) * Number(limit);
-    let whereClause = 'WHERE gallery_id = $1';
-    const params: any[] = [galleryId];
-    let paramCount = 2;
+    let whereClause = isSuperadmin ? '' : 'WHERE gallery_id = $1';
+    const params: any[] = isSuperadmin ? [] : [galleryId];
+    let paramCount = isSuperadmin ? 1 : 2;
 
     if (status) {
-      whereClause += ` AND status = $${paramCount++}`;
+      whereClause += (whereClause ? ' AND ' : 'WHERE ') + `status = $${paramCount++}`;
       params.push(status);
     }
 

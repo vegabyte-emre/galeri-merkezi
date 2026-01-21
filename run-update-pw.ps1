@@ -1,11 +1,11 @@
 ﻿add-type @"
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-public class TrustCerts53 : ICertificatePolicy {
+public class TrustCerts57 : ICertificatePolicy {
     public bool CheckValidationResult(ServicePoint sp, X509Certificate cert, WebRequest req, int problem) { return true; }
 }
 "@
-[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustCerts53
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustCerts57
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $portainerUrl = "https://72.62.115.27:9443"
@@ -43,28 +43,11 @@ function Run-Exec($cmd) {
     return $text
 }
 
-# Superadmin kullanicisi olustur
-# Password: Admin123! (bcrypt hash)
-$sql = @"
-INSERT INTO users (id, email, password_hash, first_name, last_name, role, status, email_verified)
-VALUES (
-  gen_random_uuid(),
-  'admin@otobia.com',
-  '\$2b\$12\$ZX2lixz7Zi/.PmK5ydAPJeEdpmCKMrD6xGawdK93o3Uz/LW07LZDu',
-  'Super',
-  'Admin',
-  'superadmin',
-  'active',
-  true
-)
-ON CONFLICT (email) DO UPDATE SET role = 'superadmin';
-"@
+$sqlContent = Get-Content "C:\Users\Emre\Desktop\Cursor\GaleriMerkezi\galeri-merkezi\update-admin-pw.sql" -Raw
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($sqlContent)
+$base64 = [Convert]::ToBase64String($bytes)
 
-Write-Host "=== Superadmin kullanicisi olusturuluyor ==="
-$result = Run-Exec "psql -U otobia_user -d otobia_db -c `"$sql`""
-Write-Host $result
-
-# Mevcut kullanicilari listele
-Write-Host "`n=== Kullanicilar ==="
-$result = Run-Exec "psql -U otobia_user -d otobia_db -t -c 'SELECT email, role FROM users;'"
+Write-Host "=== Superadmin sifresi guncelleniyor ==="
+$cmd = "echo '$base64' | base64 -d > /tmp/update.sql && psql -U otobia_user -d otobia_db -f /tmp/update.sql"
+$result = Run-Exec $cmd
 Write-Host $result
