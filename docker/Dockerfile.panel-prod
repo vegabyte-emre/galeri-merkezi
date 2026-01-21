@@ -1,7 +1,25 @@
+# Multi-stage build for Gallery Panel
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY frontend/panel/package*.json ./
+
+# Install dependencies
+RUN npm ci --legacy-peer-deps
+
+# Copy source files
+COPY frontend/panel/ ./
+
+# Build the Nuxt application
+RUN npm run build
+
+# Production stage
 FROM nginx:alpine
 
-# Copy pre-built static files
-COPY panel-dist/ /usr/share/nginx/html/
+# Copy built files from builder stage
+COPY --from=builder /app/.output/public /usr/share/nginx/html/
 
 # Nginx config for SPA
 RUN echo 'server { \

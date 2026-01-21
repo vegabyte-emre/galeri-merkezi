@@ -109,11 +109,11 @@ services:
       - traefik
     restart: unless-stopped
 
-  # Admin Panel - Super Admin Nuxt.js Application (Pre-built)
+  # Admin Panel - Super Admin Nuxt.js Application (Multi-stage build)
   admin:
     build:
-      context: .
-      dockerfile: Dockerfile.admin-prod
+      context: ..
+      dockerfile: docker/Dockerfile.admin-prod
     container_name: otobia-admin
     labels:
       - "traefik.enable=true"
@@ -128,11 +128,11 @@ services:
       - api-gateway
     restart: unless-stopped
 
-  # Gallery Panel - Galeri Yonetim Paneli Nuxt.js Application (Pre-built)
+  # Gallery Panel - Galeri Yonetim Paneli Nuxt.js Application (Multi-stage build)
   panel:
     build:
-      context: .
-      dockerfile: Dockerfile.panel-prod
+      context: ..
+      dockerfile: docker/Dockerfile.panel-prod
     container_name: otobia-panel
     labels:
       - "traefik.enable=true"
