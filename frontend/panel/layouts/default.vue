@@ -163,7 +163,8 @@ import {
   Moon,
   Plus,
   LogOut,
-  Video
+  Video,
+  ShieldCheck
 } from 'lucide-vue-next'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -208,8 +209,11 @@ watch(isDark, (dark) => {
 const isSidebarOpen = ref(false)
 const route = useRoute()
 const api = useApi()
+const userRole = ref<string>('')
+const pendingApprovalCount = ref<number>(0)
 
-const navItems = ref([
+// Base nav items for all users
+const baseNavItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/shorts', label: 'Oto Shorts', icon: Video, highlight: true, color: 'violet' },
   { path: '/marketplace', label: 'Oto Pazarı', icon: Car, highlight: true, color: 'orange' },
@@ -224,7 +228,36 @@ const navItems = ref([
   { path: '/notifications', label: 'Bildirimler', icon: Bell, badge: null as string | null },
   { path: '/help', label: 'Yardım', icon: HelpCircle },
   { path: '/settings', label: 'Ayarlar', icon: Settings },
-])
+]
+
+// Superadmin only items
+const adminNavItems = [
+  { path: '/admin/approvals', label: 'Araç Onayları', icon: ShieldCheck, badge: null as string | null, highlight: true, color: 'green' },
+]
+
+const navItems = computed(() => {
+  if (userRole.value === 'superadmin') {
+    // Insert admin items after Dashboard
+    const items = [...baseNavItems]
+    items.splice(1, 0, ...adminNavItems.map(item => ({
+      ...item,
+      badge: pendingApprovalCount.value > 0 ? pendingApprovalCount.value.toString() : null
+    })))
+    return items
+  }
+  return baseNavItems
+})
+
+const loadUserRole = async () => {
+  try {
+    const response = await api.get<{ success: boolean; data: { role: string } }>('/auth/me')
+    if (response.success && response.data) {
+      userRole.value = response.data.role || ''
+    }
+  } catch (e) {
+    console.error('User role error:', e)
+  }
+}
 
 const loadSidebarCounts = async () => {
   try {
@@ -232,7 +265,7 @@ const loadSidebarCounts = async () => {
     try {
       const vehiclesRes = await api.get<{ success: boolean; pagination?: { total: number } }>('/vehicles?limit=1')
       if (vehiclesRes.success && vehiclesRes.pagination) {
-        const vehicleItem = navItems.value.find(item => item.path === '/vehicles')
+        const vehicleItem = baseNavItems.find(item => item.path === '/vehicles')
         if (vehicleItem) {
           vehicleItem.badge = vehiclesRes.pagination.total > 0 ? vehiclesRes.pagination.total.toString() : null
         }
@@ -246,7 +279,7 @@ const loadSidebarCounts = async () => {
       const offersRes = await api.get<{ success: boolean; data?: any[] }>('/offers')
       if (offersRes.success && offersRes.data) {
         const pendingOffers = offersRes.data.filter((o: any) => o.status === 'pending').length
-        const offerItem = navItems.value.find(item => item.path === '/offers')
+        const offerItem = baseNavItems.find(item => item.path === '/offers')
         if (offerItem) {
           offerItem.badge = pendingOffers > 0 ? pendingOffers.toString() : null
         }
@@ -260,7 +293,7 @@ const loadSidebarCounts = async () => {
       const chatsRes = await api.get<{ success: boolean; data?: any[] }>('/chats')
       if (chatsRes.success && chatsRes.data) {
         const unreadCount = chatsRes.data.reduce((sum: number, chat: any) => sum + (chat.unread_count || 0), 0)
-        const chatItem = navItems.value.find(item => item.path === '/chats')
+        const chatItem = baseNavItems.find(item => item.path === '/chats')
         if (chatItem) {
           chatItem.badge = unreadCount > 0 ? unreadCount.toString() : null
         }
@@ -273,7 +306,7 @@ const loadSidebarCounts = async () => {
     try {
       const notifRes = await api.get<{ success: boolean; data?: any[] }>('/notifications?unread=true')
       if (notifRes.success && notifRes.data) {
-        const notifItem = navItems.value.find(item => item.path === '/notifications')
+        const notifItem = baseNavItems.find(item => item.path === '/notifications')
         if (notifItem) {
           notifItem.badge = notifRes.data.length > 0 ? notifRes.data.length.toString() : null
         }
@@ -281,12 +314,25 @@ const loadSidebarCounts = async () => {
     } catch (e) {
       console.error('Notification count error:', e)
     }
+
+    // Load pending approval count for superadmin
+    if (userRole.value === 'superadmin') {
+      try {
+        const approvalRes = await api.get<{ success: boolean; pagination?: { total: number } }>('/vehicles/pending-approval')
+        if (approvalRes.success && approvalRes.pagination) {
+          pendingApprovalCount.value = approvalRes.pagination.total
+        }
+      } catch (e) {
+        console.error('Pending approval count error:', e)
+      }
+    }
   } catch (error) {
     console.error('Sidebar counts error:', error)
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await loadUserRole()
   loadSidebarCounts()
   // Refresh counts every 30 seconds
   setInterval(loadSidebarCounts, 30000)
@@ -308,6 +354,7 @@ const pageTitle = computed(() => {
     '/notifications': 'Bildirimler',
     '/help': 'Yardım Merkezi',
     '/settings': 'Ayarlar',
+    '/admin/approvals': 'Araç Onayları',
   }
   return titles[route.path] || 'Dashboard'
 })
@@ -328,6 +375,7 @@ const pageSubtitle = computed(() => {
     '/notifications': 'Tüm bildirimlerinizi yönetin',
     '/help': 'Sık sorulan sorular ve destek kaynakları',
     '/settings': 'Galeri ayarları',
+    '/admin/approvals': 'Onay bekleyen araçları yönetin',
   }
   return subtitles[route.path] || 'Galeri yönetim paneli'
 })

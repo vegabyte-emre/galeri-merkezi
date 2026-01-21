@@ -313,5 +313,160 @@ export class VehicleController {
       message: 'Vehicle marked as sold'
     });
   }
+
+  // Galeri sahibi araç onaya gönderir
+  async submitForApproval(req: AuthenticatedRequest, res: Response) {
+    const { id } = req.params;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
+
+    if (!galleryId) {
+      throw new ValidationError('Gallery ID not found');
+    }
+
+    // Aracın mevcut durumunu kontrol et
+    const vehicle = await query(
+      'SELECT * FROM vehicles WHERE id = $1 AND gallery_id = $2',
+      [id, galleryId]
+    );
+
+    if (vehicle.rows.length === 0) {
+      throw new ValidationError('Vehicle not found');
+    }
+
+    const currentStatus = vehicle.rows[0].status;
+    if (currentStatus !== 'draft' && currentStatus !== 'rejected') {
+      throw new ValidationError('Only draft or rejected vehicles can be submitted for approval');
+    }
+
+    await query(
+      `UPDATE vehicles SET status = 'pending_approval', submitted_at = NOW(), submitted_by = $3 WHERE id = $1 AND gallery_id = $2`,
+      [id, galleryId, userInfo.sub]
+    );
+
+    // Superadmin'e bildirim gönder
+    await this.eventPublisher.publishVehicleSubmittedForApproval(id, galleryId);
+
+    res.json({
+      success: true,
+      message: 'Vehicle submitted for approval'
+    });
+  }
+
+  // Superadmin onay bekleyen araçları listeler
+  async listPendingApproval(req: AuthenticatedRequest, res: Response) {
+    const userInfo = getUserFromHeaders(req);
+    const { page = 1, limit = 20 } = req.query;
+
+    // Sadece superadmin erişebilir
+    if (userInfo.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can access pending approvals');
+    }
+
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const result = await query(
+      `SELECT v.*, g.name as gallery_name, g.city as gallery_city 
+       FROM vehicles v 
+       LEFT JOIN galleries g ON v.gallery_id = g.id
+       WHERE v.status = 'pending_approval' 
+       ORDER BY v.submitted_at ASC 
+       LIMIT $1 OFFSET $2`,
+      [Number(limit), offset]
+    );
+
+    const countResult = await query(
+      `SELECT COUNT(*) as total FROM vehicles WHERE status = 'pending_approval'`
+    );
+
+    res.json({
+      success: true,
+      data: result.rows,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: parseInt(countResult.rows[0].total),
+        totalPages: Math.ceil(parseInt(countResult.rows[0].total) / Number(limit))
+      }
+    });
+  }
+
+  // Superadmin aracı onaylar
+  async approve(req: AuthenticatedRequest, res: Response) {
+    const { id } = req.params;
+    const userInfo = getUserFromHeaders(req);
+
+    // Sadece superadmin onaylayabilir
+    if (userInfo.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can approve vehicles');
+    }
+
+    // Aracın mevcut durumunu kontrol et
+    const vehicle = await query(
+      'SELECT * FROM vehicles WHERE id = $1',
+      [id]
+    );
+
+    if (vehicle.rows.length === 0) {
+      throw new ValidationError('Vehicle not found');
+    }
+
+    if (vehicle.rows[0].status !== 'pending_approval') {
+      throw new ValidationError('Vehicle is not pending approval');
+    }
+
+    await query(
+      `UPDATE vehicles SET status = 'published', published_at = NOW(), approved_by = $2, approved_at = NOW() WHERE id = $1`,
+      [id, userInfo.sub]
+    );
+
+    // Galeri sahibine bildirim gönder ve Oto Pazarı'nda yayınla
+    await this.eventPublisher.publishVehicleApproved(id, vehicle.rows[0].gallery_id);
+    await this.eventPublisher.publishVehiclePublished(id);
+
+    res.json({
+      success: true,
+      message: 'Vehicle approved and published to Oto Pazarı'
+    });
+  }
+
+  // Superadmin aracı reddeder
+  async reject(req: AuthenticatedRequest, res: Response) {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userInfo = getUserFromHeaders(req);
+
+    // Sadece superadmin reddedebilir
+    if (userInfo.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can reject vehicles');
+    }
+
+    // Aracın mevcut durumunu kontrol et
+    const vehicle = await query(
+      'SELECT * FROM vehicles WHERE id = $1',
+      [id]
+    );
+
+    if (vehicle.rows.length === 0) {
+      throw new ValidationError('Vehicle not found');
+    }
+
+    if (vehicle.rows[0].status !== 'pending_approval') {
+      throw new ValidationError('Vehicle is not pending approval');
+    }
+
+    await query(
+      `UPDATE vehicles SET status = 'rejected', rejection_reason = $2, rejected_by = $3, rejected_at = NOW() WHERE id = $1`,
+      [id, reason || 'Belirtilmedi', userInfo.sub]
+    );
+
+    // Galeri sahibine bildirim gönder
+    await this.eventPublisher.publishVehicleRejected(id, vehicle.rows[0].gallery_id, reason);
+
+    res.json({
+      success: true,
+      message: 'Vehicle rejected'
+    });
+  }
 }
 

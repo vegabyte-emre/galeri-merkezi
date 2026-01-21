@@ -348,17 +348,26 @@
         <!-- Actions -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <!-- Status Actions -->
+            <!-- Onaya Gönder - Taslak veya Reddedilmiş araçlar için -->
             <button
-              v-if="vehicleStatus === 'draft'"
+              v-if="vehicleStatus === 'draft' || vehicleStatus === 'rejected'"
               type="button"
-              @click="publishVehicle"
+              @click="submitForApproval"
               :disabled="loading"
-              class="px-4 py-2.5 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50 flex items-center gap-2"
+              class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
             >
-              <Play class="w-4 h-4" />
-              Yayınla
+              <Send class="w-4 h-4" />
+              Onaya Gönder
             </button>
+            <!-- Onay Bekliyor durumu -->
+            <div
+              v-if="vehicleStatus === 'pending_approval'"
+              class="px-4 py-2.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-semibold rounded-xl flex items-center gap-2"
+            >
+              <Clock class="w-4 h-4" />
+              Onay Bekliyor
+            </div>
+            <!-- Yayında olan araçlar için Duraklat -->
             <button
               v-if="vehicleStatus === 'published'"
               type="button"
@@ -369,18 +378,20 @@
               <Pause class="w-4 h-4" />
               Duraklat
             </button>
+            <!-- Duraklatılmış araçlar için Tekrar Onaya Gönder -->
             <button
               v-if="vehicleStatus === 'paused'"
               type="button"
-              @click="publishVehicle"
+              @click="submitForApproval"
               :disabled="loading"
-              class="px-4 py-2.5 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50 flex items-center gap-2"
+              class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
             >
-              <Play class="w-4 h-4" />
-              Tekrar Yayınla
+              <Send class="w-4 h-4" />
+              Tekrar Onaya Gönder
             </button>
+            <!-- Satıldı butonu -->
             <button
-              v-if="vehicleStatus !== 'sold' && vehicleStatus !== 'archived'"
+              v-if="vehicleStatus !== 'sold' && vehicleStatus !== 'archived' && vehicleStatus !== 'pending_approval'"
               type="button"
               @click="markAsSold"
               :disabled="loading"
@@ -452,9 +463,10 @@
                 :class="{
                   'bg-green-400/30 text-green-100': vehicleStatus === 'published',
                   'bg-gray-400/30 text-gray-100': vehicleStatus === 'draft',
+                  'bg-orange-400/30 text-orange-100': vehicleStatus === 'pending_approval',
                   'bg-yellow-400/30 text-yellow-100': vehicleStatus === 'paused',
                   'bg-blue-400/30 text-blue-100': vehicleStatus === 'sold',
-                  'bg-red-400/30 text-red-100': vehicleStatus === 'archived'
+                  'bg-red-400/30 text-red-100': vehicleStatus === 'archived' || vehicleStatus === 'rejected'
                 }"
               >
                 {{ statusLabels[vehicleStatus] || vehicleStatus }}
@@ -462,13 +474,20 @@
             </div>
           </div>
         </div>
+
+        <!-- Reddedilme Sebebi -->
+        <div v-if="vehicleStatus === 'rejected' && rejectionReason" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4">
+          <h4 class="text-sm font-bold text-red-700 dark:text-red-400 mb-2">Reddedilme Sebebi</h4>
+          <p class="text-sm text-red-600 dark:text-red-300">{{ rejectionReason }}</p>
+          <p class="text-xs text-red-500 dark:text-red-400 mt-2">Düzenleme yapıp tekrar onaya gönderebilirsiniz.</p>
+        </div>
       </div>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Upload, Car, Settings, FileText, Image as ImageIcon, DollarSign, Play, Pause, Check } from 'lucide-vue-next'
+import { ArrowLeft, Upload, Car, Settings, FileText, Image as ImageIcon, DollarSign, Play, Pause, Check, Send, Clock } from 'lucide-vue-next'
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '~/composables/useApi'
@@ -511,6 +530,7 @@ const toast = useToast()
 const vehicleId = route.params.id as string
 const loading = ref(false)
 const vehicleStatus = ref<string>('draft')
+const rejectionReason = ref<string>('')
 const loadingBrands = ref(false)
 const loadingYears = ref(false)
 const loadingModels = ref(false)
@@ -532,9 +552,11 @@ const selectedEngineId = ref<number | ''>('')
 const statusLabels: Record<string, string> = {
   published: 'Yayında',
   draft: 'Taslak',
+  pending_approval: 'Onay Bekliyor',
   paused: 'Duraklatıldı',
   archived: 'Arşivlendi',
-  sold: 'Satıldı'
+  sold: 'Satıldı',
+  rejected: 'Reddedildi'
 }
 
 // Computed properties
@@ -782,6 +804,7 @@ onMounted(async () => {
         form.plateOrigin = v.plate_nationality === 'TR' ? 'Türkiye' : 'Yabancı'
         form.description = v.description || ''
         vehicleStatus.value = v.status || 'draft'
+        rejectionReason.value = v.rejection_reason || ''
         
         // Try to set brand and year from existing data
         if (v.brand) {
@@ -829,13 +852,13 @@ const saveVehicle = async () => {
   }
 }
 
-// Yayınla
-const publishVehicle = async () => {
+// Onaya Gönder
+const submitForApproval = async () => {
   loading.value = true
   try {
-    await api.post(`/vehicles/${vehicleId}/publish`)
-    vehicleStatus.value = 'published'
-    toast.success('Araç yayınlandı!')
+    await api.post(`/vehicles/${vehicleId}/submit-approval`)
+    vehicleStatus.value = 'pending_approval'
+    toast.success('Araç onaya gönderildi! Superadmin onayından sonra Oto Pazarı\'nda yayınlanacak.')
   } catch (error: any) {
     toast.error('Hata: ' + error.message)
   } finally {
