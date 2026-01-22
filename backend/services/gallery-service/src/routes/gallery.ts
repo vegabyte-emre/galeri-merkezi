@@ -5,18 +5,31 @@ import { query } from '@galeri/shared/database/connection';
 const router = Router();
 const controller = new GalleryController();
 
-// List all galleries (for mobile app marketplace)
+// List all galleries (for both admin panel and mobile app)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { city, district, search, limit = 50, skip = 0 } = req.query;
+    const { city, district, search, status, limit = 50, skip = 0, page } = req.query;
     const currentGalleryId = req.headers['x-gallery-id'] as string;
+    const userRole = req.headers['x-user-role'] as string;
     
-    let whereClause = "WHERE status = 'active'";
+    // Admin roles can see all statuses, others only see active
+    const isAdmin = ['superadmin', 'admin', 'compliance_officer'].includes(userRole);
+    
+    let whereClause = 'WHERE 1=1';
     const params: any[] = [];
     let paramCount = 1;
     
-    // Exclude current gallery
-    if (currentGalleryId) {
+    // Non-admin users only see active galleries
+    if (!isAdmin) {
+      whereClause += " AND status = 'active'";
+    } else if (status) {
+      whereClause += ` AND status = $${paramCount}`;
+      params.push(status);
+      paramCount++;
+    }
+    
+    // Exclude current gallery for mobile marketplace
+    if (currentGalleryId && !isAdmin) {
       whereClause += ` AND id != $${paramCount}`;
       params.push(currentGalleryId);
       paramCount++;
@@ -40,14 +53,18 @@ router.get('/', async (req: Request, res: Response) => {
       paramCount++;
     }
     
+    // Calculate offset from page if provided
+    const actualLimit = Number(limit);
+    const actualOffset = page ? (Number(page) - 1) * actualLimit : Number(skip);
+    
     const result = await query(
-      `SELECT id, name, slug, phone, email, city, district, logo_url, cover_url, 
-              working_hours, latitude, longitude, created_at
+      `SELECT id, name, slug, phone, email, city, district, status, logo_url, cover_url, 
+              working_hours, latitude, longitude, created_at, updated_at
        FROM galleries 
        ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramCount} OFFSET $${paramCount + 1}`,
-      [...params, Number(limit), Number(skip)]
+      [...params, actualLimit, actualOffset]
     );
     
     const countResult = await query(
@@ -55,13 +72,19 @@ router.get('/', async (req: Request, res: Response) => {
       params
     );
     
+    const total = parseInt(countResult.rows[0].total);
+    
+    // Return in format compatible with both admin panel and mobile
     res.json({
       success: true,
-      data: result.rows,
+      galleries: result.rows,  // For admin panel compatibility
+      data: result.rows,       // For mobile app compatibility
       pagination: {
-        total: parseInt(countResult.rows[0].total),
-        limit: Number(limit),
-        skip: Number(skip)
+        total,
+        limit: actualLimit,
+        skip: actualOffset,
+        page: page ? Number(page) : Math.floor(actualOffset / actualLimit) + 1,
+        totalPages: Math.ceil(total / actualLimit)
       }
     });
   } catch (error: any) {
@@ -92,6 +115,70 @@ router.get('/:id', async (req: Request, res: Response) => {
       success: true,
       data: result.rows[0]
     });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Admin actions on galleries
+router.post('/:id/approve', async (req: Request, res: Response) => {
+  try {
+    const userRole = req.headers['x-user-role'] as string;
+    const userId = req.headers['x-user-id'] as string;
+    
+    if (!['superadmin', 'admin'].includes(userRole)) {
+      return res.status(403).json({ success: false, message: 'Only admin can approve galleries' });
+    }
+    
+    const { id } = req.params;
+    await query(
+      `UPDATE galleries SET status = 'active', approved_at = NOW(), approved_by = $1, updated_at = NOW() WHERE id = $2`,
+      [userId, id]
+    );
+    
+    res.json({ success: true, message: 'Gallery approved successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/:id/reject', async (req: Request, res: Response) => {
+  try {
+    const userRole = req.headers['x-user-role'] as string;
+    
+    if (!['superadmin', 'admin'].includes(userRole)) {
+      return res.status(403).json({ success: false, message: 'Only admin can reject galleries' });
+    }
+    
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    await query(
+      `UPDATE galleries SET status = 'rejected', rejection_reason = $1, updated_at = NOW() WHERE id = $2`,
+      [reason || 'No reason provided', id]
+    );
+    
+    res.json({ success: true, message: 'Gallery rejected' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/:id/suspend', async (req: Request, res: Response) => {
+  try {
+    const userRole = req.headers['x-user-role'] as string;
+    
+    if (!['superadmin', 'admin'].includes(userRole)) {
+      return res.status(403).json({ success: false, message: 'Only admin can suspend galleries' });
+    }
+    
+    const { id } = req.params;
+    await query(
+      `UPDATE galleries SET status = 'suspended', updated_at = NOW() WHERE id = $1`,
+      [id]
+    );
+    
+    res.json({ success: true, message: 'Gallery suspended' });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

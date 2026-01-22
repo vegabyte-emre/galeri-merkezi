@@ -59,7 +59,7 @@ export class UserController {
     
     const result = await query(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.status, u.gallery_id,
-              u.created_at, u.last_login_at,
+              u.created_at, u.last_login,
               g.name as gallery_name
        FROM users u
        LEFT JOIN galleries g ON u.gallery_id = g.id
@@ -83,7 +83,7 @@ export class UserController {
       status: u.status,
       gallery: u.gallery_name,
       galleryId: u.gallery_id,
-      lastLogin: u.last_login_at,
+      lastLogin: u.last_login,
       createdAt: u.created_at
     }));
     
@@ -144,9 +144,17 @@ export class UserController {
       } else {
         // Create a new gallery for gallery_owner
         if (role === 'gallery_owner') {
+          // Generate slug from name
+          const galleryName = `${firstName}'s Gallery`;
+          const slug = galleryName.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim() + '-' + Date.now();
+          
           const galleryResult = await query(
-            `INSERT INTO galleries (name, status, created_at) VALUES ($1, 'active', NOW()) RETURNING id`,
-            [`${firstName}'s Gallery`]
+            `INSERT INTO galleries (name, slug, status, created_at, updated_at) VALUES ($1, $2, 'active', NOW(), NOW()) RETURNING id`,
+            [galleryName, slug]
           );
           finalGalleryId = galleryResult.rows[0].id;
         }
