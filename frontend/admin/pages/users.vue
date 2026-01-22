@@ -177,9 +177,10 @@
           </button>
           <button
             @click="createUser"
-            class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+            :disabled="createLoading"
+            class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Oluştur
+            {{ createLoading ? 'Oluşturuluyor...' : 'Oluştur' }}
           </button>
         </div>
       </div>
@@ -357,12 +358,15 @@ const saveEditUser = async () => {
   }
 }
 
+const createLoading = ref(false)
+
 const createUser = async () => {
   if (!newUser.value.name || !newUser.value.email || !newUser.value.password) {
     toast.warning('Lütfen tüm gerekli alanları doldurun')
     return
   }
   
+  createLoading.value = true
   try {
     const response = await api.post('/users', newUser.value)
     users.value.push(response)
@@ -370,7 +374,10 @@ const createUser = async () => {
     newUser.value = { name: '', email: '', password: '', role: 'gallery_owner', galleryId: null }
     toast.success('Kullanıcı başarıyla oluşturuldu!')
   } catch (error: any) {
+    console.error('Create user error:', error)
     toast.error('Hata: ' + error.message)
+  } finally {
+    createLoading.value = false
   }
 }
 

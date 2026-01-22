@@ -132,6 +132,9 @@
       @click="isSidebarOpen = false"
       class="fixed inset-0 bg-black/50 z-30 md:hidden"
     ></div>
+
+    <!-- Toast Container -->
+    <ToastContainer />
   </div>
 </template>
 

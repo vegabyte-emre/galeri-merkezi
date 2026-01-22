@@ -1,5 +1,3 @@
-import { ref, readonly } from 'vue'
-
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
 export interface Toast {
@@ -9,8 +7,9 @@ export interface Toast {
   duration?: number
 }
 
+// Global toast state using useState for SSR compatibility
 export const useToast = () => {
-  const toasts = ref<Toast[]>([])
+  const toasts = useState<Toast[]>('global-toasts', () => [])
 
   const show = (type: ToastType, message: string, duration = 3000) => {
     const id = Math.random().toString(36).substring(7)
@@ -40,7 +39,7 @@ export const useToast = () => {
   const info = (message: string, duration?: number) => show('info', message, duration)
 
   return {
-    toasts: readonly(toasts),
+    toasts,
     show,
     remove,
     success,
