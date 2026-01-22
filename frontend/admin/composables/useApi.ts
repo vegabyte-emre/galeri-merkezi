@@ -1,6 +1,6 @@
 export const useApi = () => {
   const config = useRuntimeConfig()
-  const baseUrl = config.public.apiUrl || 'http://localhost:3000'
+  const baseUrl = config.public.apiUrl || 'https://api.otobia.com/api/v1'
   // Ensure all API calls go through /api/v1 prefix
   const apiUrl = baseUrl.endsWith('/api/v1') ? baseUrl : `${baseUrl}/api/v1`
 

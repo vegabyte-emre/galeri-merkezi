@@ -4,7 +4,7 @@ import { ref, computed } from 'vue'
 export const useWebSocket = () => {
   const config = useRuntimeConfig()
   // Socket.IO uses HTTP/HTTPS, not ws://
-  const wsUrl = config.public.wsUrl || 'http://localhost:3005'
+  const wsUrl = config.public.wsUrl || 'https://chat.otobia.com'
   const token = useCookie('auth_token')
   
   let socket: Socket | null = null

@@ -20,8 +20,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:3000',
-      wsUrl: process.env.NUXT_PUBLIC_WS_URL || 'ws://localhost:3005'
+      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'https://api.otobia.com/api/v1',
+      wsUrl: process.env.NUXT_PUBLIC_WS_URL || 'wss://chat.otobia.com'
     }
   },
   ssr: false
