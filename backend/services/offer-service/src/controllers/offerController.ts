@@ -320,7 +320,8 @@ export class OfferController {
 
   async send(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
-    const galleryId = req.user?.gallery_id;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -344,7 +345,7 @@ export class OfferController {
     const { publishToQueue } = await import('@galeri/shared/utils/rabbitmq');
     await publishToQueue('notifications_queue', {
       id: uuidv4(),
-      userId: offerResult.rows[0].seller_gallery_id, // TODO: Get user ID from gallery
+      userId: offerResult.rows[0].seller_gallery_id,
       type: 'new_offer',
       title: 'Yeni Teklif',
       body: `Araçınız için yeni bir teklif geldi`,
@@ -359,7 +360,8 @@ export class OfferController {
 
   async counter(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
-    const galleryId = req.user?.gallery_id;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
     const { amount, note } = req.body;
 
     if (!galleryId) {
@@ -402,7 +404,7 @@ export class OfferController {
           note,
           id,
           (originalOffer.version || 1) + 1,
-          req.user?.sub
+          userInfo.sub
         ]
       );
 
@@ -410,7 +412,7 @@ export class OfferController {
       await client.query(
         `INSERT INTO offer_history (offer_id, old_status, new_status, old_amount, new_amount, changed_by)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [id, originalOffer.status, 'counter_offer', originalOffer.amount, amount, req.user?.sub]
+        [id, originalOffer.status, 'counter_offer', originalOffer.amount, amount, userInfo.sub]
       );
 
       await client.query('COMMIT');
@@ -419,7 +421,7 @@ export class OfferController {
       const { publishToQueue } = await import('@galeri/shared/utils/rabbitmq');
       await publishToQueue('notifications_queue', {
         id: uuidv4(),
-        userId: originalOffer.buyer_gallery_id, // TODO: Get user ID
+        userId: originalOffer.buyer_gallery_id,
         type: 'offer_counter',
         title: 'Karşı Teklif',
         body: `Teklifinize karşı teklif yapıldı`,
@@ -440,14 +442,15 @@ export class OfferController {
 
   async accept(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
-    const galleryId = req.user?.gallery_id;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
     }
 
     const allowedRoles = ['gallery_owner', 'gallery_manager'];
-    if (!allowedRoles.includes(req.user?.role || '')) {
+    if (!allowedRoles.includes(userInfo.role || '')) {
       throw new ForbiddenError('Insufficient permissions');
     }
 
@@ -469,7 +472,7 @@ export class OfferController {
       // Update offer status
       await client.query(
         `UPDATE offers SET status = 'accepted', accepted_by = $1, accepted_at = NOW() WHERE id = $2`,
-        [req.user?.sub, id]
+        [userInfo.sub, id]
       );
 
       // Cancel other active offers for this vehicle
@@ -483,7 +486,7 @@ export class OfferController {
       await client.query(
         `INSERT INTO offer_history (offer_id, old_status, new_status, changed_by)
          VALUES ($1, $2, $3, $4)`,
-        [id, offer.status, 'accepted', req.user?.sub]
+        [id, offer.status, 'accepted', userInfo.sub]
       );
 
       await client.query('COMMIT');
@@ -492,7 +495,7 @@ export class OfferController {
       const { publishToQueue } = await import('@galeri/shared/utils/rabbitmq');
       await publishToQueue('notifications_queue', {
         id: uuidv4(),
-        userId: offer.buyer_gallery_id, // TODO: Get user ID
+        userId: offer.buyer_gallery_id,
         type: 'offer_accepted',
         title: 'Teklif Kabul Edildi',
         body: `Teklifiniz kabul edildi`,
@@ -513,7 +516,8 @@ export class OfferController {
 
   async reject(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
-    const galleryId = req.user?.gallery_id;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
     const { reason } = req.body;
 
     if (!galleryId) {
@@ -540,14 +544,14 @@ export class OfferController {
     await query(
       `INSERT INTO offer_history (offer_id, old_status, new_status, change_reason, changed_by)
        VALUES ($1, $2, $3, $4, $5)`,
-      [id, offer.status, 'rejected', reason, req.user?.sub]
+      [id, offer.status, 'rejected', reason, userInfo.sub]
     );
 
     // Publish event for notification
     const { publishToQueue } = await import('@galeri/shared/utils/rabbitmq');
     await publishToQueue('notifications_queue', {
       id: uuidv4(),
-      userId: offer.buyer_gallery_id, // TODO: Get user ID
+      userId: offer.buyer_gallery_id,
       type: 'offer_rejected',
       title: 'Teklif Reddedildi',
       body: `Teklifiniz reddedildi`,
@@ -562,7 +566,8 @@ export class OfferController {
 
   async cancel(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
-    const galleryId = req.user?.gallery_id;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -590,7 +595,8 @@ export class OfferController {
 
   async reserve(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
-    const galleryId = req.user?.gallery_id;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
     const { reservedUntil } = req.body;
 
     if (!galleryId) {
@@ -619,7 +625,8 @@ export class OfferController {
 
   async convert(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
-    const galleryId = req.user?.gallery_id;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -656,7 +663,7 @@ export class OfferController {
       await client.query(
         `INSERT INTO offer_history (offer_id, old_status, new_status, changed_by)
          VALUES ($1, $2, $3, $4)`,
-        [id, 'accepted', 'converted', req.user?.sub]
+        [id, 'accepted', 'converted', userInfo.sub]
       );
 
       await client.query('COMMIT');
@@ -665,7 +672,7 @@ export class OfferController {
       const { publishToQueue } = await import('@galeri/shared/utils/rabbitmq');
       await publishToQueue('notifications_queue', {
         id: uuidv4(),
-        userId: offer.buyer_gallery_id, // TODO: Get user ID
+        userId: offer.buyer_gallery_id,
         type: 'offer_converted',
         title: 'Satış Gerçekleşti',
         body: `Teklifiniz satışa dönüştürüldü`,
@@ -691,7 +698,8 @@ export class OfferController {
 
   async getHistory(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
-    const galleryId = req.user?.gallery_id;
+    const userInfo = getUserFromHeaders(req);
+    const galleryId = userInfo.gallery_id;
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');

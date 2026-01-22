@@ -517,7 +517,14 @@ app.use('/api/v1/admin', createProxyMiddleware({
     logger.error('Admin service proxy error', { error: err.message });
     res.status(500).json({ error: 'Admin service unavailable' });
   },
-  onProxyReq: fixRequestBody
+  onProxyReq: (proxyReq, req: any, res) => {
+    if (req.user) {
+      proxyReq.setHeader('x-user-id', req.user.sub || '');
+      proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
+      proxyReq.setHeader('x-user-role', req.user.role || '');
+    }
+    fixRequestBody(proxyReq, req as any);
+  }
 }));
 
 // Contact
@@ -529,7 +536,14 @@ app.use('/api/v1/contact', createProxyMiddleware({
     logger.error('Contact service proxy error', { error: err.message });
     res.status(500).json({ error: 'Contact service unavailable' });
   },
-  onProxyReq: fixRequestBody
+  onProxyReq: (proxyReq, req: any, res) => {
+    if (req.user) {
+      proxyReq.setHeader('x-user-id', req.user.sub || '');
+      proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
+      proxyReq.setHeader('x-user-role', req.user.role || '');
+    }
+    fixRequestBody(proxyReq, req as any);
+  }
 }));
 
 // System routes
@@ -541,7 +555,14 @@ app.use('/api/v1/system', createProxyMiddleware({
     logger.error('System service proxy error', { error: err.message });
     res.status(500).json({ error: 'System service unavailable' });
   },
-  onProxyReq: fixRequestBody
+  onProxyReq: (proxyReq, req: any, res) => {
+    if (req.user) {
+      proxyReq.setHeader('x-user-id', req.user.sub || '');
+      proxyReq.setHeader('x-gallery-id', req.user.gallery_id || '');
+      proxyReq.setHeader('x-user-role', req.user.role || '');
+    }
+    fixRequestBody(proxyReq, req as any);
+  }
 }));
 
 app.use(errorHandler);
