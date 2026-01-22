@@ -790,18 +790,101 @@ export class AdminController {
         { type: 'Galeri Kayıtları', description: 'Yeni galeri başvuruları', count: galleriesResult.rows[0].new || 0, percentage: 25, icon: 'Building2', iconBg: 'bg-green-100', iconColor: 'text-green-600' },
         { type: 'Kullanıcı Girişleri', description: 'Aktif kullanıcılar', count: usersResult.rows[0].active || 0, percentage: 35, icon: 'Users', iconBg: 'bg-purple-100', iconColor: 'text-purple-600' }
       ],
-      topPerformers: [
-        { name: 'İstanbul', metric: 'En çok galeri', value: '45%' },
-        { name: 'Ankara', metric: 'En çok araç', value: '20%' },
-        { name: 'İzmir', metric: 'En yüksek satış', value: '15%' }
-      ],
+      topPerformers: regions.length > 0 ? regions.slice(0, 3).map((r, i) => ({
+        name: r.name,
+        metric: i === 0 ? 'En çok galeri' : i === 1 ? 'En çok araç' : 'En yüksek satış',
+        value: `${r.percentage}%`
+      })) : [],
       regions,
-      charts: {
+      charts: await this.getChartData(period as string, interval)
+    });
+  }
+
+  // Helper method to get chart data
+  private async getChartData(period: string, interval: string) {
+    try {
+      // Get user growth data (last 4 weeks or months based on period)
+      const isWeekly = period === 'week';
+      const dateFormat = isWeekly ? 'YYYY-MM-DD' : 'YYYY-MM';
+      const groupBy = isWeekly ? 'DATE(created_at)' : 'DATE_TRUNC(\'month\', created_at)';
+      
+      const userGrowthResult = await query(`
+        SELECT 
+          ${groupBy} as period,
+          COUNT(*) as count
+        FROM users
+        WHERE created_at > NOW() - INTERVAL '${interval}'
+        GROUP BY ${groupBy}
+        ORDER BY period ASC
+        LIMIT 12
+      `);
+
+      const userGrowthLabels = userGrowthResult.rows.map((r: any) => {
+        const date = new Date(r.period);
+        return isWeekly 
+          ? `${date.getDate()}/${date.getMonth() + 1}`
+          : `${date.getMonth() + 1}/${date.getFullYear()}`;
+      });
+      const userGrowthData = userGrowthResult.rows.map((r: any) => parseInt(r.count));
+
+      // Get revenue data (from subscriptions if available)
+      let revenueData: number[] = [];
+      let revenueLabels: string[] = [];
+      
+      try {
+        const revenueResult = await query(`
+          SELECT 
+            ${groupBy} as period,
+            SUM(price) as total
+          FROM subscriptions
+          WHERE created_at > NOW() - INTERVAL '${interval}'
+            AND status = 'active'
+          GROUP BY ${groupBy}
+          ORDER BY period ASC
+          LIMIT 12
+        `);
+
+        revenueLabels = revenueResult.rows.map((r: any) => {
+          const date = new Date(r.period);
+          return isWeekly 
+            ? `${date.getDate()}/${date.getMonth() + 1}`
+            : `${date.getMonth() + 1}/${date.getFullYear()}`;
+        });
+        revenueData = revenueResult.rows.map((r: any) => parseFloat(r.total || '0'));
+      } catch (e) {
+        // If subscriptions table doesn't exist, use empty data
+        revenueLabels = userGrowthLabels;
+        revenueData = new Array(userGrowthLabels.length).fill(0);
+      }
+
+      return {
+        userGrowth: {
+          labels: userGrowthLabels.length > 0 ? userGrowthLabels : ['Hafta 1', 'Hafta 2', 'Hafta 3', 'Hafta 4'],
+          datasets: [{
+            label: 'Yeni Kullanıcılar',
+            data: userGrowthData.length > 0 ? userGrowthData : [0, 0, 0, 0],
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true
+          }]
+        },
+        revenue: {
+          labels: revenueLabels.length > 0 ? revenueLabels : userGrowthLabels.length > 0 ? userGrowthLabels : ['Hafta 1', 'Hafta 2', 'Hafta 3', 'Hafta 4'],
+          datasets: [{
+            label: 'Gelir (₺)',
+            data: revenueData.length > 0 ? revenueData : [0, 0, 0, 0],
+            backgroundColor: 'rgba(34, 197, 94, 0.8)'
+          }]
+        }
+      };
+    } catch (e) {
+      // Fallback to empty charts
+      return {
         userGrowth: {
           labels: ['Hafta 1', 'Hafta 2', 'Hafta 3', 'Hafta 4'],
           datasets: [{
             label: 'Yeni Kullanıcılar',
-            data: [10, 15, 12, 18],
+            data: [0, 0, 0, 0],
             borderColor: 'rgb(59, 130, 246)',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             fill: true
@@ -811,12 +894,12 @@ export class AdminController {
           labels: ['Hafta 1', 'Hafta 2', 'Hafta 3', 'Hafta 4'],
           datasets: [{
             label: 'Gelir (₺)',
-            data: [5000, 7500, 6000, 9000],
+            data: [0, 0, 0, 0],
             backgroundColor: 'rgba(34, 197, 94, 0.8)'
           }]
         }
-      }
-    });
+      };
+    }
   }
 
   // ===================== SUBSCRIPTIONS =====================
