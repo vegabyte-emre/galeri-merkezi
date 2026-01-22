@@ -154,7 +154,7 @@ export class UserController {
           
           const galleryResult = await query(
             `INSERT INTO galleries (name, slug, status, tax_type, created_at, updated_at) 
-             VALUES ($1, $2, 'active', 'individual', NOW(), NOW()) RETURNING id`,
+             VALUES ($1, $2, 'active', 'corp', NOW(), NOW()) RETURNING id`,
             [galleryName, slug]
           );
           finalGalleryId = galleryResult.rows[0].id;
