@@ -4,30 +4,40 @@ export default defineNuxtRouteMiddleware((to, from) => {
     return
   }
 
+  // Only run on client side
+  if (import.meta.server) {
+    return
+  }
+
   // Check for auth token
   const token = useCookie('auth_token')
+  const user = useCookie('user')
   
+  // No token = redirect to login
   if (!token.value) {
-    // No token, redirect to login
     return navigateTo('/login')
   }
 
-  // Optional: Check if user is superadmin
-  const user = useCookie('user')
-  if (user.value) {
-    try {
-      const userData = typeof user.value === 'string' ? JSON.parse(user.value) : user.value
-      if (userData.role !== 'superadmin' && userData.role !== 'admin') {
-        // Not admin, clear cookies and redirect to login
-        token.value = null
-        user.value = null
-        return navigateTo('/login')
-      }
-    } catch (e) {
-      // Invalid user data, clear and redirect
+  // Token exists but no user data = invalid session
+  if (!user.value) {
+    token.value = null
+    return navigateTo('/login')
+  }
+
+  // Validate user role
+  try {
+    const userData = typeof user.value === 'string' ? JSON.parse(user.value) : user.value
+    
+    // Only allow superadmin and admin roles
+    if (userData.role !== 'superadmin' && userData.role !== 'admin') {
       token.value = null
       user.value = null
       return navigateTo('/login')
     }
+  } catch (e) {
+    // Invalid user data
+    token.value = null
+    user.value = null
+    return navigateTo('/login')
   }
 })
