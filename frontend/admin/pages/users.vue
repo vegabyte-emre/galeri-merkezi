@@ -1,26 +1,26 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Kullanıcılar</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Tüm kullanıcıları görüntüleyin ve yönetin</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <div class="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
           <Search class="w-4 h-4 text-gray-400" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Kullanıcı ara..."
-            class="bg-transparent border-0 outline-0 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 w-64"
+            class="bg-transparent border-0 outline-0 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 w-full sm:w-64"
           />
         </div>
         <button 
-          @click="showCreateModal = true"
-          class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+          @click="openCreateModal"
+          class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
         >
-          <Plus class="w-4 h-4 inline mr-2" />
+          <Plus class="w-4 h-4" />
           Yeni Kullanıcı
         </button>
       </div>
@@ -33,10 +33,10 @@
           <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Kullanıcı</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Telefon</th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Rol</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Galeri</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Galeri</th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Durum</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Son Giriş</th>
               <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
             </tr>
           </thead>
@@ -48,28 +48,27 @@
             >
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold">
-                    {{ user.name.charAt(0) }}
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                    {{ user.name?.charAt(0) || '?' }}
                   </div>
-                  <div>
-                    <div class="font-medium text-gray-900 dark:text-white">{{ user.name }}</div>
-                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ user.email }}</div>
+                  <div class="min-w-0">
+                    <div class="font-medium text-gray-900 dark:text-white truncate">{{ user.name }}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ user.email }}</div>
                   </div>
                 </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 hidden md:table-cell">
+                {{ user.phone || '-' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
                   class="px-2 py-1 text-xs font-semibold rounded-full"
-                  :class="{
-                    'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400': user.role === 'admin',
-                    'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': user.role === 'gallery_owner',
-                    'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400': user.role === 'user'
-                  }"
+                  :class="getRoleBadgeClass(user.role)"
                 >
-                  {{ roleLabels[user.role] }}
+                  {{ roleLabels[user.role] || user.role }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white hidden lg:table-cell">
                 {{ user.gallery || '-' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -77,19 +76,17 @@
                   class="px-2 py-1 text-xs font-semibold rounded-full"
                   :class="{
                     'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': user.status === 'active',
+                    'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': user.status === 'suspended',
                     'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400': user.status === 'inactive'
                   }"
                 >
-                  {{ user.status === 'active' ? 'Aktif' : 'Pasif' }}
+                  {{ statusLabels[user.status] || user.status }}
                 </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {{ formatDate(user.lastLogin) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex items-center justify-end gap-2">
                   <button
-                    @click="editUser(user.id)"
+                    @click="openEditModal(user)"
                     class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-semibold"
                   >
                     Düzenle
@@ -103,260 +100,436 @@
                 </div>
               </td>
             </tr>
+            <tr v-if="filteredUsers.length === 0">
+              <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                {{ loading ? 'Yükleniyor...' : 'Kullanıcı bulunamadı' }}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
 
     <!-- Create User Modal -->
-    <div
-      v-if="showCreateModal"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      @click.self="showCreateModal = false"
-    >
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6">
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          Yeni Kullanıcı Ekle
-        </h3>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Ad Soyad
-            </label>
-            <input
-              v-model="newUser.name"
-              type="text"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Ad Soyad"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              E-posta
-            </label>
-            <input
-              v-model="newUser.email"
-              type="email"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="email@example.com"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Telefon
-            </label>
-            <input
-              v-model="newUser.phone"
-              type="tel"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="05XX XXX XX XX"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Şifre
-            </label>
-            <input
-              v-model="newUser.password"
-              type="password"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Şifre (en az 8 karakter, 1 büyük, 1 küçük harf)"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Rol
-            </label>
-            <select
-              v-model="newUser.role"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="superadmin">Süper Admin</option>
-              <option value="admin">Admin</option>
-              <option value="gallery_owner">Galeri Sahibi</option>
-              <option value="gallery_manager">Galeri Yöneticisi</option>
-              <option value="inventory_manager">Envanter Yöneticisi</option>
-            </select>
+    <Teleport to="body">
+      <div
+        v-if="showCreateModal"
+        class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+        @click.self="closeCreateModal"
+      >
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl my-8">
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Yeni Kullanıcı Ekle</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sisteme yeni bir kullanıcı ekleyin</p>
+            </div>
+            <button @click="closeCreateModal" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+              <X class="w-5 h-5 text-gray-500" />
+            </button>
           </div>
 
-          <!-- Galeri Bilgileri - Sadece Galeri Sahibi için -->
-          <div v-if="newUser.role === 'gallery_owner'" class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Galeri Bilgileri</h4>
-            
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Galeri Adı
-                </label>
-                <input
-                  v-model="newUser.galleryName"
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Örn: ABC Otomotiv"
-                />
+          <!-- Modal Body -->
+          <div class="p-6">
+            <!-- Temel Bilgiler -->
+            <div class="mb-6">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <User class="w-4 h-4" />
+                Temel Bilgiler
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ad Soyad <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="formData.name"
+                    type="text"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="Örn: Ahmet Yılmaz"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    E-posta <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="formData.email"
+                    type="email"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="ornek@email.com"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Telefon <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="formData.phone"
+                    type="tel"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="05XX XXX XX XX"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Şifre <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="formData.password"
+                    type="password"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="En az 8 karakter"
+                  />
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">En az 8 karakter, 1 büyük ve 1 küçük harf içermeli</p>
+                </div>
               </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Vergi Türü
-                </label>
-                <select
-                  v-model="newUser.taxType"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="VKN">VKN (Vergi Kimlik No - Şirket)</option>
-                  <option value="TCKN">TCKN (TC Kimlik No - Şahıs)</option>
-                </select>
+            </div>
+
+            <!-- Rol Seçimi -->
+            <div class="mb-6">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Shield class="w-4 h-4" />
+                Rol ve Yetki
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Kullanıcı Rolü <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    v-model="formData.role"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  >
+                    <option value="superadmin">Süper Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="compliance_officer">Uyum Sorumlusu</option>
+                    <option value="support_agent">Destek Temsilcisi</option>
+                    <option value="gallery_owner">Galeri Sahibi</option>
+                    <option value="gallery_manager">Galeri Yöneticisi</option>
+                    <option value="inventory_manager">Envanter Yöneticisi</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Durum
+                  </label>
+                  <select
+                    v-model="formData.status"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  >
+                    <option value="active">Aktif</option>
+                    <option value="suspended">Askıya Alınmış</option>
+                  </select>
+                </div>
               </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {{ newUser.taxType === 'TCKN' ? 'TC Kimlik No' : 'Vergi Kimlik No' }}
-                </label>
-                <input
-                  v-model="newUser.taxNumber"
-                  type="text"
-                  :maxlength="newUser.taxType === 'TCKN' ? 11 : 10"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  :placeholder="newUser.taxType === 'TCKN' ? '11 haneli TC Kimlik No' : '10 haneli Vergi Kimlik No'"
-                />
+            </div>
+
+            <!-- Galeri Bilgileri - Sadece Galeri Sahibi için -->
+            <div v-if="formData.role === 'gallery_owner'" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Building class="w-4 h-4" />
+                Galeri Bilgileri
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Galeri Adı <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="formData.galleryName"
+                    type="text"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="Örn: ABC Otomotiv"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Vergi Türü <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    v-model="formData.taxType"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  >
+                    <option value="VKN">VKN (Vergi Kimlik No - Şirket)</option>
+                    <option value="TCKN">TCKN (TC Kimlik No - Şahıs)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ formData.taxType === 'TCKN' ? 'TC Kimlik No' : 'Vergi Kimlik No' }} <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="formData.taxNumber"
+                    type="text"
+                    :maxlength="formData.taxType === 'TCKN' ? 11 : 10"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    :placeholder="formData.taxType === 'TCKN' ? '11 haneli TC Kimlik No' : '10 haneli Vergi Kimlik No'"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="flex items-center justify-end gap-3 mt-6">
-          <button
-            @click="showCreateModal = false; newUser = { name: '', email: '', password: '', role: 'gallery_owner', galleryId: null, galleryName: '', taxType: 'VKN', taxNumber: '' }"
-            class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          >
-            İptal
-          </button>
-          <button
-            @click="createUser"
-            :disabled="createLoading"
-            class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ createLoading ? 'Oluşturuluyor...' : 'Oluştur' }}
-          </button>
+
+          <!-- Modal Footer -->
+          <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl">
+            <button
+              @click="closeCreateModal"
+              class="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+            >
+              İptal
+            </button>
+            <button
+              @click="createUser"
+              :disabled="formLoading"
+              class="px-5 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Loader2 v-if="formLoading" class="w-4 h-4 animate-spin" />
+              {{ formLoading ? 'Oluşturuluyor...' : 'Kullanıcı Oluştur' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Edit User Modal -->
-    <div
-      v-if="showEditModal"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      @click.self="showEditModal = false"
-    >
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6">
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          Kullanıcı Düzenle
-        </h3>
-        <div class="space-y-4" v-if="editingUser">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Ad Soyad
-            </label>
-            <input
-              v-model="editingUser.name"
-              type="text"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Ad Soyad"
-            />
+    <Teleport to="body">
+      <div
+        v-if="showEditModal"
+        class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+        @click.self="closeEditModal"
+      >
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl my-8">
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Kullanıcı Düzenle</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kullanıcı bilgilerini güncelleyin</p>
+            </div>
+            <button @click="closeEditModal" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+              <X class="w-5 h-5 text-gray-500" />
+            </button>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              E-posta
-            </label>
-            <input
-              v-model="editingUser.email"
-              type="email"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="email@example.com"
-            />
+
+          <!-- Modal Body -->
+          <div class="p-6">
+            <!-- Temel Bilgiler -->
+            <div class="mb-6">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <User class="w-4 h-4" />
+                Temel Bilgiler
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ad Soyad <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="editFormData.name"
+                    type="text"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="Örn: Ahmet Yılmaz"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    E-posta <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="editFormData.email"
+                    type="email"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="ornek@email.com"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Telefon <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="editFormData.phone"
+                    type="tel"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="05XX XXX XX XX"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Yeni Şifre <span class="text-gray-400 text-xs">(opsiyonel)</span>
+                  </label>
+                  <input
+                    v-model="editFormData.password"
+                    type="password"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="Değiştirmek için doldurun"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Rol ve Durum -->
+            <div class="mb-6">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Shield class="w-4 h-4" />
+                Rol ve Durum
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Kullanıcı Rolü
+                  </label>
+                  <select
+                    v-model="editFormData.role"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  >
+                    <option value="superadmin">Süper Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="compliance_officer">Uyum Sorumlusu</option>
+                    <option value="support_agent">Destek Temsilcisi</option>
+                    <option value="gallery_owner">Galeri Sahibi</option>
+                    <option value="gallery_manager">Galeri Yöneticisi</option>
+                    <option value="inventory_manager">Envanter Yöneticisi</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Durum
+                  </label>
+                  <select
+                    v-model="editFormData.status"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  >
+                    <option value="active">Aktif</option>
+                    <option value="suspended">Askıya Alınmış</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Galeri Bilgisi -->
+            <div v-if="editFormData.gallery" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Building class="w-4 h-4" />
+                Bağlı Galeri
+              </h4>
+              <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                  <span class="font-medium">{{ editFormData.gallery }}</span>
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Rol
-            </label>
-            <select
-              v-model="editingUser.role"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+
+          <!-- Modal Footer -->
+          <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl">
+            <button
+              @click="closeEditModal"
+              class="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
             >
-              <option value="superadmin">Süper Admin</option>
-              <option value="admin">Admin</option>
-              <option value="gallery_owner">Galeri Sahibi</option>
-              <option value="gallery_manager">Galeri Yöneticisi</option>
-              <option value="inventory_manager">Envanter Yöneticisi</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Durum
-            </label>
-            <select
-              v-model="editingUser.status"
-              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              İptal
+            </button>
+            <button
+              @click="saveEditUser"
+              :disabled="formLoading"
+              class="px-5 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              <option value="active">Aktif</option>
-              <option value="inactive">Pasif</option>
-            </select>
+              <Loader2 v-if="formLoading" class="w-4 h-4 animate-spin" />
+              {{ formLoading ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet' }}
+            </button>
           </div>
-        </div>
-        <div class="flex items-center justify-end gap-3 mt-6">
-          <button
-            @click="showEditModal = false; editingUser = null"
-            class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          >
-            İptal
-          </button>
-          <button
-            @click="saveEditUser"
-            class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
-          >
-            Kaydet
-          </button>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Search, Plus } from 'lucide-vue-next'
+import { Search, Plus, X, User, Shield, Building, Loader2 } from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
 
 const api = useApi()
 const toast = useToast()
+
+// State
 const loading = ref(false)
+const formLoading = ref(false)
 const searchQuery = ref('')
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
-const editingUser = ref<any>(null)
-const newUser = ref({
+const users = ref<any[]>([])
+
+// Form data for create
+const formData = ref({
   name: '',
   email: '',
   phone: '',
   password: '',
   role: 'gallery_owner',
-  galleryId: null as number | null,
-  // Galeri bilgileri (gallery_owner için)
+  status: 'active',
   galleryName: '',
   taxType: 'VKN',
   taxNumber: ''
 })
 
+// Form data for edit
+const editFormData = ref({
+  id: '',
+  name: '',
+  email: '',
+  phone: '',
+  password: '',
+  role: '',
+  status: '',
+  gallery: ''
+})
+
+// Labels
 const roleLabels: Record<string, string> = {
   superadmin: 'Süper Admin',
   admin: 'Admin',
+  compliance_officer: 'Uyum Sorumlusu',
+  support_agent: 'Destek Temsilcisi',
   gallery_owner: 'Galeri Sahibi',
   gallery_manager: 'Galeri Yöneticisi',
-  inventory_manager: 'Envanter Yöneticisi'
+  inventory_manager: 'Envanter Yöneticisi',
+  sales_rep: 'Satış Temsilcisi',
+  viewer: 'İzleyici'
 }
 
-const users = ref<any[]>([])
+const statusLabels: Record<string, string> = {
+  active: 'Aktif',
+  suspended: 'Askıda',
+  inactive: 'Pasif',
+  deleted: 'Silindi'
+}
+
+// Computed
+const filteredUsers = computed(() => {
+  if (!searchQuery.value) return users.value
+  const query = searchQuery.value.toLowerCase()
+  return users.value.filter(u => 
+    u.name?.toLowerCase().includes(query) ||
+    u.email?.toLowerCase().includes(query) ||
+    u.phone?.includes(query) ||
+    (u.gallery && u.gallery.toLowerCase().includes(query))
+  )
+})
+
+// Methods
+const getRoleBadgeClass = (role: string) => {
+  const classes: Record<string, string> = {
+    superadmin: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+    admin: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+    compliance_officer: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+    support_agent: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400',
+    gallery_owner: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+    gallery_manager: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    inventory_manager: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+  }
+  return classes[role] || 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
+}
 
 const loadUsers = async () => {
   loading.value = true
@@ -371,109 +544,137 @@ const loadUsers = async () => {
   }
 }
 
-const filteredUsers = computed(() => {
-  if (!searchQuery.value) return users.value
-  
-  const query = searchQuery.value.toLowerCase()
-  return users.value.filter(u => 
-    u.name.toLowerCase().includes(query) ||
-    u.email.toLowerCase().includes(query) ||
-    (u.gallery && u.gallery.toLowerCase().includes(query))
-  )
-})
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('tr-TR')
-}
-
-const editUser = (id: number) => {
-  const user = users.value.find(u => u.id === id)
-  if (user) {
-    editingUser.value = { ...user }
-    showEditModal.value = true
+const resetFormData = () => {
+  formData.value = {
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    role: 'gallery_owner',
+    status: 'active',
+    galleryName: '',
+    taxType: 'VKN',
+    taxNumber: ''
   }
 }
 
-const saveEditUser = async () => {
-  if (!editingUser.value || !editingUser.value.name || !editingUser.value.email) {
-    toast.warning('Lütfen tüm gerekli alanları doldurun')
-    return
-  }
-  
-  try {
-    const updated = await api.put(`/users/${editingUser.value.id}`, {
-      name: editingUser.value.name,
-      email: editingUser.value.email,
-      role: editingUser.value.role,
-      status: editingUser.value.status
-    })
-    const index = users.value.findIndex(u => u.id === editingUser.value.id)
-    if (index > -1) {
-      users.value[index] = updated
-    }
-    showEditModal.value = false
-    editingUser.value = null
-    toast.success('Kullanıcı güncellendi!')
-  } catch (error: any) {
-    toast.error('Hata: ' + error.message)
-  }
+const openCreateModal = () => {
+  resetFormData()
+  showCreateModal.value = true
 }
 
-const createLoading = ref(false)
+const closeCreateModal = () => {
+  showCreateModal.value = false
+  resetFormData()
+}
+
+const openEditModal = (user: any) => {
+  editFormData.value = {
+    id: user.id,
+    name: user.name || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    password: '',
+    role: user.role || 'gallery_owner',
+    status: user.status || 'active',
+    gallery: user.gallery || ''
+  }
+  showEditModal.value = true
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+}
 
 const createUser = async () => {
-  if (!newUser.value.name || !newUser.value.email || !newUser.value.phone || !newUser.value.password) {
-    toast.warning('Lütfen tüm gerekli alanları doldurun (Ad, E-posta, Telefon, Şifre)')
+  // Validation
+  if (!formData.value.name || !formData.value.email || !formData.value.phone || !formData.value.password) {
+    toast.warning('Lütfen tüm zorunlu alanları doldurun')
     return
   }
-  
+
   // Galeri sahibi için ek validasyon
-  if (newUser.value.role === 'gallery_owner') {
-    if (!newUser.value.galleryName) {
+  if (formData.value.role === 'gallery_owner') {
+    if (!formData.value.galleryName) {
       toast.warning('Galeri adı zorunludur')
       return
     }
-    if (!newUser.value.taxNumber) {
+    if (!formData.value.taxNumber) {
       toast.warning('Vergi/TC Kimlik numarası zorunludur')
       return
     }
-    if (newUser.value.taxType === 'TCKN' && newUser.value.taxNumber.length !== 11) {
+    if (formData.value.taxType === 'TCKN' && formData.value.taxNumber.length !== 11) {
       toast.warning('TC Kimlik No 11 haneli olmalıdır')
       return
     }
-    if (newUser.value.taxType === 'VKN' && newUser.value.taxNumber.length !== 10) {
+    if (formData.value.taxType === 'VKN' && formData.value.taxNumber.length !== 10) {
       toast.warning('Vergi Kimlik No 10 haneli olmalıdır')
       return
     }
   }
-  
-  createLoading.value = true
+
+  formLoading.value = true
   try {
-    const response = await api.post('/users', newUser.value)
+    const response = await api.post('/users', formData.value)
     users.value.push(response)
-    showCreateModal.value = false
-    newUser.value = { name: '', email: '', phone: '', password: '', role: 'gallery_owner', galleryId: null, galleryName: '', taxType: 'VKN', taxNumber: '' }
+    closeCreateModal()
     toast.success('Kullanıcı başarıyla oluşturuldu!')
   } catch (error: any) {
     console.error('Create user error:', error)
     toast.error('Hata: ' + error.message)
   } finally {
-    createLoading.value = false
+    formLoading.value = false
   }
 }
 
-const deleteUser = async (id: number) => {
-  if (confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) {
-    try {
-      await api.delete(`/users/${id}`)
-      const index = users.value.findIndex(u => u.id === id)
-      if (index > -1) {
-        users.value.splice(index, 1)
-      }
-      toast.success('Kullanıcı silindi!')
-    } catch (error: any) {
-      toast.error('Hata: ' + error.message)
+const saveEditUser = async () => {
+  if (!editFormData.value.name || !editFormData.value.email) {
+    toast.warning('Ad ve e-posta zorunludur')
+    return
+  }
+
+  formLoading.value = true
+  try {
+    const payload: any = {
+      name: editFormData.value.name,
+      email: editFormData.value.email,
+      phone: editFormData.value.phone,
+      role: editFormData.value.role,
+      status: editFormData.value.status
     }
+    
+    // Şifre varsa ekle
+    if (editFormData.value.password) {
+      payload.password = editFormData.value.password
+    }
+
+    const updated = await api.put(`/users/${editFormData.value.id}`, payload)
+    
+    const index = users.value.findIndex(u => u.id === editFormData.value.id)
+    if (index > -1) {
+      users.value[index] = { ...users.value[index], ...updated }
+    }
+    
+    closeEditModal()
+    toast.success('Kullanıcı güncellendi!')
+    await loadUsers() // Reload to get fresh data
+  } catch (error: any) {
+    console.error('Update user error:', error)
+    toast.error('Hata: ' + error.message)
+  } finally {
+    formLoading.value = false
+  }
+}
+
+const deleteUser = async (id: string) => {
+  if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return
+
+  try {
+    await api.delete(`/users/${id}`)
+    users.value = users.value.filter(u => u.id !== id)
+    toast.success('Kullanıcı silindi!')
+  } catch (error: any) {
+    toast.error('Hata: ' + error.message)
   }
 }
 
@@ -481,4 +682,3 @@ onMounted(() => {
   loadUsers()
 })
 </script>
-

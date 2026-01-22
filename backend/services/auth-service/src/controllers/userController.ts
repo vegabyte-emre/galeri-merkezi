@@ -198,7 +198,7 @@ export class UserController {
     }
     
     const { id } = req.params;
-    const { name, email, role, status, galleryId, password } = req.body;
+    const { name, email, phone, role, status, galleryId, password } = req.body;
     
     // Check if user exists
     const existingUser = await query('SELECT id FROM users WHERE id = $1', [id]);
@@ -231,6 +231,16 @@ export class UserController {
       }
       updates.push(`email = $${paramCount++}`);
       values.push(email);
+    }
+    
+    if (phone) {
+      // Check if phone is taken by another user
+      const phoneCheck = await query('SELECT id FROM users WHERE phone = $1 AND id != $2', [phone, id]);
+      if (phoneCheck.rows.length > 0) {
+        throw new ValidationError('Phone number already in use');
+      }
+      updates.push(`phone = $${paramCount++}`);
+      values.push(phone);
     }
     
     if (role) {
