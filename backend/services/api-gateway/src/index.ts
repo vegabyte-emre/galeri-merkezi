@@ -76,8 +76,7 @@ const services = {
 
 // ===== PUBLIC ROUTES (No auth required) =====
 
-// Auth service routes
-app.use('/api/v1/auth', express.json());
+// Auth service routes - No body parsing needed, proxy handles raw body
 app.use('/api/v1/auth', authLimiter);
 app.use('/api/v1/auth', createProxyMiddleware({
   target: services.auth,
@@ -90,12 +89,10 @@ app.use('/api/v1/auth', createProxyMiddleware({
     if (!res.headersSent) {
       res.status(500).json({ error: 'Auth service unavailable' });
     }
-  },
-  onProxyReq: fixRequestBody
+  }
 }));
 
 // Config routes (PUBLIC - splash is public, updates require auth)
-app.use('/api/v1/config', express.json());
 app.use('/api/v1/config', createProxyMiddleware({
   target: services.inventory,
   changeOrigin: true,
