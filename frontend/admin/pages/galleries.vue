@@ -32,19 +32,19 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <div class="text-sm text-gray-600 dark:text-gray-400">Toplam Galeri</div>
-        <div class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ galleries.length }}</div>
+        <div class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ stats.total || galleries.length }}</div>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <div class="text-sm text-gray-600 dark:text-gray-400">Bekleyen</div>
-        <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">{{ pendingCount }}</div>
+        <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">{{ stats.pending || pendingCount }}</div>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <div class="text-sm text-gray-600 dark:text-gray-400">Aktif</div>
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{{ activeCount }}</div>
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{{ stats.active || activeCount }}</div>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <div class="text-sm text-gray-600 dark:text-gray-400">Askıya Alınmış</div>
-        <div class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{{ suspendedCount }}</div>
+        <div class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{{ stats.suspended || suspendedCount }}</div>
       </div>
     </div>
 
@@ -202,6 +202,12 @@ const statusLabels: Record<string, string> = {
 }
 
 const galleries = ref<any[]>([])
+const stats = ref({
+  total: 0,
+  pending: 0,
+  active: 0,
+  suspended: 0
+})
 const showRejectModal = ref(false)
 const rejectingGallery = ref<any>(null)
 const rejectReason = ref('')
@@ -236,11 +242,38 @@ const formatDate = (date: string) => {
 const loadGalleries = async () => {
   loading.value = true
   try {
-    const data = await api.get<any>('/admin/galleries')
-    galleries.value = data.galleries || data || []
+    const response = await api.get<any>('/admin/galleries')
+    // Handle both response formats
+    if (response.success) {
+      galleries.value = response.galleries || []
+      // Update stats from response
+      if (response.stats) {
+        stats.value = {
+          total: response.stats.total || 0,
+          pending: response.stats.pending || 0,
+          active: response.stats.active || 0,
+          suspended: response.stats.suspended || 0
+        }
+      } else if (response.pagination) {
+        // Fallback: use pagination total and count from loaded galleries
+        stats.value = {
+          total: response.pagination.total || galleries.value.length,
+          pending: pendingCount.value,
+          active: activeCount.value,
+          suspended: suspendedCount.value
+        }
+      }
+    } else if (Array.isArray(response)) {
+      galleries.value = response
+    } else if (response.data && Array.isArray(response.data)) {
+      galleries.value = response.data
+    } else {
+      galleries.value = []
+    }
   } catch (error: any) {
     console.error('Galeriler yüklenemedi:', error)
     toast.error('Galeriler yüklenemedi: ' + error.message)
+    galleries.value = []
   } finally {
     loading.value = false
   }

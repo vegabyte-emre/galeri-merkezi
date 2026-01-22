@@ -221,6 +221,8 @@ const handleLogout = async () => {
 }
 
 const pendingApprovalCount = ref<number>(0)
+const galleryCount = ref<number>(0)
+const otoShortsCount = ref<number>(0)
 const currentUser = ref<{ name: string; email: string; role: string } | null>(null)
 
 // Load current user from cookie
@@ -251,19 +253,55 @@ const loadPendingCount = async () => {
   }
 }
 
+// Load gallery count
+const loadGalleryCount = async () => {
+  try {
+    const api = useApi()
+    const response = await api.get<any>('/admin/galleries?limit=1')
+    if (response.success && response.pagination) {
+      galleryCount.value = response.pagination.total || 0
+    } else if (response.galleries && Array.isArray(response.galleries)) {
+      galleryCount.value = response.galleries.length
+    }
+  } catch (e) {
+    console.error('Gallery count error:', e)
+  }
+}
+
+// Load Oto Shorts count
+const loadOtoShortsCount = async () => {
+  try {
+    const api = useApi()
+    const response = await api.get<any>('/admin/oto-shorts?limit=1')
+    if (response.success && response.pagination) {
+      otoShortsCount.value = response.pagination.total || 0
+    } else if (response.data && Array.isArray(response.data)) {
+      otoShortsCount.value = response.data.length
+    }
+  } catch (e) {
+    console.error('Oto Shorts count error:', e)
+  }
+}
+
 onMounted(() => {
   loadCurrentUser()
   loadPendingCount()
+  loadGalleryCount()
+  loadOtoShortsCount()
   // Refresh every 30 seconds
-  setInterval(loadPendingCount, 30000)
+  setInterval(() => {
+    loadPendingCount()
+    loadGalleryCount()
+    loadOtoShortsCount()
+  }, 30000)
 })
 
 const navItems = computed(() => [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/vehicle-approvals', label: 'Araç Onayları', icon: Car, badge: pendingApprovalCount.value > 0 ? pendingApprovalCount.value.toString() : null, highlight: true },
-  { path: '/galleries', label: 'Galeriler', icon: Building2, badge: '150' },
+  { path: '/galleries', label: 'Galeriler', icon: Building2, badge: galleryCount.value > 0 ? galleryCount.value.toString() : null },
   { path: '/users', label: 'Kullanıcılar', icon: Users },
-  { path: '/oto-shorts', label: 'Oto Shorts', icon: Video, badge: '8' },
+  { path: '/oto-shorts', label: 'Oto Shorts', icon: Video, badge: otoShortsCount.value > 0 ? otoShortsCount.value.toString() : null },
   { path: '/subscriptions', label: 'Abonelikler', icon: CreditCard },
   { path: '/roles', label: 'Roller & İzinler', icon: Shield },
   { path: '/reports', label: 'Raporlar', icon: BarChart3 },

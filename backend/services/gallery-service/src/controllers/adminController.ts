@@ -189,6 +189,16 @@ export class AdminController {
       params
     );
 
+    // Get stats for all galleries (not filtered)
+    const statsResult = await query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status = 'pending') as pending,
+        COUNT(*) FILTER (WHERE status = 'active') as active,
+        COUNT(*) FILTER (WHERE status = 'suspended') as suspended
+      FROM galleries
+    `);
+
     // Map data for frontend
     const galleries = result.rows.map(g => ({
       id: g.id,
@@ -204,6 +214,12 @@ export class AdminController {
     res.json({
       success: true,
       galleries: galleries,
+      stats: {
+        total: parseInt(statsResult.rows[0]?.total || '0'),
+        pending: parseInt(statsResult.rows[0]?.pending || '0'),
+        active: parseInt(statsResult.rows[0]?.active || '0'),
+        suspended: parseInt(statsResult.rows[0]?.suspended || '0')
+      },
       pagination: {
         page: Number(page),
         limit: Number(limit),
