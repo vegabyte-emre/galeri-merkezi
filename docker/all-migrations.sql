@@ -9571,6 +9571,24 @@ ON CONFLICT DO NOTHING;
 -- Set sequence for roles to start after 100 (for custom roles)
 SELECT setval('roles_id_seq', 100, false);
 
+-- ========== 023_create_fcm_tokens.sql ==========
+CREATE TABLE IF NOT EXISTS fcm_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    device_type VARCHAR(20) CHECK (device_type IN ('ios', 'android', 'web')),
+    device_id VARCHAR(255),
+    app_version VARCHAR(50),
+    is_active BOOLEAN DEFAULT TRUE,
+    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, token)
+);
+
+CREATE INDEX idx_fcm_tokens_user ON fcm_tokens(user_id);
+CREATE INDEX idx_fcm_tokens_active ON fcm_tokens(user_id, is_active) WHERE is_active = TRUE;
+
 -- ========== 019_create_backups.sql ==========
 CREATE TABLE IF NOT EXISTS backups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

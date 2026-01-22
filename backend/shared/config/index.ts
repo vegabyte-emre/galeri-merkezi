@@ -82,6 +82,12 @@ export const config = {
     clientId: process.env.EIDS_CLIENT_ID || '',
     clientSecret: process.env.EIDS_CLIENT_SECRET || '',
     callbackUrl: process.env.EIDS_CALLBACK_URL || ''
+  },
+
+  // FCM (Firebase Cloud Messaging)
+  fcm: {
+    serverKey: process.env.FCM_SERVER_KEY || '',
+    apiUrl: 'https://fcm.googleapis.com/fcm/send'
   }
 };
 
