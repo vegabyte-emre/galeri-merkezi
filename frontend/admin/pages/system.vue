@@ -238,7 +238,8 @@ const formatNumber = (num: number) => {
 const loadSystemStatus = async () => {
   try {
     const response = await api.get<any>('/admin/system/status')
-    const status = response.data || response
+    // Response is already the data object from useApi
+    const status = response.success ? response : response.data || response
     
     // Update service statuses
     if (status.services && Array.isArray(status.services)) {

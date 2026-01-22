@@ -985,45 +985,77 @@ export class AdminController {
     // Check Database connectivity and get stats
     let dbStatus = 'healthy';
     let dbResponseTime = 0;
+    
+    // Test basic connectivity first
     try {
       const start = Date.now();
       await query('SELECT 1');
       dbResponseTime = Date.now() - start;
-      
-      // Get database statistics
-      const tableCount = await query(`
-        SELECT COUNT(*) as count 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public'
-      `);
-      
-      const totalRecords = await query(`
-        SELECT SUM(n_live_tup)::bigint as total
-        FROM pg_stat_user_tables
-      `);
-      
-      const activeConnections = await query(`
-        SELECT COUNT(*) as count 
-        FROM pg_stat_activity 
-        WHERE state = 'active'
-      `);
-      
-      const avgQueryTime = await query(`
-        SELECT COALESCE(AVG(mean_exec_time), 0) as avg_time
-        FROM pg_stat_statements
-        LIMIT 1
-      `);
-
-      dbStats.totalTables = parseInt(tableCount.rows[0]?.count || '0');
-      dbStats.totalRecords = parseInt(totalRecords.rows[0]?.total || '0');
-      dbStats.activeConnections = parseInt(activeConnections.rows[0]?.count || '0');
-      dbStats.avgQueryTime = Math.round(parseFloat(avgQueryTime.rows[0]?.avg_time || '0'));
     } catch (e: any) {
       dbStatus = 'error';
       dbStats.totalTables = 0;
       dbStats.totalRecords = 0;
       dbStats.activeConnections = 0;
       dbStats.avgQueryTime = 0;
+      // Skip rest if basic connection fails
+    }
+    
+    // Only get stats if connection is healthy
+    if (dbStatus === 'healthy') {
+      // Get table count
+      try {
+        const tableCount = await query(`
+          SELECT COUNT(*) as count 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public'
+        `);
+        dbStats.totalTables = parseInt(tableCount.rows[0]?.count || '0');
+      } catch (e) {
+        dbStats.totalTables = 0;
+      }
+      
+      // Get total records
+      try {
+        const totalRecords = await query(`
+          SELECT SUM(n_live_tup)::bigint as total
+          FROM pg_stat_user_tables
+        `);
+        dbStats.totalRecords = parseInt(totalRecords.rows[0]?.total || '0');
+      } catch (e) {
+        dbStats.totalRecords = 0;
+      }
+      
+      // Get active connections
+      try {
+        const activeConnections = await query(`
+          SELECT COUNT(*) as count 
+          FROM pg_stat_activity 
+          WHERE state = 'active'
+        `);
+        dbStats.activeConnections = parseInt(activeConnections.rows[0]?.count || '0');
+      } catch (e) {
+        dbStats.activeConnections = 0;
+      }
+      
+      // Get average query time (pg_stat_statements might not be enabled)
+      try {
+        const avgQueryTime = await query(`
+          SELECT COALESCE(AVG(mean_exec_time), 0) as avg_time
+          FROM pg_stat_statements
+          LIMIT 1
+        `);
+        dbStats.avgQueryTime = Math.round(parseFloat(avgQueryTime.rows[0]?.avg_time || '0'));
+      } catch (e) {
+        // pg_stat_statements extension might not be enabled, use fallback
+        try {
+          // Alternative: calculate from query execution time
+          const testStart = Date.now();
+          await query('SELECT NOW()');
+          dbStats.avgQueryTime = Date.now() - testStart;
+        } catch (e2) {
+          dbStats.avgQueryTime = 0;
+        }
+      }
     }
 
     services.push({ name: 'Database', status: dbStatus, responseTime: dbResponseTime });
