@@ -22,14 +22,27 @@ pool.on('connect', () => {
   logger.info('Database connection established');
 });
 
-// Test connection
-pool.query('SELECT NOW()')
-  .then(() => {
-    logger.info('Database connection test successful');
-  })
-  .catch((err) => {
-    logger.error('Database connection test failed', { error: err });
-  });
+// Test connection with retry
+const testConnection = async (retries = 5, delay = 2000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await pool.query('SELECT NOW()');
+      logger.info('Database connection test successful');
+      return;
+    } catch (err: any) {
+      logger.error(`Database connection attempt ${i + 1}/${retries} failed`, { 
+        message: err.message,
+        code: err.code
+      });
+      if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  logger.error('Database connection failed after all retries');
+};
+
+testConnection();
 
 export async function query(text: string, params?: any[]) {
   const start = Date.now();
