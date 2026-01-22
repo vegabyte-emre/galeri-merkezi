@@ -137,30 +137,12 @@ export class UserController {
     const passwordHash = await bcrypt.hash(password, 12);
     
     // Determine gallery_id based on role
+    // Admin panel'den kullanıcı oluştururken galeri otomatik oluşturulmaz
+    // Galeri daha sonra ayrıca atanabilir veya kullanıcı kendi kaydolurken oluşturur
     let finalGalleryId = null;
-    if (role === 'gallery_owner' || role === 'gallery_manager' || role === 'inventory_manager') {
-      if (galleryId) {
-        finalGalleryId = galleryId;
-      } else {
-        // Create a new gallery for gallery_owner
-        if (role === 'gallery_owner') {
-          // Generate slug from name
-          const galleryName = `${firstName}'s Gallery`;
-          const slug = galleryName.toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
-            .trim() + '-' + Date.now();
-          
-          // tax_type must be 'TCKN' or 'VKN', tax_number is required
-          const galleryResult = await query(
-            `INSERT INTO galleries (name, slug, status, tax_type, tax_number, created_at, updated_at) 
-             VALUES ($1, $2, 'pending', 'VKN', '0000000000', NOW(), NOW()) RETURNING id`,
-            [galleryName, slug]
-          );
-          finalGalleryId = galleryResult.rows[0].id;
-        }
-      }
+    if (galleryId) {
+      // Eğer formda galeri seçildiyse onu kullan
+      finalGalleryId = galleryId;
     }
     
     // Create user
