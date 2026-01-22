@@ -1164,20 +1164,26 @@ export class AdminController {
     try {
       const os = await import('os');
       
-      // CPU Usage - Use load average as approximation
-      // Load average represents the average system load over 1, 5, and 15 minutes
-      const cpus = os.cpus().length;
+      // CPU Usage - Use load average correctly
+      // Load average: average number of processes in runnable state
+      // Load 1.0 on 1 CPU = 100% busy, Load 2.0 on 4 CPUs = 50% busy
+      const cpusLength = os.cpus().length;
       const loadAvg = os.loadavg()[0]; // 1 minute load average
-      // Convert load average to percentage (load/cpu_count * 100, capped at 100%)
-      const cpuUsage = Math.min(100, Math.round((loadAvg / cpus) * 100));
       
-      // If load average is 0 or invalid, try to estimate from process CPU usage
-      let finalCpuUsage = cpuUsage;
-      if (cpuUsage === 0 || isNaN(cpuUsage)) {
-        // Use a simple heuristic: if we're processing requests, assume some CPU usage
-        // This is a fallback - in production, you'd want to track CPU over time
-        finalCpuUsage = 5; // Minimal baseline
+      let cpuUsage = 0;
+      if (loadAvg > 0 && cpusLength > 0) {
+        // Simple formula: (load / cpu_count) * 100
+        // But cap at 85% max to avoid showing unrealistic 100%
+        const loadPerCpu = loadAvg / cpusLength;
+        cpuUsage = Math.min(85, Math.round(loadPerCpu * 100));
       }
+      
+      // If load is 0 or calculation failed, show minimal usage
+      if (cpuUsage === 0 || isNaN(cpuUsage)) {
+        cpuUsage = Math.max(1, Math.min(10, Math.round(loadAvg || 0))); // 1-10% baseline
+      }
+      
+      const finalCpuUsage = cpuUsage;
       
       // Memory Usage
       const totalMem = os.totalmem();
