@@ -1128,11 +1128,77 @@ export class AdminController {
       recentErrors = [];
     }
 
-    // System resources (CPU, Memory, Disk) - Docker container stats would be ideal but requires Docker API
-    // For now, we'll use PostgreSQL stats as approximation
-    systemResources.cpuUsage = 0; // Would need Docker API or system stats
-    systemResources.memoryUsage = 0; // Would need Docker API or system stats
-    systemResources.diskUsage = 0; // Would need filesystem stats
+    // Get system resources (CPU, Memory, Disk)
+    try {
+      const os = await import('os');
+      
+      // CPU Usage - Use load average as approximation
+      // Load average represents the average system load over 1, 5, and 15 minutes
+      const cpus = os.cpus().length;
+      const loadAvg = os.loadavg()[0]; // 1 minute load average
+      // Convert load average to percentage (load/cpu_count * 100, capped at 100%)
+      const cpuUsage = Math.min(100, Math.round((loadAvg / cpus) * 100));
+      
+      // If load average is 0 or invalid, try to estimate from process CPU usage
+      let finalCpuUsage = cpuUsage;
+      if (cpuUsage === 0 || isNaN(cpuUsage)) {
+        // Use a simple heuristic: if we're processing requests, assume some CPU usage
+        // This is a fallback - in production, you'd want to track CPU over time
+        finalCpuUsage = 5; // Minimal baseline
+      }
+      
+      // Memory Usage
+      const totalMem = os.totalmem();
+      const freeMem = os.freemem();
+      const usedMem = totalMem - freeMem;
+      const memoryUsage = Math.round((usedMem / totalMem) * 100);
+      
+      // Disk Usage - Try to get from system command
+      let diskUsage = 0;
+      try {
+        const { execSync } = await import('child_process');
+        // Try df command (works on Linux)
+        const dfOutput = execSync('df -h / 2>/dev/null || df -h .', { 
+          encoding: 'utf-8',
+          timeout: 2000,
+          maxBuffer: 1024 * 1024
+        });
+        const lines = dfOutput.trim().split('\n');
+        if (lines.length > 1) {
+          const parts = lines[1].split(/\s+/).filter(p => p);
+          // df output format: Filesystem Size Used Avail Use% Mounted
+          // Find the percentage column
+          for (let i = 0; i < parts.length; i++) {
+            if (parts[i].endsWith('%')) {
+              diskUsage = parseInt(parts[i].replace('%', '')) || 0;
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        // If df fails, try alternative: estimate from database size
+        try {
+          const dbSizeResult = await query(`
+            SELECT pg_database_size(current_database()) as size
+          `);
+          const dbSize = parseInt(dbSizeResult.rows[0]?.size || '0');
+          // Rough estimate: assume container has ~20GB total space
+          const estimatedTotal = 20 * 1024 * 1024 * 1024; // 20GB
+          diskUsage = Math.min(95, Math.round((dbSize / estimatedTotal) * 100));
+        } catch (e2) {
+          diskUsage = 0;
+        }
+      }
+      
+      systemResources.cpuUsage = finalCpuUsage;
+      systemResources.memoryUsage = memoryUsage;
+      systemResources.diskUsage = diskUsage;
+    } catch (e: any) {
+      // Fallback values if system stats fail
+      systemResources.cpuUsage = 0;
+      systemResources.memoryUsage = 0;
+      systemResources.diskUsage = 0;
+    }
 
     res.json({
       success: true,
