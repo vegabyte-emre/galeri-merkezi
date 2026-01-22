@@ -149,7 +149,7 @@ const gradientEnd = computed({
 
 const loadConfig = async () => {
   try {
-    const response = await api.get('/config/splash')
+    const response = await api.get<any>('/admin/splash-config')
     if (response.success && response.config) {
       config.value = { ...config.value, ...response.config }
       lastUpdated.value = response.lastUpdated
@@ -162,7 +162,7 @@ const loadConfig = async () => {
 const saveConfig = async () => {
   saving.value = true
   try {
-    const response = await api.put('/config/splash', { config: config.value })
+    const response = await api.put<any>('/admin/splash-config', { config: config.value })
     if (response.success) {
       alert('Splash screen ayarları başarıyla kaydedildi!')
       lastUpdated.value = new Date().toISOString()

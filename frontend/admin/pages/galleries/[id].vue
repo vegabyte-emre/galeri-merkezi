@@ -155,10 +155,12 @@
 <script setup lang="ts">
 import { ArrowLeft } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter, navigateTo } from 'vue-router'
+import { useApi } from '~/composables/useApi'
+import { useToast } from '~/composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 
 const statusLabels: Record<string, string> = {
   pending: 'Bekleyen',
@@ -174,14 +176,19 @@ const activities = ref([
   { action: 'Galeri onaylandı', date: '2024-01-10' }
 ])
 
-onMounted(async () => {
+const loadGallery = async () => {
   try {
     const api = useApi()
-    gallery.value = await api.get(`/galleries/${route.params.id}`)
+    const response = await api.get(`/admin/galleries/${route.params.id}`)
+    gallery.value = response.data || response
   } catch (error: any) {
     toast.error('Galeri bilgileri yüklenemedi: ' + error.message)
     router.push('/galleries')
   }
+}
+
+onMounted(() => {
+  loadGallery()
 })
 
 const formatDate = (date: string) => {
@@ -192,7 +199,7 @@ const approveGallery = async () => {
   if (gallery.value) {
     try {
       const api = useApi()
-      await api.post(`/galleries/${gallery.value.id}/approve`)
+      await api.post(`/admin/galleries/${gallery.value.id}/approve`)
       gallery.value.status = 'active'
       toast.success('Galeri onaylandı!')
       await loadGallery()
@@ -207,12 +214,12 @@ const rejectGallery = async () => {
     if (gallery.value) {
       try {
         const api = useApi()
-        await api.post(`/galleries/${gallery.value.id}/reject`)
-        gallery.value.status = 'suspended'
+        await api.post(`/admin/galleries/${gallery.value.id}/reject`, { reason: 'Reddedildi' })
+        gallery.value.status = 'rejected'
         toast.success('Galeri reddedildi!')
         await loadGallery()
-    } catch (error: any) {
-      toast.error('Hata: ' + error.message)
+      } catch (error: any) {
+        toast.error('Hata: ' + error.message)
       }
     }
   }
@@ -223,12 +230,12 @@ const suspendGallery = async () => {
     if (gallery.value) {
       try {
         const api = useApi()
-        await api.post(`/galleries/${gallery.value.id}/suspend`)
+        await api.post(`/admin/galleries/${gallery.value.id}/suspend`)
         gallery.value.status = 'suspended'
         toast.success('Galeri askıya alındı!')
         await loadGallery()
-    } catch (error: any) {
-      toast.error('Hata: ' + error.message)
+      } catch (error: any) {
+        toast.error('Hata: ' + error.message)
       }
     }
   }

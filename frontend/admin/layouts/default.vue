@@ -55,11 +55,11 @@
       <div class="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800">
         <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
           <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold">
-            A
+            {{ currentUser?.name?.charAt(0) || 'A' }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">Admin User</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">admin@otobia.com</p>
+            <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ currentUser?.name || 'Admin User' }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ currentUser?.email || 'admin@otobia.com' }}</p>
           </div>
           <div class="flex items-center gap-2">
             <button
@@ -208,18 +208,35 @@ const handleLogout = async () => {
     try {
       const api = useApi()
       await api.post('/auth/logout')
-      const authToken = useCookie('auth_token')
-      authToken.value = null
-      navigateTo('/login')
     } catch (error) {
-      const authToken = useCookie('auth_token')
-      authToken.value = null
-      navigateTo('/login')
+      // Ignore logout API errors
     }
+    // Always clear cookies and redirect
+    const authToken = useCookie('auth_token')
+    const userCookie = useCookie('user')
+    authToken.value = null
+    userCookie.value = null
+    navigateTo('/login')
   }
 }
 
 const pendingApprovalCount = ref<number>(0)
+const currentUser = ref<{ name: string; email: string; role: string } | null>(null)
+
+// Load current user from cookie
+const loadCurrentUser = () => {
+  try {
+    const userCookie = useCookie('user')
+    if (userCookie.value) {
+      const userData = typeof userCookie.value === 'string' 
+        ? JSON.parse(userCookie.value) 
+        : userCookie.value
+      currentUser.value = userData
+    }
+  } catch (e) {
+    console.error('Load user error:', e)
+  }
+}
 
 // Load pending approval count
 const loadPendingCount = async () => {
@@ -235,6 +252,7 @@ const loadPendingCount = async () => {
 }
 
 onMounted(() => {
+  loadCurrentUser()
   loadPendingCount()
   // Refresh every 30 seconds
   setInterval(loadPendingCount, 30000)

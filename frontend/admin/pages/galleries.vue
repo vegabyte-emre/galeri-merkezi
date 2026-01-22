@@ -236,7 +236,7 @@ const formatDate = (date: string) => {
 const loadGalleries = async () => {
   loading.value = true
   try {
-    const data = await api.get('/galleries')
+    const data = await api.get<any>('/admin/galleries')
     galleries.value = data.galleries || data || []
   } catch (error: any) {
     console.error('Galeriler yüklenemedi:', error)
@@ -253,7 +253,7 @@ const approveGallery = async (id: number) => {
   if (!confirm('Bu galeriyi onaylamak istediğinize emin misiniz?')) return
   
   try {
-    await api.post(`/galleries/${id}/approve`)
+    await api.post(`/admin/galleries/${id}/approve`)
     toast.success('Galeri onaylandı!')
     await loadGalleries()
   } catch (error: any) {
@@ -277,7 +277,7 @@ const confirmReject = async () => {
   }
   
   try {
-    await api.post(`/galleries/${rejectingGallery.value.id}/reject`, { reason: rejectReason.value })
+    await api.post(`/admin/galleries/${rejectingGallery.value.id}/reject`, { reason: rejectReason.value })
     toast.success('Galeri reddedildi!')
     showRejectModal.value = false
     rejectingGallery.value = null
@@ -295,7 +295,7 @@ const suspendGallery = async (id: number) => {
   if (!confirm('Bu galeriyi askıya almak istediğinize emin misiniz?')) return
   
   try {
-    await api.post(`/galleries/${id}/suspend`)
+    await api.post(`/admin/galleries/${id}/suspend`)
     toast.success('Galeri askıya alındı!')
     await loadGalleries()
   } catch (error: any) {

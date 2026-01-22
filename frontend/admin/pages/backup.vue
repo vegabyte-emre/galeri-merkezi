@@ -184,14 +184,13 @@ const backups = ref<any[]>([])
 const loadBackups = async () => {
   loading.value = true
   try {
-    const data = await api.get('/backup')
+    const data = await api.get<any>('/admin/backups')
     backups.value = data.backups || data || []
     
     // Load schedule settings
-    if (data.schedule) {
-      autoBackup.value = data.schedule.enabled || false
-      backupFrequency.value = data.schedule.frequency || 'daily'
-      backupTime.value = data.schedule.time || '02:00'
+    if (data.settings) {
+      autoBackup.value = data.settings.autoBackup || false
+      backupFrequency.value = data.settings.frequency || 'daily'
     }
   } catch (error: any) {
     console.error('Yedeklemeler yüklenemedi:', error)
@@ -229,8 +228,7 @@ const formatDateTime = (timestamp: string) => {
 const createBackup = async () => {
   creatingBackup.value = true
   try {
-    const api = useApi()
-    const response = await api.post('/backup/create')
+    const response = await api.post('/admin/backups')
     backups.value.unshift({
       id: response.id,
       createdAt: response.createdAt,
@@ -249,8 +247,7 @@ const createBackup = async () => {
 
 const downloadBackup = async (id: number) => {
   try {
-    const api = useApi()
-    const blob = await api.get(`/backup/${id}/download`, { responseType: 'blob' })
+    const blob = await api.get(`/admin/backups/${id}/download`, { responseType: 'blob' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -268,8 +265,7 @@ const downloadBackup = async (id: number) => {
 const restoreBackup = async (id: number) => {
   if (confirm('Bu yedeklemeyi geri yüklemek istediğinize emin misiniz? Bu işlem mevcut verileri değiştirecektir.')) {
     try {
-      const api = useApi()
-      await api.post(`/backup/${id}/restore`)
+      await api.post(`/admin/backups/${id}/restore`)
       toast.success('Yedekleme geri yüklendi!')
     } catch (error: any) {
       alert('Hata: ' + error.message)
@@ -280,8 +276,7 @@ const restoreBackup = async (id: number) => {
 const deleteBackup = async (id: number) => {
   if (confirm('Bu yedeklemeyi silmek istediğinize emin misiniz?')) {
     try {
-      const api = useApi()
-      await api.delete(`/backup/${id}`)
+      await api.delete(`/admin/backups/${id}`)
       backups.value = backups.value.filter(b => b.id !== id)
       toast.success('Yedekleme silindi!')
     } catch (error: any) {
@@ -292,8 +287,7 @@ const deleteBackup = async (id: number) => {
 
 const saveSchedule = async () => {
   try {
-    const api = useApi()
-    await api.put('/backup/schedule', {
+    await api.put('/admin/backups/schedule', {
       enabled: autoBackup.value,
       frequency: backupFrequency.value,
       time: backupTime.value

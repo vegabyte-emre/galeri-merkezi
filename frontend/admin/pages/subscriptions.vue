@@ -307,7 +307,7 @@ const monthlyRevenue = computed(() => {
 const loadSubscriptions = async () => {
   loading.value = true
   try {
-    const data = await api.get('/subscriptions')
+    const data = await api.get<any>('/admin/subscriptions')
     subscriptions.value = data.subscriptions || data || []
   } catch (error: any) {
     console.error('Abonelikler yüklenemedi:', error)
@@ -319,7 +319,7 @@ const loadSubscriptions = async () => {
 
 const loadGalleries = async () => {
   try {
-    const data = await api.get('/galleries')
+    const data = await api.get<any>('/admin/galleries')
     galleries.value = data.galleries || data || []
   } catch (error: any) {
     console.error('Galeriler yüklenemedi:', error)
@@ -348,7 +348,7 @@ const extendTrial = async (id: number) => {
   if (!days || isNaN(Number(days))) return
   
   try {
-    await api.post(`/subscriptions/${id}/extend-trial`, { days: Number(days) })
+    await api.post(`/admin/subscriptions/${id}/extend-trial`, { days: Number(days) })
     toast.success('Deneme süresi uzatıldı!')
     await loadSubscriptions()
   } catch (error: any) {
@@ -366,11 +366,11 @@ const saveSubscription = async () => {
     if (showEditModal.value) {
       const subscription = subscriptions.value.find(s => s.galleryId === subscriptionForm.value.galleryId)
       if (subscription) {
-        await api.put(`/subscriptions/${subscription.id}`, subscriptionForm.value)
+        await api.put(`/admin/subscriptions/${subscription.id}`, subscriptionForm.value)
         toast.success('Abonelik güncellendi!')
       }
     } else {
-      await api.post('/subscriptions', subscriptionForm.value)
+      await api.post('/admin/subscriptions', subscriptionForm.value)
       toast.success('Abonelik oluşturuldu!')
     }
     closeModal()

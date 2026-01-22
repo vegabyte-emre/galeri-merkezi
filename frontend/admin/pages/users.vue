@@ -534,7 +534,7 @@ const getRoleBadgeClass = (role: string) => {
 const loadUsers = async () => {
   loading.value = true
   try {
-    const data = await api.get('/users')
+    const data = await api.get<any>('/admin/users')
     users.value = data.users || data || []
   } catch (error: any) {
     console.error('Kullanıcılar yüklenemedi:', error)
@@ -615,7 +615,7 @@ const createUser = async () => {
 
   formLoading.value = true
   try {
-    const response = await api.post('/users', formData.value)
+    const response = await api.post('/admin/users', formData.value)
     users.value.push(response)
     closeCreateModal()
     toast.success('Kullanıcı başarıyla oluşturuldu!')
@@ -648,7 +648,7 @@ const saveEditUser = async () => {
       payload.password = editFormData.value.password
     }
 
-    const updated = await api.put(`/users/${editFormData.value.id}`, payload)
+    const updated = await api.put(`/admin/users/${editFormData.value.id}`, payload)
     
     const index = users.value.findIndex(u => u.id === editFormData.value.id)
     if (index > -1) {
@@ -670,7 +670,7 @@ const deleteUser = async (id: string) => {
   if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return
 
   try {
-    await api.delete(`/users/${id}`)
+    await api.delete(`/admin/users/${id}`)
     users.value = users.value.filter(u => u.id !== id)
     toast.success('Kullanıcı silindi!')
   } catch (error: any) {

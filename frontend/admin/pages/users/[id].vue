@@ -202,7 +202,8 @@ const activities = ref([
 onMounted(async () => {
   try {
     const api = useApi()
-    user.value = await api.get(`/users/${route.params.id}`)
+    const response = await api.get(`/admin/users/${route.params.id}`)
+    user.value = response.data || response
   } catch (error: any) {
     toast.error('Kullanıcı bilgileri yüklenemedi: ' + error.message)
     router.push('/users')
@@ -226,7 +227,7 @@ const deleteUser = async () => {
   if (confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) {
     try {
       const api = useApi()
-      await api.delete(`/users/${user.value?.id}`)
+      await api.delete(`/admin/users/${user.value?.id}`)
       toast.success('Kullanıcı silindi!')
       router.push('/users')
     } catch (error: any) {
@@ -239,8 +240,8 @@ const resetPassword = async () => {
   if (confirm('Bu kullanıcının şifresini sıfırlamak istediğinize emin misiniz?')) {
     try {
       const api = useApi()
-      await api.post(`/users/${user.value?.id}/reset-password`)
-      alert('Şifre sıfırlama e-postası gönderildi!')
+      await api.post(`/admin/users/${user.value?.id}/reset-password`)
+      toast.success('Şifre sıfırlama e-postası gönderildi!')
     } catch (error: any) {
       toast.error('Hata: ' + error.message)
     }
@@ -251,8 +252,8 @@ const toggleStatus = async () => {
   if (user.value) {
     try {
       const api = useApi()
-      const newStatus = user.value.status === 'active' ? 'inactive' : 'active'
-      await api.put(`/users/${user.value.id}/status`, { status: newStatus })
+      const newStatus = user.value.status === 'active' ? 'suspended' : 'active'
+      await api.put(`/admin/users/${user.value.id}`, { status: newStatus })
       user.value.status = newStatus
       toast.success(`Kullanıcı durumu ${newStatus === 'active' ? 'aktif' : 'pasif'} olarak güncellendi!`)
     } catch (error: any) {

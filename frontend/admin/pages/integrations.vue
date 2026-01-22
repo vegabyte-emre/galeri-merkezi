@@ -225,7 +225,7 @@ const apiKeys = ref<any[]>([])
 const loadIntegrations = async () => {
   loading.value = true
   try {
-    const data = await api.get('/integrations')
+    const data = await api.get<any>('/admin/integrations')
     integrations.value = data.integrations || data || []
   } catch (error: any) {
     console.error('Entegrasyonlar yüklenemedi:', error)
@@ -237,11 +237,12 @@ const loadIntegrations = async () => {
 
 const loadApiKeys = async () => {
   try {
-    const data = await api.get('/api-keys')
+    const data = await api.get<any>('/admin/api-keys')
     apiKeys.value = data.apiKeys || data || []
   } catch (error: any) {
     console.error('API anahtarları yüklenemedi:', error)
-    toast.error('API anahtarları yüklenemedi: ' + error.message)
+    // Ignore error, use empty list
+    apiKeys.value = []
   }
 }
 
@@ -249,7 +250,7 @@ const connectIntegration = async (id: number) => {
   const integration = integrations.value.find(i => i.id === id)
   if (integration) {
     try {
-      await api.post(`/integrations/${id}/connect`)
+      await api.post(`/admin/integrations/${id}/connect`)
       integration.connected = true
       toast.success(`${integration.name} bağlantısı kuruldu!`)
     } catch (error: any) {
@@ -263,7 +264,7 @@ const disconnectIntegration = async (id: number) => {
     const integration = integrations.value.find(i => i.id === id)
     if (integration) {
       try {
-        await api.post(`/integrations/${id}/disconnect`)
+        await api.post(`/admin/integrations/${id}/disconnect`)
         integration.connected = false
         toast.success('Bağlantı kesildi!')
       } catch (error: any) {
@@ -289,7 +290,7 @@ const saveConfiguration = async () => {
   }
   
   try {
-    await api.post(`/integrations/${configuringIntegration.value.id}/configure`, { 
+    await api.post(`/admin/integrations/${configuringIntegration.value.id}/configure`, { 
       apiKey: configApiKey.value 
     })
     toast.success('Yapılandırma kaydedildi!')
@@ -311,7 +312,7 @@ const regenerateApiKey = async (id: number) => {
     const apiKey = apiKeys.value.find(k => k.id === id)
     if (apiKey) {
       try {
-        const response = await api.post(`/api-keys/${id}/regenerate`)
+        const response = await api.post(`/admin/api-keys/${id}/regenerate`)
         apiKey.key = response.key
         toast.success('API anahtarı yenilendi!')
       } catch (error: any) {
@@ -324,7 +325,7 @@ const regenerateApiKey = async (id: number) => {
 const deleteApiKey = async (id: number) => {
   if (confirm('Bu API anahtarını silmek istediğinize emin misiniz?')) {
     try {
-      await api.delete(`/api-keys/${id}`)
+      await api.delete(`/admin/api-keys/${id}`)
       apiKeys.value = apiKeys.value.filter(k => k.id !== id)
       toast.success('API anahtarı silindi!')
     } catch (error: any) {
@@ -345,7 +346,7 @@ const createApiKey = async () => {
   }
   
   try {
-    const response = await api.post('/api-keys', { name: newApiKeyName.value })
+    const response = await api.post('/admin/api-keys', { name: newApiKeyName.value })
     apiKeys.value.push({
       id: response.id,
       name: response.name,

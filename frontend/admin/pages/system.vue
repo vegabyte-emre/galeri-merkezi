@@ -237,7 +237,7 @@ const formatDateTime = (timestamp: string) => {
 
 const loadSystemStatus = async () => {
   try {
-    const status = await api.get('/system/status')
+    const status = await api.get<any>('/admin/system/status')
     
     // Update service statuses
     if (status.services) {

@@ -360,7 +360,7 @@ const quickActions = [
 const loadDashboardData = async () => {
   loading.value = true
   try {
-    const data = await api.get('/admin/dashboard')
+    const data = await api.get<any>('/admin/dashboard')
     
     // Update stats
     stats.value.forEach(stat => {

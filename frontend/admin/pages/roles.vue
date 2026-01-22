@@ -181,7 +181,7 @@ const roles = ref<any[]>([])
 const loadRoles = async () => {
   loading.value = true
   try {
-    const data = await api.get('/roles')
+    const data = await api.get<any>('/admin/roles')
     roles.value = data.roles || data || []
   } catch (error: any) {
     console.error('Roller yüklenemedi:', error)
@@ -193,7 +193,7 @@ const loadRoles = async () => {
 
 const loadPermissions = async () => {
   try {
-    const data = await api.get('/roles/permissions')
+    const data = await api.get<any>('/admin/roles/permissions')
     allPermissions.value = data.permissions || data || []
   } catch (error: any) {
     console.error('İzinler yüklenemedi:', error)
@@ -220,8 +220,7 @@ const togglePermission = async (roleId: number, permissionId: number) => {
     const hasPermission = index > -1
     
     try {
-      const api = useApi()
-      await api.put(`/roles/${roleId}/permissions`, {
+      await api.put(`/admin/roles/${roleId}/permissions`, {
         permissionId,
         enabled: !hasPermission
       })
@@ -265,15 +264,14 @@ const saveRole = async () => {
   }
   
   try {
-    const api = useApi()
     if (editingRole.value.id) {
-      await api.put(`/roles/${editingRole.value.id}`, editingRole.value)
+      await api.put(`/admin/roles/${editingRole.value.id}`, editingRole.value)
       const index = roles.value.findIndex(r => r.id === editingRole.value.id)
       if (index > -1) {
         roles.value[index] = { ...editingRole.value }
       }
     } else {
-      const newRole = await api.post('/roles', editingRole.value)
+      const newRole = await api.post('/admin/roles', editingRole.value)
       roles.value.push(newRole)
     }
     showEditModal.value = false
@@ -288,8 +286,7 @@ const saveRole = async () => {
 const deleteRole = async (id: number) => {
   if (confirm('Bu rolü silmek istediğinize emin misiniz?')) {
     try {
-      const api = useApi()
-      await api.delete(`/roles/${id}`)
+      await api.delete(`/admin/roles/${id}`)
       roles.value = roles.value.filter(r => r.id !== id)
       toast.success('Rol silindi!')
     } catch (error: any) {

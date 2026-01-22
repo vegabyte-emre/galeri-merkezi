@@ -83,7 +83,7 @@ const templates = ref<any[]>([])
 const loadTemplates = async () => {
   loading.value = true
   try {
-    const data = await api.get('/email-templates')
+    const data = await api.get<any>('/admin/email-templates')
     templates.value = data.templates || data || []
   } catch (error: any) {
     console.error('Şablonlar yüklenemedi:', error)
@@ -99,7 +99,7 @@ const editTemplate = (id: number) => {
 
 const previewTemplate = async (id: number) => {
   try {
-    const preview = await api.get(`/email-templates/${id}/preview`)
+    const preview = await api.get<any>(`/admin/email-templates/${id}/preview`)
     // Show preview in modal or new window
     const previewWindow = window.open('', '_blank')
     if (previewWindow) {

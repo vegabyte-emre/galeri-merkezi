@@ -201,7 +201,7 @@ const chartData = ref<any>(null)
 const loadReports = async () => {
   loading.value = true
   try {
-    const data = await api.get(`/reports?period=${selectedPeriod.value}`)
+    const data = await api.get<any>(`/admin/reports?period=${selectedPeriod.value}`)
     
     // Update stats
     stats.value.forEach(stat => {
@@ -230,7 +230,7 @@ const loadReports = async () => {
 
 const exportReport = async () => {
   try {
-    const blob = await api.get(`/reports/export?period=${selectedPeriod.value}`, { responseType: 'blob' })
+    const blob = await api.get(`/admin/reports/export?period=${selectedPeriod.value}`, { responseType: 'blob' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

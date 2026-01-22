@@ -194,7 +194,7 @@ const loadLogs = async () => {
     if (filterLevel.value) params.append('level', filterLevel.value)
     if (searchQuery.value) params.append('search', searchQuery.value)
     
-    const data = await api.get(`/logs?${params.toString()}`)
+    const data = await api.get<any>(`/admin/logs?${params.toString()}`)
     logs.value = data.logs || data || []
     
     // Update stats
@@ -258,7 +258,7 @@ const exportLogs = async () => {
     if (filterLevel.value) params.append('level', filterLevel.value)
     if (searchQuery.value) params.append('search', searchQuery.value)
     
-    const blob = await api.get(`/logs/export?${params.toString()}`, { responseType: 'blob' })
+    const blob = await api.get(`/admin/logs/export?${params.toString()}`, { responseType: 'blob' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

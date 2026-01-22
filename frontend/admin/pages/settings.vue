@@ -207,7 +207,7 @@ const notificationSettings = ref({
 const loadSettings = async () => {
   loading.value = true
   try {
-    const data = await api.get('/settings')
+    const data = await api.get<any>('/admin/settings')
     if (data.general) {
       settings.value = { ...settings.value, ...data.general }
     }
@@ -219,7 +219,7 @@ const loadSettings = async () => {
     }
   } catch (error: any) {
     console.error('Ayarlar yüklenemedi:', error)
-    toast.error('Ayarlar yüklenemedi: ' + error.message)
+    // Use default values on error
   } finally {
     loading.value = false
   }
@@ -227,7 +227,7 @@ const loadSettings = async () => {
 
 const saveGeneralSettings = async () => {
   try {
-    await api.put('/settings/general', settings.value)
+    await api.put('/admin/settings/general', settings.value)
     toast.success('Genel ayarlar kaydedildi!')
   } catch (error: any) {
     toast.error('Hata: ' + error.message)
@@ -236,7 +236,7 @@ const saveGeneralSettings = async () => {
 
 const saveSecuritySettings = async () => {
   try {
-    await api.put('/settings/security', securitySettings.value)
+    await api.put('/admin/settings/security', securitySettings.value)
     toast.success('Güvenlik ayarları kaydedildi!')
   } catch (error: any) {
     toast.error('Hata: ' + error.message)
@@ -245,7 +245,7 @@ const saveSecuritySettings = async () => {
 
 const saveNotificationSettings = async () => {
   try {
-    await api.put('/settings/notifications', notificationSettings.value)
+    await api.put('/admin/settings/notifications', notificationSettings.value)
     toast.success('Bildirim ayarları kaydedildi!')
   } catch (error: any) {
     toast.error('Hata: ' + error.message)
