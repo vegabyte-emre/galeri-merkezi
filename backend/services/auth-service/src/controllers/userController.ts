@@ -152,9 +152,10 @@ export class UserController {
             .replace(/-+/g, '-')
             .trim() + '-' + Date.now();
           
+          // tax_type must be 'TCKN' or 'VKN', tax_number is required
           const galleryResult = await query(
-            `INSERT INTO galleries (name, slug, status, tax_type, created_at, updated_at) 
-             VALUES ($1, $2, 'active', 'corp', NOW(), NOW()) RETURNING id`,
+            `INSERT INTO galleries (name, slug, status, tax_type, tax_number, created_at, updated_at) 
+             VALUES ($1, $2, 'pending', 'VKN', '0000000000', NOW(), NOW()) RETURNING id`,
             [galleryName, slug]
           );
           finalGalleryId = galleryResult.rows[0].id;
