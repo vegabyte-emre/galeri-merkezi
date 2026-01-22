@@ -1,4 +1,4 @@
-﻿-- ========== 001_create_galleries.sql ==========
+-- ========== 001_create_galleries.sql ==========
 -- Create galleries table
 CREATE TABLE IF NOT EXISTS galleries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -9447,6 +9447,129 @@ SELECT
 FROM users u
 JOIN galleries g ON u.gallery_id = g.id
 WHERE u.email = 'test2@galeri.com';
+
+-- ========== 015_add_audit_logs_columns.sql ==========
+-- Add missing columns to audit_logs
+ALTER TABLE audit_logs 
+ADD COLUMN IF NOT EXISTS level VARCHAR(20) DEFAULT 'info' CHECK (level IN ('info', 'success', 'warning', 'error')),
+ADD COLUMN IF NOT EXISTS details TEXT,
+ADD COLUMN IF NOT EXISTS service VARCHAR(50),
+ADD COLUMN IF NOT EXISTS resolved BOOLEAN DEFAULT FALSE;
+
+CREATE INDEX IF NOT EXISTS idx_audit_level ON audit_logs(level);
+CREATE INDEX IF NOT EXISTS idx_audit_service ON audit_logs(service);
+
+-- ========== 016_create_subscriptions.sql ==========
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    gallery_id UUID REFERENCES galleries(id) ON DELETE CASCADE NOT NULL,
+    plan VARCHAR(50) NOT NULL CHECK (plan IN ('basic', 'premium', 'enterprise', 'trial')),
+    payment_type VARCHAR(20) NOT NULL CHECK (payment_type IN ('monthly', 'yearly', 'lifetime')),
+    start_date DATE NOT NULL,
+    end_date DATE,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'cancelled', 'suspended')),
+    price DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'TRY',
+    auto_renew BOOLEAN DEFAULT TRUE,
+    trial_days INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_subscriptions_gallery ON subscriptions(gallery_id);
+CREATE INDEX idx_subscriptions_status ON subscriptions(status);
+CREATE INDEX idx_subscriptions_end_date ON subscriptions(end_date);
+
+-- ========== 017_create_email_templates.sql ==========
+CREATE TABLE IF NOT EXISTS email_templates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL UNIQUE,
+    body_html TEXT,
+    body_text TEXT,
+    variables JSONB DEFAULT '[]'::jsonb,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default email templates
+INSERT INTO email_templates (name, subject, type, body_html, body_text, variables) VALUES
+    ('Hoş Geldiniz', 'Otobia''ya Hoş Geldiniz', 'welcome', '<p>Merhaba {{name}},</p><p>Otobia platformuna hoş geldiniz!</p>', 'Merhaba {{name}}, Otobia platformuna hoş geldiniz!', '["name", "email"]'::jsonb),
+    ('Şifre Sıfırlama', 'Şifre Sıfırlama Talebi', 'password_reset', '<p>Şifre sıfırlama linkiniz: {{reset_link}}</p>', 'Şifre sıfırlama linkiniz: {{reset_link}}', '["reset_link", "expires_in"]'::jsonb),
+    ('Galeri Onayı', 'Galeri Başvurunuz Onaylandı', 'gallery_approved', '<p>Galeri başvurunuz onaylandı!</p>', 'Galeri başvurunuz onaylandı!', '["gallery_name"]'::jsonb),
+    ('Galeri Reddi', 'Galeri Başvurunuz Reddedildi', 'gallery_rejected', '<p>Galeri başvurunuz reddedildi. Sebep: {{reason}}</p>', 'Galeri başvurunuz reddedildi. Sebep: {{reason}}', '["gallery_name", "reason"]'::jsonb),
+    ('Yeni Teklif', 'Aracınıza Yeni Teklif Geldi', 'new_offer', '<p>Aracınıza yeni bir teklif geldi: {{offer_amount}}</p>', 'Aracınıza yeni bir teklif geldi: {{offer_amount}}', '["vehicle_name", "offer_amount", "buyer_name"]'::jsonb)
+ON CONFLICT (type) DO NOTHING;
+
+-- ========== 018_create_roles_permissions.sql ==========
+CREATE TABLE IF NOT EXISTS roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    is_default BOOLEAN DEFAULT FALSE,
+    is_system BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS permissions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    category VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+    role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+-- Insert default permissions
+INSERT INTO permissions (id, name, description, category) VALUES
+    (1, 'Galerileri Görüntüle', 'Galeri listesini görüntüleme izni', 'galleries'),
+    (2, 'Galerileri Düzenle', 'Galeri bilgilerini düzenleme izni', 'galleries'),
+    (3, 'Galerileri Sil', 'Galeri silme izni', 'galleries'),
+    (4, 'Kullanıcıları Görüntüle', 'Kullanıcı listesini görüntüleme izni', 'users'),
+    (5, 'Kullanıcıları Düzenle', 'Kullanıcı bilgilerini düzenleme izni', 'users'),
+    (6, 'Kullanıcıları Sil', 'Kullanıcı silme izni', 'users'),
+    (7, 'Raporları Görüntüle', 'Rapor görüntüleme izni', 'reports'),
+    (8, 'Sistem Ayarları', 'Sistem ayarlarını düzenleme izni', 'system'),
+    (9, 'Yedekleme Yönetimi', 'Yedekleme işlemleri izni', 'system'),
+    (10, 'Entegrasyon Yönetimi', 'Entegrasyon yönetimi izni', 'system')
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert default roles (matching existing system roles)
+INSERT INTO roles (id, name, description, is_default, is_system) VALUES
+    (1, 'Süper Admin', 'Tüm sistem erişimi', TRUE, TRUE),
+    (2, 'Admin', 'Yönetim paneli erişimi', FALSE, TRUE),
+    (3, 'Uyum Sorumlusu', 'Galeri onay işlemleri', FALSE, TRUE),
+    (4, 'Destek Temsilcisi', 'Müşteri desteği', FALSE, TRUE),
+    (5, 'Galeri Sahibi', 'Galeri yönetimi', FALSE, TRUE),
+    (6, 'Galeri Yöneticisi', 'Galeri operasyonları', FALSE, TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Insert default role permissions
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+    -- Süper Admin: All permissions
+    (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10),
+    -- Admin: Limited permissions
+    (2, 1), (2, 2), (2, 4), (2, 5), (2, 7),
+    -- Uyum Sorumlusu
+    (3, 1), (3, 2), (3, 7),
+    -- Destek Temsilcisi
+    (4, 1), (4, 4), (4, 7),
+    -- Galeri Sahibi
+    (5, 1), (5, 4),
+    -- Galeri Yöneticisi
+    (6, 1)
+ON CONFLICT DO NOTHING;
+
+-- Set sequence for roles to start after 100 (for custom roles)
+SELECT setval('roles_id_seq', 100, false);
 
 
 

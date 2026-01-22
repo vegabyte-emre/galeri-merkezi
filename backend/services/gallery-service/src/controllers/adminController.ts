@@ -19,9 +19,7 @@ const getUserFromHeaders = (req: Request) => {
   };
 };
 
-// In-memory roles store (will be replaced with database later)
-const customRolesStore: Map<number, any> = new Map();
-let nextRoleId = 100; // Start from 100 to avoid conflicts with default roles
+// Roles are now stored in database
 
 export class AdminController {
   // Dashboard stats
@@ -829,36 +827,56 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    // Return demo data for now (subscriptions table would need to be created)
-    const galleriesResult = await query(`
-      SELECT 
-        g.id as gallery_id,
-        g.name as "galleryName",
-        g.email as "galleryEmail",
-        g.status,
-        g.created_at as "startDate"
-      FROM galleries g
-      WHERE g.status = 'active'
-      ORDER BY g.created_at DESC
-      LIMIT 50
-    `);
+    try {
+      const result = await query(`
+        SELECT 
+          s.id,
+          s.gallery_id as "galleryId",
+          g.name as "galleryName",
+          g.email as "galleryEmail",
+          s.plan,
+          s.payment_type as "paymentType",
+          s.start_date as "startDate",
+          s.end_date as "endDate",
+          s.status,
+          s.price,
+          s.currency,
+          s.auto_renew as "autoRenew",
+          s.trial_days as "trialDays",
+          s.created_at as "createdAt"
+        FROM subscriptions s
+        LEFT JOIN galleries g ON s.gallery_id = g.id
+        ORDER BY s.created_at DESC
+      `);
 
-    const subscriptions = galleriesResult.rows.map((g, i) => ({
-      id: i + 1,
-      galleryId: g.gallery_id,
-      galleryName: g.galleryName,
-      galleryEmail: g.galleryEmail,
-      plan: i % 3 === 0 ? 'enterprise' : (i % 2 === 0 ? 'premium' : 'basic'),
-      paymentType: i % 2 === 0 ? 'monthly' : 'yearly',
-      startDate: g.startDate,
-      endDate: new Date(new Date(g.startDate).setFullYear(new Date(g.startDate).getFullYear() + 1)).toISOString(),
-      status: 'active'
-    }));
+      const subscriptions = result.rows.map(s => ({
+        id: s.id,
+        galleryId: s.galleryId,
+        galleryName: s.galleryName || 'Unknown',
+        galleryEmail: s.galleryEmail || '',
+        plan: s.plan,
+        paymentType: s.paymentType,
+        startDate: s.startDate,
+        endDate: s.endDate,
+        status: s.status,
+        price: parseFloat(s.price || '0'),
+        currency: s.currency || 'TRY',
+        autoRenew: s.autoRenew || false,
+        trialDays: s.trialDays || 0,
+        createdAt: s.createdAt
+      }));
 
-    res.json({
-      success: true,
-      subscriptions
-    });
+      res.json({
+        success: true,
+        subscriptions
+      });
+    } catch (e: any) {
+      // If table doesn't exist, return empty array
+      res.json({
+        success: true,
+        subscriptions: []
+      });
+    }
   }
 
   async createSubscription(req: AuthenticatedRequest, res: Response) {
@@ -867,8 +885,48 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can create subscriptions');
     }
 
-    // In a real implementation, this would create a subscription record
-    res.json({ success: true, message: 'Subscription created' });
+    const { galleryId, plan, paymentType, startDate, endDate, price, currency, autoRenew, trialDays } = req.body;
+
+    if (!galleryId || !plan || !paymentType || !startDate || !price) {
+      throw new ValidationError('Gallery ID, plan, payment type, start date and price are required');
+    }
+
+    // Validate plan
+    const validPlans = ['basic', 'premium', 'enterprise', 'trial'];
+    if (!validPlans.includes(plan)) {
+      throw new ValidationError('Invalid plan');
+    }
+
+    // Validate payment type
+    const validPaymentTypes = ['monthly', 'yearly', 'lifetime'];
+    if (!validPaymentTypes.includes(paymentType)) {
+      throw new ValidationError('Invalid payment type');
+    }
+
+    try {
+      const result = await query(`
+        INSERT INTO subscriptions (
+          gallery_id, plan, payment_type, start_date, end_date, 
+          price, currency, auto_renew, trial_days, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active')
+        RETURNING *
+      `, [
+        galleryId, plan, paymentType, startDate, endDate || null,
+        price, currency || 'TRY', autoRenew !== false, trialDays || 0
+      ]);
+
+      res.json({
+        success: true,
+        message: 'Subscription created',
+        subscription: result.rows[0]
+      });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        // Table doesn't exist
+        throw new ValidationError('Subscriptions table not found. Please run database migrations.');
+      }
+      throw e;
+    }
   }
 
   async updateSubscription(req: AuthenticatedRequest, res: Response) {
@@ -877,7 +935,66 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can update subscriptions');
     }
 
-    res.json({ success: true, message: 'Subscription updated' });
+    const { id } = req.params;
+    const { plan, paymentType, startDate, endDate, price, currency, autoRenew, status } = req.body;
+
+    try {
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+
+      if (plan) {
+        updates.push(`plan = $${paramCount++}`);
+        values.push(plan);
+      }
+      if (paymentType) {
+        updates.push(`payment_type = $${paramCount++}`);
+        values.push(paymentType);
+      }
+      if (startDate) {
+        updates.push(`start_date = $${paramCount++}`);
+        values.push(startDate);
+      }
+      if (endDate !== undefined) {
+        updates.push(`end_date = $${paramCount++}`);
+        values.push(endDate);
+      }
+      if (price !== undefined) {
+        updates.push(`price = $${paramCount++}`);
+        values.push(price);
+      }
+      if (currency) {
+        updates.push(`currency = $${paramCount++}`);
+        values.push(currency);
+      }
+      if (autoRenew !== undefined) {
+        updates.push(`auto_renew = $${paramCount++}`);
+        values.push(autoRenew);
+      }
+      if (status) {
+        updates.push(`status = $${paramCount++}`);
+        values.push(status);
+      }
+
+      if (updates.length === 0) {
+        throw new ValidationError('No fields to update');
+      }
+
+      updates.push(`updated_at = NOW()`);
+      values.push(id);
+
+      await query(
+        `UPDATE subscriptions SET ${updates.join(', ')} WHERE id = $${paramCount}`,
+        values
+      );
+
+      res.json({ success: true, message: 'Subscription updated' });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Subscriptions table not found');
+      }
+      throw e;
+    }
   }
 
   async extendTrial(req: AuthenticatedRequest, res: Response) {
@@ -886,7 +1003,28 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can extend trials');
     }
 
-    res.json({ success: true, message: 'Trial extended' });
+    const { id } = req.params;
+    const { days } = req.body;
+
+    if (!days || days <= 0) {
+      throw new ValidationError('Valid number of days is required');
+    }
+
+    try {
+      await query(`
+        UPDATE subscriptions 
+        SET end_date = end_date + INTERVAL '${parseInt(days)} days',
+            updated_at = NOW()
+        WHERE id = $1 AND plan = 'trial'
+      `, [id]);
+
+      res.json({ success: true, message: 'Trial extended' });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Subscriptions table not found');
+      }
+      throw e;
+    }
   }
 
   // ===================== LOGS =====================
@@ -903,14 +1041,18 @@ export class AdminController {
     try {
       let queryStr = `
         SELECT 
-          id,
-          created_at as timestamp,
-          level,
-          user_id,
-          action,
-          details,
-          ip_address as ip
-        FROM audit_logs
+          al.id,
+          al.created_at as timestamp,
+          COALESCE(al.level, 'info') as level,
+          al.service,
+          COALESCE(u.email, 'Sistem') as user_email,
+          al.user_id,
+          al.action,
+          COALESCE(al.details, al.action) as details,
+          al.ip_address as ip,
+          al.resolved
+        FROM audit_logs al
+        LEFT JOIN users u ON al.user_id = u.id
       `;
       
       const conditions: string[] = [];
@@ -918,11 +1060,11 @@ export class AdminController {
       let paramCount = 1;
 
       if (level) {
-        conditions.push(`level = $${paramCount++}`);
+        conditions.push(`COALESCE(al.level, 'info') = $${paramCount++}`);
         params.push(level);
       }
       if (search) {
-        conditions.push(`(action ILIKE $${paramCount} OR details ILIKE $${paramCount})`);
+        conditions.push(`(al.action ILIKE $${paramCount} OR al.details ILIKE $${paramCount})`);
         params.push(`%${search}%`);
         paramCount++;
       }
@@ -930,7 +1072,7 @@ export class AdminController {
       if (conditions.length > 0) {
         queryStr += ' WHERE ' + conditions.join(' AND ');
       }
-      queryStr += ' ORDER BY created_at DESC LIMIT 100';
+      queryStr += ' ORDER BY al.created_at DESC LIMIT 100';
 
       const result = await query(queryStr, params);
 
@@ -938,10 +1080,12 @@ export class AdminController {
         id: r.id,
         timestamp: r.timestamp,
         level: r.level || 'info',
-        user: r.user_id || 'Sistem',
+        service: r.service || 'System',
+        user: r.user_email || 'Sistem',
         action: r.action,
-        details: r.details || '',
-        ip: r.ip || '-'
+        details: r.details || r.action || '',
+        ip: r.ip || '-',
+        resolved: r.resolved || false
       }));
 
       res.json({
@@ -955,23 +1099,14 @@ export class AdminController {
         }
       });
       return;
-    } catch (e) {
-      // Table doesn't exist, return demo data
+    } catch (e: any) {
+      // Table doesn't exist or error occurred, return empty logs
+      res.json({
+        success: true,
+        logs: [],
+        stats: { error: 0, warning: 0, info: 0, success: 0 }
+      });
     }
-
-    // Demo data
-    const logs = [
-      { id: 1, timestamp: new Date().toISOString(), level: 'info', user: 'admin@otobia.com', action: 'Giriş yapıldı', details: 'Başarılı oturum açma', ip: '192.168.1.1' },
-      { id: 2, timestamp: new Date(Date.now() - 3600000).toISOString(), level: 'success', user: 'Sistem', action: 'Yedekleme tamamlandı', details: 'Günlük yedekleme başarılı', ip: '-' },
-      { id: 3, timestamp: new Date(Date.now() - 7200000).toISOString(), level: 'warning', user: 'Sistem', action: 'Disk alanı uyarısı', details: '%85 doluluk oranı', ip: '-' },
-      { id: 4, timestamp: new Date(Date.now() - 10800000).toISOString(), level: 'error', user: 'Sistem', action: 'Bağlantı hatası', details: 'Redis bağlantısı koptu', ip: '-' }
-    ];
-
-    res.json({
-      success: true,
-      logs,
-      stats: { error: 1, warning: 1, info: 1, success: 1 }
-    });
   }
 
   async exportLogs(req: AuthenticatedRequest, res: Response) {
@@ -1275,55 +1410,146 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    // Count users per role
-    const roleCountsResult = await query(`
-      SELECT role, COUNT(*) as count
-      FROM users
-      WHERE status != 'deleted'
-      GROUP BY role
-    `);
+    try {
+      // Get all roles from database
+      const rolesResult = await query(`
+        SELECT 
+          r.id,
+          r.name,
+          r.description,
+          r.is_default as "isDefault",
+          r.is_system as "isSystem",
+          r.created_at as "createdAt",
+          r.updated_at as "updatedAt"
+        FROM roles r
+        ORDER BY r.id ASC
+      `);
 
-    const roleCounts: Record<string, number> = {};
-    roleCountsResult.rows.forEach(r => {
-      roleCounts[r.role] = parseInt(r.count);
-    });
+      // Get permissions for each role
+      const permissionsResult = await query(`
+        SELECT 
+          rp.role_id,
+          rp.permission_id
+        FROM role_permissions rp
+      `);
 
-    // Default system roles
-    const defaultRoles = [
-      { id: 1, name: 'Süper Admin', description: 'Tüm sistem erişimi', permissions: [1,2,3,4,5,6,7,8,9,10], isDefault: true, userCount: roleCounts['superadmin'] || 0 },
-      { id: 2, name: 'Admin', description: 'Yönetim paneli erişimi', permissions: [1,2,4,5,7], isDefault: false, userCount: roleCounts['admin'] || 0 },
-      { id: 3, name: 'Uyum Sorumlusu', description: 'Galeri onay işlemleri', permissions: [1,2,7], isDefault: false, userCount: roleCounts['compliance_officer'] || 0 },
-      { id: 4, name: 'Destek Temsilcisi', description: 'Müşteri desteği', permissions: [1,4,7], isDefault: false, userCount: roleCounts['support_agent'] || 0 },
-      { id: 5, name: 'Galeri Sahibi', description: 'Galeri yönetimi', permissions: [1,4], isDefault: false, userCount: roleCounts['gallery_owner'] || 0 },
-      { id: 6, name: 'Galeri Yöneticisi', description: 'Galeri operasyonları', permissions: [1], isDefault: false, userCount: roleCounts['gallery_manager'] || 0 }
-    ];
+      // Group permissions by role
+      const rolePermissions: Record<number, number[]> = {};
+      permissionsResult.rows.forEach((rp: any) => {
+        if (!rolePermissions[rp.role_id]) {
+          rolePermissions[rp.role_id] = [];
+        }
+        rolePermissions[rp.role_id].push(rp.permission_id);
+      });
 
-    // Merge with custom roles
-    const customRoles = Array.from(customRolesStore.values());
-    const allRoles = [...defaultRoles, ...customRoles];
+      // Count users per role (from users table)
+      const roleCountsResult = await query(`
+        SELECT role, COUNT(*) as count
+        FROM users
+        WHERE status != 'deleted'
+        GROUP BY role
+      `);
 
-    res.json({
-      success: true,
-      roles: allRoles
-    });
+      const roleCounts: Record<string, number> = {};
+      roleCountsResult.rows.forEach(r => {
+        // Map database role names to role IDs
+        const roleMap: Record<string, number> = {
+          'superadmin': 1,
+          'admin': 2,
+          'compliance_officer': 3,
+          'support_agent': 4,
+          'gallery_owner': 5,
+          'gallery_manager': 6
+        };
+        const roleId = roleMap[r.role];
+        if (roleId) {
+          roleCounts[roleId] = parseInt(r.count);
+        }
+      });
+
+      const roles = rolesResult.rows.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        permissions: rolePermissions[r.id] || [],
+        isDefault: r.isDefault || false,
+        isSystem: r.isSystem || false,
+        userCount: roleCounts[r.id] || 0,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt
+      }));
+
+      res.json({
+        success: true,
+        roles
+      });
+    } catch (e: any) {
+      // If tables don't exist, return default roles
+      const roleCountsResult = await query(`
+        SELECT role, COUNT(*) as count
+        FROM users
+        WHERE status != 'deleted'
+        GROUP BY role
+      `);
+
+      const roleCounts: Record<string, number> = {};
+      roleCountsResult.rows.forEach(r => {
+        roleCounts[r.role] = parseInt(r.count);
+      });
+
+      const defaultRoles = [
+        { id: 1, name: 'Süper Admin', description: 'Tüm sistem erişimi', permissions: [1,2,3,4,5,6,7,8,9,10], isDefault: true, userCount: roleCounts['superadmin'] || 0 },
+        { id: 2, name: 'Admin', description: 'Yönetim paneli erişimi', permissions: [1,2,4,5,7], isDefault: false, userCount: roleCounts['admin'] || 0 },
+        { id: 3, name: 'Uyum Sorumlusu', description: 'Galeri onay işlemleri', permissions: [1,2,7], isDefault: false, userCount: roleCounts['compliance_officer'] || 0 },
+        { id: 4, name: 'Destek Temsilcisi', description: 'Müşteri desteği', permissions: [1,4,7], isDefault: false, userCount: roleCounts['support_agent'] || 0 },
+        { id: 5, name: 'Galeri Sahibi', description: 'Galeri yönetimi', permissions: [1,4], isDefault: false, userCount: roleCounts['gallery_owner'] || 0 },
+        { id: 6, name: 'Galeri Yöneticisi', description: 'Galeri operasyonları', permissions: [1], isDefault: false, userCount: roleCounts['gallery_manager'] || 0 }
+      ];
+
+      res.json({
+        success: true,
+        roles: defaultRoles
+      });
+    }
   }
 
   async getPermissions(req: AuthenticatedRequest, res: Response) {
-    res.json({
-      success: true,
-      permissions: [
-        { id: 1, name: 'Galerileri Görüntüle' },
-        { id: 2, name: 'Galerileri Düzenle' },
-        { id: 3, name: 'Galerileri Sil' },
-        { id: 4, name: 'Kullanıcıları Görüntüle' },
-        { id: 5, name: 'Kullanıcıları Düzenle' },
-        { id: 6, name: 'Kullanıcıları Sil' },
-        { id: 7, name: 'Raporları Görüntüle' },
-        { id: 8, name: 'Sistem Ayarları' },
-        { id: 9, name: 'Yedekleme Yönetimi' },
-        { id: 10, name: 'Entegrasyon Yönetimi' }
-      ]
-    });
+    try {
+      const result = await query(`
+        SELECT id, name, description, category
+        FROM permissions
+        ORDER BY id ASC
+      `);
+
+      const permissions = result.rows.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        category: p.category
+      }));
+
+      res.json({
+        success: true,
+        permissions
+      });
+    } catch (e: any) {
+      // If table doesn't exist, return default permissions
+      res.json({
+        success: true,
+        permissions: [
+          { id: 1, name: 'Galerileri Görüntüle' },
+          { id: 2, name: 'Galerileri Düzenle' },
+          { id: 3, name: 'Galerileri Sil' },
+          { id: 4, name: 'Kullanıcıları Görüntüle' },
+          { id: 5, name: 'Kullanıcıları Düzenle' },
+          { id: 6, name: 'Kullanıcıları Sil' },
+          { id: 7, name: 'Raporları Görüntüle' },
+          { id: 8, name: 'Sistem Ayarları' },
+          { id: 9, name: 'Yedekleme Yönetimi' },
+          { id: 10, name: 'Entegrasyon Yönetimi' }
+        ]
+      });
+    }
   }
 
   async createRole(req: AuthenticatedRequest, res: Response) {
@@ -1332,33 +1558,64 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can create roles');
     }
 
-    const { name, description, permissions = [], isDefault = false } = req.body;
+    const { name, description, permissions = [] } = req.body;
 
     if (!name) {
       throw new ValidationError('Role name is required');
     }
 
-    // Check if role name already exists
-    const existingRoles = Array.from(customRolesStore.values());
-    if (existingRoles.some(r => r.name === name)) {
-      throw new ValidationError('Role with this name already exists');
+    try {
+      // Check if role name already exists
+      const existing = await query('SELECT id FROM roles WHERE name = $1', [name]);
+      if (existing.rows.length > 0) {
+        throw new ValidationError('Role with this name already exists');
+      }
+
+      // Create role
+      const roleResult = await query(`
+        INSERT INTO roles (name, description, is_default, is_system)
+        VALUES ($1, $2, FALSE, FALSE)
+        RETURNING *
+      `, [name, description || '']);
+
+      const roleId = roleResult.rows[0].id;
+
+      // Add permissions
+      if (Array.isArray(permissions) && permissions.length > 0) {
+        const permissionValues = permissions.map((permId: number) => `(${roleId}, ${permId})`).join(', ');
+        await query(`
+          INSERT INTO role_permissions (role_id, permission_id)
+          VALUES ${permissionValues}
+          ON CONFLICT DO NOTHING
+        `);
+      }
+
+      // Get created role with permissions
+      const roleWithPerms = await query(`
+        SELECT r.*, array_agg(rp.permission_id) as permissions
+        FROM roles r
+        LEFT JOIN role_permissions rp ON r.id = rp.role_id
+        WHERE r.id = $1
+        GROUP BY r.id
+      `, [roleId]);
+
+      const role = roleWithPerms.rows[0];
+
+      res.json({
+        success: true,
+        id: role.id,
+        name: role.name,
+        description: role.description,
+        permissions: role.permissions || [],
+        isDefault: role.is_default || false,
+        userCount: 0
+      });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Roles table not found. Please run database migrations.');
+      }
+      throw e;
     }
-
-    const newRole = {
-      id: nextRoleId++,
-      name,
-      description: description || '',
-      permissions: Array.isArray(permissions) ? permissions : [],
-      isDefault: false, // Custom roles cannot be default
-      userCount: 0
-    };
-
-    customRolesStore.set(newRole.id, newRole);
-
-    res.json({
-      success: true,
-      ...newRole
-    });
   }
 
   async updateRole(req: AuthenticatedRequest, res: Response) {
@@ -1371,28 +1628,62 @@ export class AdminController {
     const roleId = parseInt(id);
     const { name, description, permissions } = req.body;
 
-    // Default roles (1-6) cannot be updated, only custom roles
-    if (roleId <= 6) {
-      throw new ValidationError('Default system roles cannot be modified');
+    try {
+      // Check if role exists and is not system role
+      const roleCheck = await query('SELECT is_system FROM roles WHERE id = $1', [roleId]);
+      if (roleCheck.rows.length === 0) {
+        throw new ValidationError('Role not found');
+      }
+
+      if (roleCheck.rows[0].is_system) {
+        throw new ValidationError('System roles cannot be modified');
+      }
+
+      // Update role
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+
+      if (name) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(name);
+      }
+      if (description !== undefined) {
+        updates.push(`description = $${paramCount++}`);
+        values.push(description);
+      }
+
+      if (updates.length > 0) {
+        updates.push(`updated_at = NOW()`);
+        values.push(roleId);
+        await query(`UPDATE roles SET ${updates.join(', ')} WHERE id = $${paramCount}`, values);
+      }
+
+      // Update permissions if provided
+      if (Array.isArray(permissions)) {
+        // Delete existing permissions
+        await query('DELETE FROM role_permissions WHERE role_id = $1', [roleId]);
+        
+        // Add new permissions
+        if (permissions.length > 0) {
+          const permissionValues = permissions.map((permId: number) => `(${roleId}, ${permId})`).join(', ');
+          await query(`
+            INSERT INTO role_permissions (role_id, permission_id)
+            VALUES ${permissionValues}
+          `);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: 'Role updated'
+      });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Roles table not found');
+      }
+      throw e;
     }
-
-    const role = customRolesStore.get(roleId);
-    if (!role) {
-      throw new ValidationError('Role not found');
-    }
-
-    // Update role
-    if (name) role.name = name;
-    if (description !== undefined) role.description = description;
-    if (Array.isArray(permissions)) role.permissions = permissions;
-
-    customRolesStore.set(roleId, role);
-
-    res.json({
-      success: true,
-      message: 'Role updated',
-      ...role
-    });
   }
 
   async updateRolePermissions(req: AuthenticatedRequest, res: Response) {
@@ -1405,54 +1696,58 @@ export class AdminController {
     const roleId = parseInt(id);
     const { permissionId, enabled, permissions } = req.body;
 
-    // Handle both formats: single permission toggle or full permissions array
-    if (permissions && Array.isArray(permissions)) {
-      // Full permissions array update
-      if (roleId <= 6) {
-        // Default roles - cannot modify, but return success for UI
-        res.json({ success: true, message: 'Default role permissions cannot be modified' });
-        return;
-      }
-
-      const role = customRolesStore.get(roleId);
-      if (!role) {
+    try {
+      // Check if role exists and is not system role
+      const roleCheck = await query('SELECT is_system FROM roles WHERE id = $1', [roleId]);
+      if (roleCheck.rows.length === 0) {
         throw new ValidationError('Role not found');
       }
 
-      role.permissions = permissions;
-      customRolesStore.set(roleId, role);
-
-      res.json({ success: true, message: 'Permissions updated' });
-    } else if (permissionId !== undefined && enabled !== undefined) {
-      // Single permission toggle
-      let role: any = null;
-      
-      // Check if it's a default role (we'll handle it differently)
-      if (roleId <= 6) {
-        // Default roles - cannot modify, but return success for UI
-        res.json({ success: true, message: 'Default role permissions cannot be modified' });
+      if (roleCheck.rows[0].is_system) {
+        res.json({ success: true, message: 'System role permissions cannot be modified' });
         return;
       }
 
-      role = customRolesStore.get(roleId);
-      if (!role) {
-        throw new ValidationError('Role not found');
-      }
-
-      const permId = parseInt(permissionId);
-      if (enabled) {
-        if (!role.permissions.includes(permId)) {
-          role.permissions.push(permId);
+      // Handle both formats: single permission toggle or full permissions array
+      if (permissions && Array.isArray(permissions)) {
+        // Full permissions array update
+        await query('DELETE FROM role_permissions WHERE role_id = $1', [roleId]);
+        
+        if (permissions.length > 0) {
+          const permissionValues = permissions.map((permId: number) => `(${roleId}, ${permId})`).join(', ');
+          await query(`
+            INSERT INTO role_permissions (role_id, permission_id)
+            VALUES ${permissionValues}
+          `);
         }
+
+        res.json({ success: true, message: 'Permissions updated' });
+      } else if (permissionId !== undefined && enabled !== undefined) {
+        // Single permission toggle
+        const permId = parseInt(permissionId);
+        
+        if (enabled) {
+          await query(`
+            INSERT INTO role_permissions (role_id, permission_id)
+            VALUES ($1, $2)
+            ON CONFLICT DO NOTHING
+          `, [roleId, permId]);
+        } else {
+          await query(`
+            DELETE FROM role_permissions 
+            WHERE role_id = $1 AND permission_id = $2
+          `, [roleId, permId]);
+        }
+
+        res.json({ success: true, message: 'Permission updated' });
       } else {
-        role.permissions = role.permissions.filter((p: number) => p !== permId);
+        throw new ValidationError('Invalid request: provide either permissions array or permissionId+enabled');
       }
-
-      customRolesStore.set(roleId, role);
-
-      res.json({ success: true, message: 'Permission updated' });
-    } else {
-      throw new ValidationError('Invalid request: provide either permissions array or permissionId+enabled');
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Roles table not found');
+      }
+      throw e;
     }
   }
 
@@ -1465,24 +1760,40 @@ export class AdminController {
     const { id } = req.params;
     const roleId = parseInt(id);
 
-    // Default roles (1-6) cannot be deleted
-    if (roleId <= 6) {
-      throw new ValidationError('Default system roles cannot be deleted');
+    try {
+      // Check if role exists and is not system role
+      const roleCheck = await query('SELECT is_system FROM roles WHERE id = $1', [roleId]);
+      if (roleCheck.rows.length === 0) {
+        throw new ValidationError('Role not found');
+      }
+
+      if (roleCheck.rows[0].is_system) {
+        throw new ValidationError('System roles cannot be deleted');
+      }
+
+      // Check if role has users (count users with this role)
+      const userCount = await query(`
+        SELECT COUNT(*) as count
+        FROM users
+        WHERE role = (
+          SELECT name FROM roles WHERE id = $1
+        ) AND status != 'deleted'
+      `, [roleId]);
+
+      if (parseInt(userCount.rows[0].count) > 0) {
+        throw new ValidationError('Cannot delete role with assigned users');
+      }
+
+      // Delete role (permissions will be deleted via CASCADE)
+      await query('DELETE FROM roles WHERE id = $1', [roleId]);
+
+      res.json({ success: true, message: 'Role deleted' });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Roles table not found');
+      }
+      throw e;
     }
-
-    const role = customRolesStore.get(roleId);
-    if (!role) {
-      throw new ValidationError('Role not found');
-    }
-
-    // Check if role has users
-    if (role.userCount > 0) {
-      throw new ValidationError('Cannot delete role with assigned users');
-    }
-
-    customRolesStore.delete(roleId);
-
-    res.json({ success: true, message: 'Role deleted' });
   }
 
   // ===================== EMAIL TEMPLATES =====================
@@ -1493,16 +1804,47 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    res.json({
-      success: true,
-      templates: [
-        { id: 1, name: 'Hoş Geldiniz', subject: 'Otobia\'ya Hoş Geldiniz', type: 'welcome', active: true },
-        { id: 2, name: 'Şifre Sıfırlama', subject: 'Şifre Sıfırlama Talebi', type: 'password_reset', active: true },
-        { id: 3, name: 'Galeri Onayı', subject: 'Galeri Başvurunuz Onaylandı', type: 'gallery_approved', active: true },
-        { id: 4, name: 'Galeri Reddi', subject: 'Galeri Başvurunuz Reddedildi', type: 'gallery_rejected', active: true },
-        { id: 5, name: 'Yeni Teklif', subject: 'Aracınıza Yeni Teklif Geldi', type: 'new_offer', active: true }
-      ]
-    });
+    try {
+      const result = await query(`
+        SELECT 
+          id,
+          name,
+          subject,
+          type,
+          body_html as "bodyHtml",
+          body_text as "bodyText",
+          variables,
+          is_active as active,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM email_templates
+        ORDER BY name ASC
+      `);
+
+      const templates = result.rows.map(t => ({
+        id: t.id,
+        name: t.name,
+        subject: t.subject,
+        type: t.type,
+        bodyHtml: t.bodyHtml,
+        bodyText: t.bodyText,
+        variables: t.variables || [],
+        active: t.active !== false,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt
+      }));
+
+      res.json({
+        success: true,
+        templates
+      });
+    } catch (e: any) {
+      // If table doesn't exist, return empty array
+      res.json({
+        success: true,
+        templates: []
+      });
+    }
   }
 
   // ===================== BACKUP =====================
