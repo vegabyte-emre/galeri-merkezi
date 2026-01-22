@@ -7,6 +7,7 @@ import { userRoutes } from './routes/user';
 import { eidsRoutes } from './routes/eids';
 import { channelRoutes } from './routes/channel';
 import { adminRoutes } from './routes/admin';
+import { publicRoutes } from './routes/public';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/users', userRoutes);
 app.use('/eids', eidsRoutes);
 app.use('/channels', channelRoutes);
 app.use('/admin', adminRoutes);
+app.use('/public', publicRoutes);
 
 // Error handler
 app.use(errorHandler);

@@ -81,12 +81,37 @@
 
 <script setup lang="ts">
 import { Check } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
 
 useHead({
   title: 'Fiyatlandırma - Otobia'
 })
 
-const plans = [
+const config = useRuntimeConfig()
+const api = useApi()
+const plans = ref<any[]>([])
+const loading = ref(true)
+
+const loadPricingPlans = async () => {
+  try {
+    loading.value = true
+    const response = await api.get('/pricing-plans')
+    if (response.success && response.plans) {
+      plans.value = response.plans
+    } else {
+      // Fallback to default plans if API fails
+      plans.value = getDefaultPlans()
+    }
+  } catch (error: any) {
+    console.error('Fiyat planları yüklenemedi:', error)
+    // Fallback to default plans
+    plans.value = getDefaultPlans()
+  } finally {
+    loading.value = false
+  }
+}
+
+const getDefaultPlans = () => [
   {
     name: 'Başlangıç',
     description: 'Küçük galeriler için',
@@ -136,6 +161,10 @@ const plans = [
     ]
   }
 ]
+
+onMounted(() => {
+  loadPricingPlans()
+})
 
 const faqs = [
   {

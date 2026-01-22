@@ -2662,5 +2662,294 @@ export class AdminController {
     // Legacy endpoint - redirect to generateReport
     return this.generateReport(req, res);
   }
+
+  // ===================== PRICING PLANS =====================
+  async listPricingPlans(req: AuthenticatedRequest, res: Response) {
+    // Public endpoint - no auth required for landing page
+    try {
+      const result = await query(`
+        SELECT 
+          id,
+          name,
+          slug,
+          description,
+          price_monthly as "priceMonthly",
+          price_yearly as "priceYearly",
+          price_custom as "priceCustom",
+          price_display as "priceDisplay",
+          billing_note as "billingNote",
+          is_featured as "isFeatured",
+          is_active as "isActive",
+          sort_order as "sortOrder",
+          features,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM pricing_plans
+        WHERE is_active = TRUE
+        ORDER BY sort_order ASC, created_at ASC
+      `);
+
+      const plans = result.rows.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        description: p.description,
+        price: p.priceCustom ? p.priceDisplay : (p.priceMonthly?.toString() || '0'),
+        priceMonthly: p.priceMonthly ? parseFloat(p.priceMonthly) : null,
+        priceYearly: p.priceYearly ? parseFloat(p.priceYearly) : null,
+        priceCustom: p.priceCustom || false,
+        priceDisplay: p.priceDisplay,
+        billing: p.billingNote || 'Aylık ödeme',
+        featured: p.isFeatured || false,
+        features: p.features || []
+      }));
+
+      res.json({
+        success: true,
+        plans
+      });
+    } catch (e: any) {
+      // If table doesn't exist, return default plans
+      res.json({
+        success: true,
+        plans: [
+          {
+            name: 'Başlangıç',
+            slug: 'starter',
+            description: 'Küçük galeriler için',
+            price: '499',
+            billing: 'Aylık ödeme',
+            featured: false,
+            features: ['50 araç yükleme', 'Temel stok yönetimi', 'E-posta desteği', 'Temel raporlar', '1 kanal bağlantısı']
+          },
+          {
+            name: 'Profesyonel',
+            slug: 'professional',
+            description: 'Büyüyen galeriler için',
+            price: '999',
+            billing: 'Aylık ödeme',
+            featured: true,
+            features: ['Sınırsız araç yükleme', 'Gelişmiş stok yönetimi', 'Öncelikli destek', 'Detaylı analitik', 'Tüm kanal bağlantıları', 'API erişimi', 'Özel entegrasyonlar']
+          },
+          {
+            name: 'Kurumsal',
+            slug: 'enterprise',
+            description: 'Büyük galeriler için',
+            price: 'Özel',
+            billing: 'Özel fiyatlandırma',
+            featured: false,
+            features: ['Sınırsız araç yükleme', 'Gelişmiş stok yönetimi', '7/24 öncelikli destek', 'Özel analitik dashboard', 'Tüm kanal bağlantıları', 'API erişimi', 'Özel entegrasyonlar', 'Dedike hesap yöneticisi', 'Özel eğitim ve danışmanlık']
+          }
+        ]
+      });
+    }
+  }
+
+  async adminListPricingPlans(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    const allowedRoles = ['superadmin', 'admin'];
+    if (!allowedRoles.includes(user.role || '')) {
+      throw new ForbiddenError('Insufficient permissions');
+    }
+
+    try {
+      const result = await query(`
+        SELECT 
+          id,
+          name,
+          slug,
+          description,
+          price_monthly as "priceMonthly",
+          price_yearly as "priceYearly",
+          price_custom as "priceCustom",
+          price_display as "priceDisplay",
+          billing_note as "billingNote",
+          is_featured as "isFeatured",
+          is_active as "isActive",
+          sort_order as "sortOrder",
+          features,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM pricing_plans
+        ORDER BY sort_order ASC, created_at ASC
+      `);
+
+      const plans = result.rows.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        description: p.description,
+        priceMonthly: p.priceMonthly ? parseFloat(p.priceMonthly) : null,
+        priceYearly: p.priceYearly ? parseFloat(p.priceYearly) : null,
+        priceCustom: p.priceCustom || false,
+        priceDisplay: p.priceDisplay,
+        billingNote: p.billingNote,
+        isFeatured: p.isFeatured || false,
+        isActive: p.isActive !== false,
+        sortOrder: p.sortOrder || 0,
+        features: p.features || [],
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt
+      }));
+
+      res.json({
+        success: true,
+        plans
+      });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        res.json({
+          success: true,
+          plans: []
+        });
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  async createPricingPlan(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can create pricing plans');
+    }
+
+    const { name, slug, description, priceMonthly, priceYearly, priceCustom, priceDisplay, billingNote, isFeatured, sortOrder, features } = req.body;
+
+    if (!name || !slug) {
+      throw new ValidationError('Name and slug are required');
+    }
+
+    try {
+      const result = await query(`
+        INSERT INTO pricing_plans (
+          name, slug, description, price_monthly, price_yearly, 
+          price_custom, price_display, billing_note, is_featured, 
+          sort_order, features, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, TRUE)
+        RETURNING *
+      `, [
+        name, slug, description || null, priceMonthly || null, priceYearly || null,
+        priceCustom || false, priceDisplay || null, billingNote || null,
+        isFeatured || false, sortOrder || 0, JSON.stringify(features || [])
+      ]);
+
+      res.json({
+        success: true,
+        plan: result.rows[0]
+      });
+    } catch (e: any) {
+      if (e.code === '23505') {
+        throw new ValidationError('Plan with this slug already exists');
+      }
+      if (e.code === '42P01') {
+        throw new ValidationError('Pricing plans table not found. Please run database migrations.');
+      }
+      throw e;
+    }
+  }
+
+  async updatePricingPlan(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can update pricing plans');
+    }
+
+    const { id } = req.params;
+    const { name, slug, description, priceMonthly, priceYearly, priceCustom, priceDisplay, billingNote, isFeatured, isActive, sortOrder, features } = req.body;
+
+    try {
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+
+      if (name) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(name);
+      }
+      if (slug) {
+        updates.push(`slug = $${paramCount++}`);
+        values.push(slug);
+      }
+      if (description !== undefined) {
+        updates.push(`description = $${paramCount++}`);
+        values.push(description);
+      }
+      if (priceMonthly !== undefined) {
+        updates.push(`price_monthly = $${paramCount++}`);
+        values.push(priceMonthly);
+      }
+      if (priceYearly !== undefined) {
+        updates.push(`price_yearly = $${paramCount++}`);
+        values.push(priceYearly);
+      }
+      if (priceCustom !== undefined) {
+        updates.push(`price_custom = $${paramCount++}`);
+        values.push(priceCustom);
+      }
+      if (priceDisplay !== undefined) {
+        updates.push(`price_display = $${paramCount++}`);
+        values.push(priceDisplay);
+      }
+      if (billingNote !== undefined) {
+        updates.push(`billing_note = $${paramCount++}`);
+        values.push(billingNote);
+      }
+      if (isFeatured !== undefined) {
+        updates.push(`is_featured = $${paramCount++}`);
+        values.push(isFeatured);
+      }
+      if (isActive !== undefined) {
+        updates.push(`is_active = $${paramCount++}`);
+        values.push(isActive);
+      }
+      if (sortOrder !== undefined) {
+        updates.push(`sort_order = $${paramCount++}`);
+        values.push(sortOrder);
+      }
+      if (features !== undefined) {
+        updates.push(`features = $${paramCount++}::jsonb`);
+        values.push(JSON.stringify(features));
+      }
+
+      if (updates.length === 0) {
+        throw new ValidationError('No fields to update');
+      }
+
+      updates.push(`updated_at = NOW()`);
+      values.push(id);
+
+      await query(
+        `UPDATE pricing_plans SET ${updates.join(', ')} WHERE id = $${paramCount}`,
+        values
+      );
+
+      res.json({ success: true, message: 'Pricing plan updated' });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Pricing plans table not found');
+      }
+      throw e;
+    }
+  }
+
+  async deletePricingPlan(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can delete pricing plans');
+    }
+
+    const { id } = req.params;
+
+    try {
+      await query('DELETE FROM pricing_plans WHERE id = $1', [id]);
+      res.json({ success: true, message: 'Pricing plan deleted' });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Pricing plans table not found');
+      }
+      throw e;
+    }
+  }
 }
 

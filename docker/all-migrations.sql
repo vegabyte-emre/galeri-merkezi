@@ -9589,6 +9589,34 @@ CREATE TABLE IF NOT EXISTS fcm_tokens (
 CREATE INDEX idx_fcm_tokens_user ON fcm_tokens(user_id);
 CREATE INDEX idx_fcm_tokens_active ON fcm_tokens(user_id, is_active) WHERE is_active = TRUE;
 
+-- ========== 024_create_pricing_plans.sql ==========
+CREATE TABLE IF NOT EXISTS pricing_plans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    slug VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    price_monthly DECIMAL(10,2),
+    price_yearly DECIMAL(10,2),
+    price_custom BOOLEAN DEFAULT FALSE,
+    price_display VARCHAR(50), -- For custom pricing like "Özel"
+    billing_note VARCHAR(255),
+    is_featured BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    sort_order INTEGER DEFAULT 0,
+    features JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default pricing plans
+INSERT INTO pricing_plans (name, slug, description, price_monthly, price_yearly, price_display, billing_note, is_featured, sort_order, features) VALUES
+    ('Başlangıç', 'starter', 'Küçük galeriler için', 499.00, 4990.00, NULL, 'Aylık ödeme', FALSE, 1, '["50 araç yükleme", "Temel stok yönetimi", "E-posta desteği", "Temel raporlar", "1 kanal bağlantısı"]'::jsonb),
+    ('Profesyonel', 'professional', 'Büyüyen galeriler için', 999.00, 9990.00, NULL, 'Aylık ödeme', TRUE, 2, '["Sınırsız araç yükleme", "Gelişmiş stok yönetimi", "Öncelikli destek", "Detaylı analitik", "Tüm kanal bağlantıları", "API erişimi", "Özel entegrasyonlar"]'::jsonb),
+    ('Kurumsal', 'enterprise', 'Büyük galeriler için', NULL, NULL, 'Özel', 'Özel fiyatlandırma', FALSE, 3, '["Sınırsız araç yükleme", "Gelişmiş stok yönetimi", "7/24 öncelikli destek", "Özel analitik dashboard", "Tüm kanal bağlantıları", "API erişimi", "Özel entegrasyonlar", "Dedike hesap yöneticisi", "Özel eğitim ve danışmanlık"]'::jsonb)
+ON CONFLICT (slug) DO NOTHING;
+
+CREATE INDEX idx_pricing_plans_active ON pricing_plans(is_active, sort_order);
+
 -- ========== 019_create_backups.sql ==========
 CREATE TABLE IF NOT EXISTS backups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

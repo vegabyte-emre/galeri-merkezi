@@ -182,6 +182,21 @@ app.use('/api/v1/banners', createProxyMiddleware({
   onProxyReq: fixRequestBody
 }));
 
+// Pricing plans routes (PUBLIC - for landing page)
+app.use('/api/v1/pricing-plans', express.json());
+app.use('/api/v1/pricing-plans', createProxyMiddleware({
+  target: services.gallery,
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/pricing-plans': '/public/pricing-plans' },
+  onError: (err, req, res) => {
+    logger.error('Pricing plans proxy error', { error: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Pricing plans service unavailable' });
+    }
+  },
+  onProxyReq: fixRequestBody
+}));
+
 // Shorts routes (PUBLIC for GET, authenticated for POST/DELETE)
 app.use('/api/v1/shorts', express.json());
 // Optional auth - don't fail if no token, just set user if available

@@ -87,6 +87,12 @@ router.post('/reports', asyncHandler(controller.generateReport.bind(controller))
 router.get('/reports/:id/download', asyncHandler(controller.downloadReport.bind(controller)));
 router.get('/reports/export', asyncHandler(controller.exportReport.bind(controller)));
 
+// Pricing Plans
+router.get('/pricing-plans', asyncHandler(controller.adminListPricingPlans.bind(controller)));
+router.post('/pricing-plans', asyncHandler(controller.createPricingPlan.bind(controller)));
+router.put('/pricing-plans/:id', asyncHandler(controller.updatePricingPlan.bind(controller)));
+router.delete('/pricing-plans/:id', asyncHandler(controller.deletePricingPlan.bind(controller)));
+
 export { router as adminRoutes };
 
 

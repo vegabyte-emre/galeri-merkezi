@@ -158,7 +158,8 @@ import {
   CreditCard,
   Video,
   Car,
-  CheckCircle
+  CheckCircle,
+  DollarSign
 } from 'lucide-vue-next'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -303,6 +304,7 @@ const navItems = computed(() => [
   { path: '/users', label: 'Kullanıcılar', icon: Users },
   { path: '/oto-shorts', label: 'Oto Shorts', icon: Video, badge: otoShortsCount.value > 0 ? otoShortsCount.value.toString() : null },
   { path: '/subscriptions', label: 'Abonelikler', icon: CreditCard },
+  { path: '/pricing', label: 'Fiyat Planları', icon: DollarSign },
   { path: '/roles', label: 'Roller & İzinler', icon: Shield },
   { path: '/reports', label: 'Raporlar', icon: BarChart3 },
   { path: '/analytics', label: 'Analitik', icon: BarChart3 },
@@ -322,6 +324,7 @@ const pageTitle = computed(() => {
     '/vehicle-approvals': 'Araç Onayları',
     '/galleries': 'Galeriler',
     '/users': 'Kullanıcılar',
+    '/pricing': 'Fiyat Planları',
     '/oto-shorts': 'Oto Shorts',
     '/subscriptions': 'Abonelik Yönetimi',
     '/roles': 'Roller & İzinler',
