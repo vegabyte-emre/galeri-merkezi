@@ -38,7 +38,8 @@ export const useApi = () => {
       let errorMessage = 'Request failed'
       try {
         const error = await response.json()
-        errorMessage = error.message || errorMessage
+        // Handle both {message: ''} and {error: {message: ''}} formats
+        errorMessage = error.message || error.error?.message || errorMessage
       } catch {
         errorMessage = `HTTP ${response.status}: ${response.statusText}`
       }

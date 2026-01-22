@@ -107,10 +107,10 @@ export class UserController {
       throw new ForbiddenError('Only admin can create users');
     }
     
-    const { name, email, password, role, galleryId, galleryName, taxType, taxNumber } = req.body;
+    const { name, email, phone, password, role, galleryId, galleryName, taxType, taxNumber } = req.body;
     
-    if (!name || !email || !password) {
-      throw new ValidationError('Name, email and password are required');
+    if (!name || !email || !phone || !password) {
+      throw new ValidationError('Name, email, phone and password are required');
     }
     
     if (!validateEmail(email)) {
@@ -159,10 +159,10 @@ export class UserController {
     
     // Create user
     const result = await query(
-      `INSERT INTO users (email, password_hash, first_name, last_name, role, gallery_id, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'active', NOW())
-       RETURNING id, email, first_name, last_name, role, gallery_id, status, created_at`,
-      [email, passwordHash, firstName, lastName, role || 'gallery_owner', finalGalleryId]
+      `INSERT INTO users (email, phone, password_hash, first_name, last_name, role, gallery_id, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', NOW())
+       RETURNING id, email, phone, first_name, last_name, role, gallery_id, status, created_at`,
+      [email, phone, passwordHash, firstName, lastName, role || 'gallery_owner', finalGalleryId]
     );
     
     const newUser = result.rows[0];

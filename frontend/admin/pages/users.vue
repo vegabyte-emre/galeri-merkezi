@@ -143,13 +143,24 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Telefon
+            </label>
+            <input
+              v-model="newUser.phone"
+              type="tel"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="05XX XXX XX XX"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Şifre
             </label>
             <input
               v-model="newUser.password"
               type="password"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Şifre"
+              placeholder="Şifre (en az 8 karakter, 1 büyük, 1 küçük harf)"
             />
           </div>
           <div>
@@ -327,6 +338,7 @@ const editingUser = ref<any>(null)
 const newUser = ref({
   name: '',
   email: '',
+  phone: '',
   password: '',
   role: 'gallery_owner',
   galleryId: null as number | null,
@@ -410,8 +422,8 @@ const saveEditUser = async () => {
 const createLoading = ref(false)
 
 const createUser = async () => {
-  if (!newUser.value.name || !newUser.value.email || !newUser.value.password) {
-    toast.warning('Lütfen tüm gerekli alanları doldurun')
+  if (!newUser.value.name || !newUser.value.email || !newUser.value.phone || !newUser.value.password) {
+    toast.warning('Lütfen tüm gerekli alanları doldurun (Ad, E-posta, Telefon, Şifre)')
     return
   }
   
@@ -440,7 +452,7 @@ const createUser = async () => {
     const response = await api.post('/users', newUser.value)
     users.value.push(response)
     showCreateModal.value = false
-    newUser.value = { name: '', email: '', password: '', role: 'gallery_owner', galleryId: null, galleryName: '', taxType: 'VKN', taxNumber: '' }
+    newUser.value = { name: '', email: '', phone: '', password: '', role: 'gallery_owner', galleryId: null, galleryName: '', taxType: 'VKN', taxNumber: '' }
     toast.success('Kullanıcı başarıyla oluşturuldu!')
   } catch (error: any) {
     console.error('Create user error:', error)
