@@ -395,7 +395,9 @@ export class AdminController {
 
     const result = await query(`
       SELECT 
-        u.id, u.name, u.email, u.phone, u.role, u.status, u.created_at,
+        u.id, 
+        COALESCE(u.first_name || ' ' || u.last_name, u.email) as name,
+        u.email, u.phone, u.role, u.status, u.created_at,
         g.name as gallery
       FROM users u
       LEFT JOIN galleries g ON u.gallery_id = g.id
@@ -414,7 +416,10 @@ export class AdminController {
 
     const result = await query(`
       SELECT 
-        u.*, g.name as gallery_name
+        u.id, u.email, u.phone, u.role, u.status, u.created_at, u.last_login,
+        u.first_name, u.last_name,
+        COALESCE(u.first_name || ' ' || u.last_name, u.email) as name,
+        g.name as gallery_name, g.id as gallery_id
       FROM users u
       LEFT JOIN galleries g ON u.gallery_id = g.id
       WHERE u.id = $1
@@ -424,9 +429,20 @@ export class AdminController {
       throw new ValidationError('User not found');
     }
 
+    const userData = result.rows[0];
+    
     res.json({
       success: true,
-      data: result.rows[0]
+      data: {
+        ...userData,
+        gallery: userData.gallery_name ? {
+          id: userData.gallery_id,
+          name: userData.gallery_name
+        } : null,
+        totalLogins: 0, // TODO: Track login count
+        vehicleCount: 0,
+        offerCount: 0
+      }
     });
   }
 
@@ -443,32 +459,56 @@ export class AdminController {
       throw new ValidationError('Name, email and password are required');
     }
 
+    // Parse name into first and last
+    const nameParts = name.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     // Check if email exists
     const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existingUser.rows.length > 0) {
       throw new ValidationError('Email already exists');
     }
 
+    // Check if phone exists
+    if (phone) {
+      const existingPhone = await query('SELECT id FROM users WHERE phone = $1', [phone]);
+      if (existingPhone.rows.length > 0) {
+        throw new ValidationError('Phone already exists');
+      }
+    }
+
     const userId = uuidv4();
     let galleryId = null;
+
+    // Generate slug for gallery
+    const generateSlug = (text: string) => {
+      return text
+        .toLowerCase()
+        .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+        .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') + '-' + Date.now();
+    };
 
     // If gallery owner, create gallery first
     if (role === 'gallery_owner' && galleryName) {
       galleryId = uuidv4();
+      const slug = generateSlug(galleryName);
       await query(`
-        INSERT INTO galleries (id, name, tax_type, tax_number, status, created_at)
-        VALUES ($1, $2, $3, $4, 'pending', NOW())
-      `, [galleryId, galleryName, taxType || 'VKN', taxNumber]);
+        INSERT INTO galleries (id, name, slug, tax_type, tax_number, status, created_at)
+        VALUES ($1, $2, $3, $4, $5, 'pending', NOW())
+      `, [galleryId, galleryName, slug, taxType || 'VKN', taxNumber || '0000000000']);
     }
 
-    // Hash password (use bcrypt in production)
+    // Hash password
     const bcrypt = await import('bcrypt');
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await query(`
-      INSERT INTO users (id, name, email, phone, password_hash, role, status, gallery_id, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-    `, [userId, name, email, phone, hashedPassword, role || 'gallery_owner', status || 'active', galleryId]);
+      INSERT INTO users (id, first_name, last_name, email, phone, password_hash, role, status, gallery_id, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+    `, [userId, firstName, lastName, email, phone || `+90${Date.now()}`, hashedPassword, role || 'gallery_owner', status || 'active', galleryId]);
 
     res.json({
       success: true,
@@ -494,7 +534,15 @@ export class AdminController {
     const values: any[] = [];
     let paramCount = 1;
 
-    if (name) { updates.push(`name = $${paramCount++}`); values.push(name); }
+    if (name) { 
+      const nameParts = name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      updates.push(`first_name = $${paramCount++}`); 
+      values.push(firstName); 
+      updates.push(`last_name = $${paramCount++}`); 
+      values.push(lastName); 
+    }
     if (email) { updates.push(`email = $${paramCount++}`); values.push(email); }
     if (phone) { updates.push(`phone = $${paramCount++}`); values.push(phone); }
     if (role) { updates.push(`role = $${paramCount++}`); values.push(role); }

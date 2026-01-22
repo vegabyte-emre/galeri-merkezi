@@ -160,7 +160,7 @@ const pendingCount = computed(() => vehicles.value.length)
 const loadPendingVehicles = async () => {
   loading.value = true
   try {
-    const response = await api.get<{ success: boolean; data: any[] }>('/vehicles/pending-approval')
+    const response = await api.get<any>('/vehicles/pending-approval')
     if (response.success && response.data) {
       vehicles.value = response.data
     }
