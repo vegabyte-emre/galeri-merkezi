@@ -168,11 +168,11 @@ export class UserController {
     const newUser = result.rows[0];
     
     // Get gallery name if exists
-    let galleryName = null;
+    let createdGalleryName = null;
     if (newUser.gallery_id) {
       const galleryResult = await query('SELECT name FROM galleries WHERE id = $1', [newUser.gallery_id]);
       if (galleryResult.rows.length > 0) {
-        galleryName = galleryResult.rows[0].name;
+        createdGalleryName = galleryResult.rows[0].name;
       }
     }
     
@@ -183,7 +183,7 @@ export class UserController {
       email: newUser.email,
       role: newUser.role,
       status: newUser.status,
-      gallery: galleryName,
+      gallery: createdGalleryName,
       galleryId: newUser.gallery_id,
       createdAt: newUser.created_at
     });
