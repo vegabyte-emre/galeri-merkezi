@@ -415,7 +415,7 @@ export class AuthController {
     await redis.setex(resetKey, 3600, user.id);
 
     // Send email via notification worker
-    const resetLink = `${process.env.FRONTEND_URL || 'https://otobia.com'}/reset-password?token=${token}`;
+    const resetLink = `${process.env.FRONTEND_URL || 'https://otobia.com'}/reset-password?token=${resetToken}`;
     try {
       await publishToQueue('notifications_queue', {
         id: uuidv4(),
@@ -425,6 +425,7 @@ export class AuthController {
         body: `Şifre sıfırlama linkiniz: ${resetLink}`,
         email: user.email,
         resetLink,
+        resetToken,
         channels: ['email']
       });
       logger.info('Password reset email queued', { userId: user.id, token: '***' });

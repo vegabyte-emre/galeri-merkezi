@@ -63,7 +63,7 @@ export class EventPublisher {
   // Araç onaya gönderildiğinde - Superadmin'e bildirim
   async publishVehicleSubmittedForApproval(vehicleId: string, galleryId: string) {
     try {
-      await publishToQueue('notification_queue', {
+      await publishToQueue('notifications_queue', {
         type: 'vehicle_submitted_for_approval',
         vehicleId,
         galleryId,
@@ -80,7 +80,7 @@ export class EventPublisher {
   // Araç onaylandığında - Galeri sahibine bildirim
   async publishVehicleApproved(vehicleId: string, galleryId: string) {
     try {
-      await publishToQueue('notification_queue', {
+      await publishToQueue('notifications_queue', {
         type: 'vehicle_approved',
         vehicleId,
         galleryId,
@@ -96,7 +96,7 @@ export class EventPublisher {
   // Araç reddedildiğinde - Galeri sahibine bildirim
   async publishVehicleRejected(vehicleId: string, galleryId: string, reason?: string) {
     try {
-      await publishToQueue('notification_queue', {
+      await publishToQueue('notifications_queue', {
         type: 'vehicle_rejected',
         vehicleId,
         galleryId,
