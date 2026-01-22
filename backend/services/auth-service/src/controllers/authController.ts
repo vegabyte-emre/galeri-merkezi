@@ -8,6 +8,7 @@ import { config } from '@galeri/shared/config';
 import { logger } from '@galeri/shared/utils/logger';
 import { ValidationError, UnauthorizedError, ConflictError } from '@galeri/shared/utils/errors';
 import { validatePhone, validateEmail, validatePassword, validateTCKN, validateVKN } from '@galeri/shared/utils/validation';
+import { publishToQueue } from '@galeri/shared/utils/rabbitmq';
 
 const redis = new Redis({
   host: config.redis.host,
@@ -47,8 +48,20 @@ export class AuthController {
     await redis.incr(`otp:daily:${phone}`);
     await redis.expire(`otp:daily:${phone}`, 86400); // 24 hours
 
-    // TODO: Send SMS via notification worker
-    logger.info('OTP generated', { phone, otp: '***' });
+    // Send SMS via notification worker
+    try {
+      await publishToQueue('notifications_queue', {
+        id: uuidv4(),
+        type: 'otp',
+        phone,
+        otp,
+        channels: ['sms']
+      });
+      logger.info('OTP SMS queued', { phone, otp: '***' });
+    } catch (error: any) {
+      logger.error('Failed to queue OTP SMS', { error: error.message, phone });
+      // Continue even if SMS fails - OTP is still generated
+    }
 
     res.json({
       success: true,
@@ -113,8 +126,19 @@ export class AuthController {
     await redis.incr(`otp:daily:${phone}`);
     await redis.expire(`otp:daily:${phone}`, 86400);
 
-    // TODO: Send SMS
-    logger.info('OTP resent', { phone, otp: '***' });
+    // Send SMS via notification worker
+    try {
+      await publishToQueue('notifications_queue', {
+        id: uuidv4(),
+        type: 'otp',
+        phone,
+        otp,
+        channels: ['sms']
+      });
+      logger.info('OTP SMS queued (resend)', { phone, otp: '***' });
+    } catch (error: any) {
+      logger.error('Failed to queue OTP SMS', { error: error.message, phone });
+    }
 
     res.json({
       success: true,
@@ -390,8 +414,24 @@ export class AuthController {
     // Store reset token (1 hour expiry)
     await redis.setex(resetKey, 3600, user.id);
 
-    // TODO: Send email via notification worker
-    logger.info('Password reset token generated', { userId: user.id, token: '***' });
+    // Send email via notification worker
+    const resetLink = `${process.env.FRONTEND_URL || 'https://otobia.com'}/reset-password?token=${token}`;
+    try {
+      await publishToQueue('notifications_queue', {
+        id: uuidv4(),
+        userId: user.id,
+        type: 'password_reset',
+        title: 'Şifre Sıfırlama',
+        body: `Şifre sıfırlama linkiniz: ${resetLink}`,
+        email: user.email,
+        resetLink,
+        channels: ['email']
+      });
+      logger.info('Password reset email queued', { userId: user.id, token: '***' });
+    } catch (error: any) {
+      logger.error('Failed to queue password reset email', { error: error.message, userId: user.id });
+      // Continue even if email fails - token is still generated
+    }
 
     res.json({
       success: true,

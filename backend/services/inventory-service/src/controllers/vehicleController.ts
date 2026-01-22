@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ValidationError, ForbiddenError } from '@galeri/shared/utils/errors';
 import { VehicleStatus } from '@galeri/shared/types';
 import { EventPublisher } from '../services/eventPublisher';
+import { logger } from '@galeri/shared/utils/logger';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -80,10 +81,46 @@ export class VehicleController {
       throw new ValidationError('Search query is required');
     }
 
-    // TODO: Implement Meilisearch integration
+    // Use Meilisearch if available, otherwise fallback to database search
+    try {
+      const MeiliSearch = require('meilisearch');
+      const client = new MeiliSearch.Client({
+        host: process.env.MEILISEARCH_HOST || 'http://localhost:7700',
+        apiKey: process.env.MEILISEARCH_MASTER_KEY || 'master_key'
+      });
+
+      const index = client.index('vehicles');
+      const searchResults = await index.search(q as string, {
+        limit: Number(limit),
+        offset: (Number(page) - 1) * Number(limit)
+      });
+
+      res.json({
+        success: true,
+        data: searchResults.hits || [],
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: searchResults.estimatedTotalHits || 0
+        }
+      });
+      return;
+    } catch (error: any) {
+      // Fallback to database search if Meilisearch is not available
+      logger.warn('Meilisearch not available, using database search', { error: error.message });
+    }
+
+    // Database fallback search
+    const searchQuery = `%${q}%`;
+    const result = await query(`
+      SELECT * FROM vehicles 
+      WHERE (brand ILIKE $1 OR model ILIKE $1 OR series ILIKE $1)
+      LIMIT $2 OFFSET $3
+    `, [searchQuery, limit, (Number(page) - 1) * Number(limit)]);
+
     res.json({
       success: true,
-      data: [],
+      data: result.rows || [],
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -253,7 +290,11 @@ export class VehicleController {
       throw new ValidationError('Gallery ID not found');
     }
 
-    // TODO: Check EİDS verification
+    // Check EİDS verification if required
+    const galleryResult = await query('SELECT eids_verified FROM galleries WHERE id = $1', [galleryId]);
+    if (galleryResult.rows.length > 0 && !galleryResult.rows[0].eids_verified) {
+      throw new ValidationError('Gallery EİDS verification is required before publishing vehicles');
+    }
 
     await query(
       `UPDATE vehicles SET status = 'published', published_at = NOW() WHERE id = $1 AND gallery_id = $2`,

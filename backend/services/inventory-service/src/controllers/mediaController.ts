@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { ValidationError } from '@galeri/shared/utils/errors';
 import { PresignedUrlService } from '../services/presignedUrlService';
 import { EventPublisher } from '../services/eventPublisher';
+import { uploadFile } from '@galeri/shared/utils/minio';
+import { config } from '@galeri/shared/config';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -57,15 +59,36 @@ export class MediaController {
     const { vehicleId } = req.params;
     const { type, originalUrl, fileName, fileSize, mimeType } = req.body;
 
-    // TODO: Upload to MinIO and get URLs
-    // For now, just store the reference
+    // Upload to MinIO if originalUrl is provided
+    let finalUrl = originalUrl;
+    if (originalUrl && originalUrl.startsWith('data:') || originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
+      try {
+        // If it's a data URL or external URL, download and upload to MinIO
+        let buffer: Buffer;
+        if (originalUrl.startsWith('data:')) {
+          const base64Data = originalUrl.split(',')[1];
+          buffer = Buffer.from(base64Data, 'base64');
+        } else {
+          // For external URLs, media worker will handle it
+          buffer = Buffer.from('');
+        }
+        
+        if (buffer.length > 0) {
+          const objectName = `vehicles/${vehicleId}/${uuidv4()}-${fileName}`;
+          finalUrl = await uploadFile(config.minio.bucket, objectName, buffer, mimeType);
+        }
+      } catch (error: any) {
+        // If MinIO upload fails, use original URL
+        console.error('MinIO upload failed, using original URL:', error.message);
+      }
+    }
 
     const result = await query(
       `INSERT INTO vehicle_media (
         vehicle_id, type, original_url, file_name, file_size, mime_type, processing_status
       ) VALUES ($1, $2, $3, $4, $5, $6, 'pending')
       RETURNING *`,
-      [vehicleId, type, originalUrl, fileName, fileSize, mimeType]
+      [vehicleId, type, finalUrl, fileName, fileSize, mimeType]
     );
 
     // Publish event for media processing
@@ -117,7 +140,18 @@ export class MediaController {
       [mediaId, vehicleId]
     );
 
-    // TODO: Delete from MinIO
+    // Delete from MinIO if URL is from MinIO
+    if (media.original_url && media.original_url.includes(config.minio.endpoint)) {
+      try {
+        const { getMinIOClient } = await import('@galeri/shared/utils/minio');
+        const client = getMinIOClient();
+        const objectName = media.original_url.split('/').pop() || '';
+        await client.removeObject(config.minio.bucket, objectName);
+      } catch (error: any) {
+        console.error('MinIO delete failed:', error.message);
+        // Continue even if delete fails
+      }
+    }
 
     res.json({
       success: true,
