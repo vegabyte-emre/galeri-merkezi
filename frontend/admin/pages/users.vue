@@ -167,10 +167,55 @@
               <option value="inventory_manager">Envanter Yöneticisi</option>
             </select>
           </div>
+
+          <!-- Galeri Bilgileri - Sadece Galeri Sahibi için -->
+          <div v-if="newUser.role === 'gallery_owner'" class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Galeri Bilgileri</h4>
+            
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Galeri Adı
+                </label>
+                <input
+                  v-model="newUser.galleryName"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Örn: ABC Otomotiv"
+                />
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Vergi Türü
+                </label>
+                <select
+                  v-model="newUser.taxType"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="VKN">VKN (Vergi Kimlik No - Şirket)</option>
+                  <option value="TCKN">TCKN (TC Kimlik No - Şahıs)</option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ newUser.taxType === 'TCKN' ? 'TC Kimlik No' : 'Vergi Kimlik No' }}
+                </label>
+                <input
+                  v-model="newUser.taxNumber"
+                  type="text"
+                  :maxlength="newUser.taxType === 'TCKN' ? 11 : 10"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  :placeholder="newUser.taxType === 'TCKN' ? '11 haneli TC Kimlik No' : '10 haneli Vergi Kimlik No'"
+                />
+              </div>
+            </div>
+          </div>
         </div>
         <div class="flex items-center justify-end gap-3 mt-6">
           <button
-            @click="showCreateModal = false; newUser = { name: '', email: '', password: '', role: 'gallery_owner', galleryId: null }"
+            @click="showCreateModal = false; newUser = { name: '', email: '', password: '', role: 'gallery_owner', galleryId: null, galleryName: '', taxType: 'VKN', taxNumber: '' }"
             class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
             İptal
@@ -284,7 +329,11 @@ const newUser = ref({
   email: '',
   password: '',
   role: 'gallery_owner',
-  galleryId: null as number | null
+  galleryId: null as number | null,
+  // Galeri bilgileri (gallery_owner için)
+  galleryName: '',
+  taxType: 'VKN',
+  taxNumber: ''
 })
 
 const roleLabels: Record<string, string> = {
@@ -366,12 +415,32 @@ const createUser = async () => {
     return
   }
   
+  // Galeri sahibi için ek validasyon
+  if (newUser.value.role === 'gallery_owner') {
+    if (!newUser.value.galleryName) {
+      toast.warning('Galeri adı zorunludur')
+      return
+    }
+    if (!newUser.value.taxNumber) {
+      toast.warning('Vergi/TC Kimlik numarası zorunludur')
+      return
+    }
+    if (newUser.value.taxType === 'TCKN' && newUser.value.taxNumber.length !== 11) {
+      toast.warning('TC Kimlik No 11 haneli olmalıdır')
+      return
+    }
+    if (newUser.value.taxType === 'VKN' && newUser.value.taxNumber.length !== 10) {
+      toast.warning('Vergi Kimlik No 10 haneli olmalıdır')
+      return
+    }
+  }
+  
   createLoading.value = true
   try {
     const response = await api.post('/users', newUser.value)
     users.value.push(response)
     showCreateModal.value = false
-    newUser.value = { name: '', email: '', password: '', role: 'gallery_owner', galleryId: null }
+    newUser.value = { name: '', email: '', password: '', role: 'gallery_owner', galleryId: null, galleryName: '', taxType: 'VKN', taxNumber: '' }
     toast.success('Kullanıcı başarıyla oluşturuldu!')
   } catch (error: any) {
     console.error('Create user error:', error)

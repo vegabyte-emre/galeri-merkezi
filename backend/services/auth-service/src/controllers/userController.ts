@@ -107,7 +107,7 @@ export class UserController {
       throw new ForbiddenError('Only admin can create users');
     }
     
-    const { name, email, password, role, galleryId } = req.body;
+    const { name, email, password, role, galleryId, galleryName, taxType, taxNumber } = req.body;
     
     if (!name || !email || !password) {
       throw new ValidationError('Name, email and password are required');
@@ -137,12 +137,24 @@ export class UserController {
     const passwordHash = await bcrypt.hash(password, 12);
     
     // Determine gallery_id based on role
-    // Admin panel'den kullanıcı oluştururken galeri otomatik oluşturulmaz
-    // Galeri daha sonra ayrıca atanabilir veya kullanıcı kendi kaydolurken oluşturur
     let finalGalleryId = null;
     if (galleryId) {
-      // Eğer formda galeri seçildiyse onu kullan
+      // Eğer formda mevcut galeri seçildiyse onu kullan
       finalGalleryId = galleryId;
+    } else if (role === 'gallery_owner' && galleryName && taxType && taxNumber) {
+      // Galeri sahibi için yeni galeri oluştur (form bilgileriyle)
+      const slug = galleryName.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim() + '-' + Date.now();
+      
+      const galleryResult = await query(
+        `INSERT INTO galleries (name, slug, status, tax_type, tax_number, created_at, updated_at) 
+         VALUES ($1, $2, 'pending', $3, $4, NOW(), NOW()) RETURNING id`,
+        [galleryName, slug, taxType, taxNumber]
+      );
+      finalGalleryId = galleryResult.rows[0].id;
     }
     
     // Create user
