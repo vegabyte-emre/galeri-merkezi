@@ -82,12 +82,12 @@
 <script setup lang="ts">
 import { Check } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
+import { useApi } from '~/composables/useApi'
 
 useHead({
   title: 'Fiyatlandırma - Otobia'
 })
 
-const config = useRuntimeConfig()
 const api = useApi()
 const plans = ref<any[]>([])
 const loading = ref(true)
