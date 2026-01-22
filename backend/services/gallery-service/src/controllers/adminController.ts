@@ -978,26 +978,168 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    // Check database connectivity
+    const services: any[] = [];
+    const systemResources: any = {};
+    const dbStats: any = {};
+
+    // Check Database connectivity and get stats
     let dbStatus = 'healthy';
     let dbResponseTime = 0;
     try {
       const start = Date.now();
       await query('SELECT 1');
       dbResponseTime = Date.now() - start;
-    } catch (e) {
+      
+      // Get database statistics
+      const tableCount = await query(`
+        SELECT COUNT(*) as count 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+      `);
+      
+      const totalRecords = await query(`
+        SELECT SUM(n_live_tup)::bigint as total
+        FROM pg_stat_user_tables
+      `);
+      
+      const activeConnections = await query(`
+        SELECT COUNT(*) as count 
+        FROM pg_stat_activity 
+        WHERE state = 'active'
+      `);
+      
+      const avgQueryTime = await query(`
+        SELECT COALESCE(AVG(mean_exec_time), 0) as avg_time
+        FROM pg_stat_statements
+        LIMIT 1
+      `);
+
+      dbStats.totalTables = parseInt(tableCount.rows[0]?.count || '0');
+      dbStats.totalRecords = parseInt(totalRecords.rows[0]?.total || '0');
+      dbStats.activeConnections = parseInt(activeConnections.rows[0]?.count || '0');
+      dbStats.avgQueryTime = Math.round(parseFloat(avgQueryTime.rows[0]?.avg_time || '0'));
+    } catch (e: any) {
       dbStatus = 'error';
+      dbStats.totalTables = 0;
+      dbStats.totalRecords = 0;
+      dbStats.activeConnections = 0;
+      dbStats.avgQueryTime = 0;
     }
+
+    services.push({ name: 'Database', status: dbStatus, responseTime: dbResponseTime });
+
+    // Check Redis connectivity
+    let redisStatus = 'healthy';
+    let redisResponseTime = 0;
+    try {
+      const Redis = (await import('ioredis')).default;
+      const { config } = await import('@galeri/shared/config');
+      const redis = new Redis({
+        host: config.redis.host,
+        port: config.redis.port,
+        password: config.redis.password,
+        connectTimeout: 2000,
+        lazyConnect: true
+      });
+      
+      const start = Date.now();
+      await redis.ping();
+      redisResponseTime = Date.now() - start;
+      await redis.quit();
+    } catch (e) {
+      redisStatus = 'error';
+    }
+    services.push({ name: 'Redis', status: redisStatus, responseTime: redisResponseTime });
+
+    // Check RabbitMQ connectivity
+    let rabbitmqStatus = 'healthy';
+    let rabbitmqResponseTime = 0;
+    try {
+      const { config } = await import('@galeri/shared/config');
+      // Try to connect via HTTP to RabbitMQ management API (port 15672)
+      const http = await import('http');
+      const start = Date.now();
+      await new Promise((resolve, reject) => {
+        const req = http.get(`http://${config.rabbitmq.host}:15672/api/overview`, {
+          timeout: 2000,
+          auth: `${config.rabbitmq.user}:${config.rabbitmq.password}`
+        }, (res) => {
+          if (res.statusCode === 200 || res.statusCode === 401) {
+            // 401 means server is up but auth failed, which is fine for health check
+            resolve(res);
+          } else {
+            reject(new Error(`Status: ${res.statusCode}`));
+          }
+        });
+        req.on('error', reject);
+        req.on('timeout', () => {
+          req.destroy();
+          reject(new Error('Timeout'));
+        });
+      });
+      rabbitmqResponseTime = Date.now() - start;
+    } catch (e) {
+      rabbitmqStatus = 'error';
+    }
+    services.push({ name: 'RabbitMQ', status: rabbitmqStatus, responseTime: rabbitmqResponseTime });
+
+    // Check API Gateway (simple HTTP check)
+    let apiGatewayStatus = 'healthy';
+    let apiGatewayResponseTime = 0;
+    try {
+      const start = Date.now();
+      const http = await import('http');
+      const apiUrl = process.env.API_GATEWAY_URL || 'http://otobia-api-gateway:8000';
+      await new Promise((resolve, reject) => {
+        const req = http.get(`${apiUrl}/health`, { timeout: 2000 }, (res) => {
+          resolve(res);
+        });
+        req.on('error', reject);
+        req.on('timeout', () => {
+          req.destroy();
+          reject(new Error('Timeout'));
+        });
+      });
+      apiGatewayResponseTime = Date.now() - start;
+    } catch (e) {
+      apiGatewayStatus = 'error';
+    }
+    services.push({ name: 'API Gateway', status: apiGatewayStatus, responseTime: apiGatewayResponseTime });
+
+    // Get recent errors from audit_logs if table exists
+    let recentErrors: any[] = [];
+    try {
+      const errorsResult = await query(`
+        SELECT id, created_at as timestamp, service, message, resolved
+        FROM audit_logs
+        WHERE level = 'error'
+        ORDER BY created_at DESC
+        LIMIT 10
+      `);
+      recentErrors = errorsResult.rows.map((row: any) => ({
+        id: row.id,
+        timestamp: row.timestamp,
+        service: row.service || 'Unknown',
+        message: row.message || 'Error occurred',
+        resolved: row.resolved || false
+      }));
+    } catch (e) {
+      // Table might not exist, ignore
+      recentErrors = [];
+    }
+
+    // System resources (CPU, Memory, Disk) - Docker container stats would be ideal but requires Docker API
+    // For now, we'll use PostgreSQL stats as approximation
+    systemResources.cpuUsage = 0; // Would need Docker API or system stats
+    systemResources.memoryUsage = 0; // Would need Docker API or system stats
+    systemResources.diskUsage = 0; // Would need filesystem stats
 
     res.json({
       success: true,
-      services: [
-        { name: 'API Gateway', status: 'healthy', responseTime: 45 },
-        { name: 'Database', status: dbStatus, responseTime: dbResponseTime },
-        { name: 'Redis', status: 'healthy', responseTime: 8 },
-        { name: 'RabbitMQ', status: 'healthy', responseTime: 15 }
-      ],
-      recentErrors: []
+      services,
+      systemResources,
+      dbStats,
+      recentErrors
     });
   }
 

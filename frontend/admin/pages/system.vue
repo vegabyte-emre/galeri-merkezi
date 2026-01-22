@@ -60,28 +60,28 @@
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">CPU Kullanımı</span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">45%</span>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ systemResources.cpuUsage }}%</span>
             </div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div class="bg-primary-500 h-2 rounded-full" style="width: 45%"></div>
+              <div class="bg-primary-500 h-2 rounded-full" :style="`width: ${systemResources.cpuUsage}%`"></div>
             </div>
           </div>
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Bellek Kullanımı</span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">62%</span>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ systemResources.memoryUsage }}%</span>
             </div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div class="bg-green-500 h-2 rounded-full" style="width: 62%"></div>
+              <div class="bg-green-500 h-2 rounded-full" :style="`width: ${systemResources.memoryUsage}%`"></div>
             </div>
           </div>
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Disk Kullanımı</span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">38%</span>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ systemResources.diskUsage }}%</span>
             </div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div class="bg-blue-500 h-2 rounded-full" style="width: 38%"></div>
+              <div class="bg-blue-500 h-2 rounded-full" :style="`width: ${systemResources.diskUsage}%`"></div>
             </div>
           </div>
         </div>
@@ -93,19 +93,19 @@
         <div class="space-y-4">
           <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
             <span class="text-sm text-gray-600 dark:text-gray-400">Toplam Tablo</span>
-            <span class="font-semibold text-gray-900 dark:text-white">24</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ dbStats.totalTables }}</span>
           </div>
           <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
             <span class="text-sm text-gray-600 dark:text-gray-400">Toplam Kayıt</span>
-            <span class="font-semibold text-gray-900 dark:text-white">125.4K</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ formatNumber(dbStats.totalRecords) }}</span>
           </div>
           <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
             <span class="text-sm text-gray-600 dark:text-gray-400">Aktif Bağlantı</span>
-            <span class="font-semibold text-gray-900 dark:text-white">45</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ dbStats.activeConnections }}</span>
           </div>
           <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
             <span class="text-sm text-gray-600 dark:text-gray-400">Ortalama Sorgu Süresi</span>
-            <span class="font-semibold text-gray-900 dark:text-white">12ms</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ dbStats.avgQueryTime }}ms</span>
           </div>
         </div>
       </div>
@@ -173,7 +173,7 @@ const services = ref([
     name: 'API Gateway',
     description: 'Ana API servisi',
     status: 'healthy',
-    responseTime: 45,
+    responseTime: 0,
     icon: Zap,
     iconBg: 'bg-blue-100 dark:bg-blue-900/30',
     iconColor: 'text-blue-600 dark:text-blue-400'
@@ -182,7 +182,7 @@ const services = ref([
     name: 'Database',
     description: 'PostgreSQL',
     status: 'healthy',
-    responseTime: 12,
+    responseTime: 0,
     icon: Database,
     iconBg: 'bg-green-100 dark:bg-green-900/30',
     iconColor: 'text-green-600 dark:text-green-400'
@@ -190,8 +190,8 @@ const services = ref([
   {
     name: 'Redis',
     description: 'Cache servisi',
-    status: 'warning',
-    responseTime: 8,
+    status: 'healthy',
+    responseTime: 0,
     icon: Server,
     iconBg: 'bg-yellow-100 dark:bg-yellow-900/30',
     iconColor: 'text-yellow-600 dark:text-yellow-400'
@@ -200,47 +200,48 @@ const services = ref([
     name: 'RabbitMQ',
     description: 'Mesaj kuyruğu',
     status: 'healthy',
-    responseTime: 15,
+    responseTime: 0,
     icon: MessageSquare,
     iconBg: 'bg-purple-100 dark:bg-purple-900/30',
     iconColor: 'text-purple-600 dark:text-purple-400'
   }
 ])
 
-const recentErrors = ref([
-  {
-    id: 1,
-    timestamp: '2024-01-20T14:30:00',
-    service: 'API Gateway',
-    message: 'Connection timeout',
-    resolved: true
-  },
-  {
-    id: 2,
-    timestamp: '2024-01-20T13:15:00',
-    service: 'Database',
-    message: 'Slow query detected',
-    resolved: true
-  },
-  {
-    id: 3,
-    timestamp: '2024-01-20T12:00:00',
-    service: 'Redis',
-    message: 'Memory usage high',
-    resolved: false
-  }
-])
+const systemResources = ref({
+  cpuUsage: 0,
+  memoryUsage: 0,
+  diskUsage: 0
+})
+
+const dbStats = ref({
+  totalTables: 0,
+  totalRecords: 0,
+  activeConnections: 0,
+  avgQueryTime: 0
+})
+
+const recentErrors = ref<any[]>([])
 
 const formatDateTime = (timestamp: string) => {
   return new Date(timestamp).toLocaleString('tr-TR')
 }
 
+const formatNumber = (num: number) => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M'
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K'
+  }
+  return num.toString()
+}
+
 const loadSystemStatus = async () => {
   try {
-    const status = await api.get<any>('/admin/system/status')
+    const response = await api.get<any>('/admin/system/status')
+    const status = response.data || response
     
     // Update service statuses
-    if (status.services) {
+    if (status.services && Array.isArray(status.services)) {
       services.value.forEach(service => {
         const updated = status.services.find((s: any) => s.name === service.name)
         if (updated) {
@@ -250,9 +251,30 @@ const loadSystemStatus = async () => {
       })
     }
     
+    // Update system resources
+    if (status.systemResources) {
+      systemResources.value = {
+        cpuUsage: status.systemResources.cpuUsage || 0,
+        memoryUsage: status.systemResources.memoryUsage || 0,
+        diskUsage: status.systemResources.diskUsage || 0
+      }
+    }
+    
+    // Update database stats
+    if (status.dbStats) {
+      dbStats.value = {
+        totalTables: status.dbStats.totalTables || 0,
+        totalRecords: status.dbStats.totalRecords || 0,
+        activeConnections: status.dbStats.activeConnections || 0,
+        avgQueryTime: status.dbStats.avgQueryTime || 0
+      }
+    }
+    
     // Update recent errors
-    if (status.recentErrors) {
+    if (status.recentErrors && Array.isArray(status.recentErrors)) {
       recentErrors.value = status.recentErrors
+    } else {
+      recentErrors.value = []
     }
   } catch (error: any) {
     console.error('Sistem durumu yüklenemedi:', error)
