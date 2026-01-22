@@ -24,12 +24,12 @@ const getUserFromHeaders = (req: Request): { sub: string; gallery_id?: string; r
 export class UserController {
   // ========== ADMIN USER MANAGEMENT ==========
   
-  // List all users (superadmin only)
+  // List all users (superadmin/admin only)
   async listUsers(req: Request, res: Response) {
     const userInfo = getUserFromHeaders(req);
     
-    if (userInfo.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can list all users');
+    if (userInfo.role !== 'superadmin' && userInfo.role !== 'admin') {
+      throw new ForbiddenError('Only admin can list all users');
     }
     
     const { page = 1, limit = 50, search, role, status } = req.query;
@@ -99,12 +99,12 @@ export class UserController {
     });
   }
   
-  // Create new user (superadmin only)
+  // Create new user (superadmin/admin only)
   async createUser(req: Request, res: Response) {
     const userInfo = getUserFromHeaders(req);
     
-    if (userInfo.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can create users');
+    if (userInfo.role !== 'superadmin' && userInfo.role !== 'admin') {
+      throw new ForbiddenError('Only admin can create users');
     }
     
     const { name, email, password, role, galleryId } = req.body;
@@ -185,12 +185,12 @@ export class UserController {
     });
   }
   
-  // Update user (superadmin only)
+  // Update user (superadmin/admin only)
   async updateUser(req: Request, res: Response) {
     const userInfo = getUserFromHeaders(req);
     
-    if (userInfo.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can update users');
+    if (userInfo.role !== 'superadmin' && userInfo.role !== 'admin') {
+      throw new ForbiddenError('Only admin can update users');
     }
     
     const { id } = req.params;
@@ -291,12 +291,12 @@ export class UserController {
     });
   }
   
-  // Delete user (superadmin only)
+  // Delete user (superadmin/admin only)
   async deleteUser(req: Request, res: Response) {
     const userInfo = getUserFromHeaders(req);
     
-    if (userInfo.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can delete users');
+    if (userInfo.role !== 'superadmin' && userInfo.role !== 'admin') {
+      throw new ForbiddenError('Only admin can delete users');
     }
     
     const { id } = req.params;

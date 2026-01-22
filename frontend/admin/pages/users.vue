@@ -160,9 +160,11 @@
               v-model="newUser.role"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
+              <option value="superadmin">Süper Admin</option>
               <option value="admin">Admin</option>
               <option value="gallery_owner">Galeri Sahibi</option>
-              <option value="user">Kullanıcı</option>
+              <option value="gallery_manager">Galeri Yöneticisi</option>
+              <option value="inventory_manager">Envanter Yöneticisi</option>
             </select>
           </div>
         </div>
@@ -224,9 +226,11 @@
               v-model="editingUser.role"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
+              <option value="superadmin">Süper Admin</option>
               <option value="admin">Admin</option>
               <option value="gallery_owner">Galeri Sahibi</option>
-              <option value="user">Kullanıcı</option>
+              <option value="gallery_manager">Galeri Yöneticisi</option>
+              <option value="inventory_manager">Envanter Yöneticisi</option>
             </select>
           </div>
           <div>
@@ -283,9 +287,11 @@ const newUser = ref({
 })
 
 const roleLabels: Record<string, string> = {
+  superadmin: 'Süper Admin',
   admin: 'Admin',
   gallery_owner: 'Galeri Sahibi',
-  user: 'Kullanıcı'
+  gallery_manager: 'Galeri Yöneticisi',
+  inventory_manager: 'Envanter Yöneticisi'
 }
 
 const users = ref<any[]>([])
