@@ -1,31 +1,44 @@
+# Stage 1: Build the Nuxt.js application
+FROM node:20-alpine AS builder
+
+ARG NUXT_PUBLIC_API_URL=https://api.otobia.com/api/v1
+ARG NUXT_PUBLIC_WS_URL=wss://ws.otobia.com
+
+WORKDIR /app
+
+COPY ../frontend/landing/package*.json ./
+RUN npm install --legacy-peer-deps
+
+COPY ../frontend/landing/ .
+
+ENV NODE_ENV=production
+ENV NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL}
+ENV NUXT_PUBLIC_WS_URL=${NUXT_PUBLIC_WS_URL}
+RUN npm run generate
+
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# Copy pre-built static files
-COPY landing-dist/ /usr/share/nginx/html/
+COPY --from=builder /app/.output/public /usr/share/nginx/html/
 
-# Nginx config for SPA
 RUN echo 'server { \
     listen 80; \
     server_name _; \
     root /usr/share/nginx/html; \
     index index.html; \
     \
-    # Gzip compression \
     gzip on; \
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript; \
     \
-    # SPA routing \
     location / { \
         try_files $uri $uri/ /index.html; \
     } \
     \
-    # Cache static assets \
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ { \
         expires 1y; \
         add_header Cache-Control "public, immutable"; \
     } \
     \
-    # Security headers \
     add_header X-Frame-Options "SAMEORIGIN" always; \
     add_header X-Content-Type-Options "nosniff" always; \
     add_header X-XSS-Protection "1; mode=block" always; \

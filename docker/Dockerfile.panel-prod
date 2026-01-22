@@ -1,9 +1,26 @@
+# Stage 1: Build the Nuxt.js application
+FROM node:20-alpine AS builder
+
+ARG NUXT_PUBLIC_API_URL=https://api.otobia.com/api/v1
+ARG NUXT_PUBLIC_WS_URL=wss://ws.otobia.com
+
+WORKDIR /app
+
+COPY ../frontend/panel/package*.json ./
+RUN npm install --legacy-peer-deps
+
+COPY ../frontend/panel/ .
+
+ENV NODE_ENV=production
+ENV NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL}
+ENV NUXT_PUBLIC_WS_URL=${NUXT_PUBLIC_WS_URL}
+RUN npm run generate
+
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# Copy pre-built static files
-COPY panel-dist/ /usr/share/nginx/html/
+COPY --from=builder /app/.output/public /usr/share/nginx/html/
 
-# Nginx config for SPA
 RUN echo 'server { \
     listen 80; \
     server_name _; \
