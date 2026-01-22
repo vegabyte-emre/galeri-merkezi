@@ -19,6 +19,10 @@ const getUserFromHeaders = (req: Request) => {
   };
 };
 
+// In-memory roles store (will be replaced with database later)
+const customRolesStore: Map<number, any> = new Map();
+let nextRoleId = 100; // Start from 100 to avoid conflicts with default roles
+
 export class AdminController {
   // Dashboard stats
   async getDashboard(req: AuthenticatedRequest, res: Response) {
@@ -1284,7 +1288,8 @@ export class AdminController {
       roleCounts[r.role] = parseInt(r.count);
     });
 
-    const roles = [
+    // Default system roles
+    const defaultRoles = [
       { id: 1, name: 'Süper Admin', description: 'Tüm sistem erişimi', permissions: [1,2,3,4,5,6,7,8,9,10], isDefault: true, userCount: roleCounts['superadmin'] || 0 },
       { id: 2, name: 'Admin', description: 'Yönetim paneli erişimi', permissions: [1,2,4,5,7], isDefault: false, userCount: roleCounts['admin'] || 0 },
       { id: 3, name: 'Uyum Sorumlusu', description: 'Galeri onay işlemleri', permissions: [1,2,7], isDefault: false, userCount: roleCounts['compliance_officer'] || 0 },
@@ -1293,9 +1298,13 @@ export class AdminController {
       { id: 6, name: 'Galeri Yöneticisi', description: 'Galeri operasyonları', permissions: [1], isDefault: false, userCount: roleCounts['gallery_manager'] || 0 }
     ];
 
+    // Merge with custom roles
+    const customRoles = Array.from(customRolesStore.values());
+    const allRoles = [...defaultRoles, ...customRoles];
+
     res.json({
       success: true,
-      roles
+      roles: allRoles
     });
   }
 
@@ -1323,7 +1332,33 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can create roles');
     }
 
-    res.json({ success: true, id: Date.now(), ...req.body, userCount: 0 });
+    const { name, description, permissions = [], isDefault = false } = req.body;
+
+    if (!name) {
+      throw new ValidationError('Role name is required');
+    }
+
+    // Check if role name already exists
+    const existingRoles = Array.from(customRolesStore.values());
+    if (existingRoles.some(r => r.name === name)) {
+      throw new ValidationError('Role with this name already exists');
+    }
+
+    const newRole = {
+      id: nextRoleId++,
+      name,
+      description: description || '',
+      permissions: Array.isArray(permissions) ? permissions : [],
+      isDefault: false, // Custom roles cannot be default
+      userCount: 0
+    };
+
+    customRolesStore.set(newRole.id, newRole);
+
+    res.json({
+      success: true,
+      ...newRole
+    });
   }
 
   async updateRole(req: AuthenticatedRequest, res: Response) {
@@ -1332,7 +1367,32 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can update roles');
     }
 
-    res.json({ success: true, message: 'Role updated' });
+    const { id } = req.params;
+    const roleId = parseInt(id);
+    const { name, description, permissions } = req.body;
+
+    // Default roles (1-6) cannot be updated, only custom roles
+    if (roleId <= 6) {
+      throw new ValidationError('Default system roles cannot be modified');
+    }
+
+    const role = customRolesStore.get(roleId);
+    if (!role) {
+      throw new ValidationError('Role not found');
+    }
+
+    // Update role
+    if (name) role.name = name;
+    if (description !== undefined) role.description = description;
+    if (Array.isArray(permissions)) role.permissions = permissions;
+
+    customRolesStore.set(roleId, role);
+
+    res.json({
+      success: true,
+      message: 'Role updated',
+      ...role
+    });
   }
 
   async updateRolePermissions(req: AuthenticatedRequest, res: Response) {
@@ -1341,7 +1401,59 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can update permissions');
     }
 
-    res.json({ success: true, message: 'Permissions updated' });
+    const { id } = req.params;
+    const roleId = parseInt(id);
+    const { permissionId, enabled, permissions } = req.body;
+
+    // Handle both formats: single permission toggle or full permissions array
+    if (permissions && Array.isArray(permissions)) {
+      // Full permissions array update
+      if (roleId <= 6) {
+        // Default roles - cannot modify, but return success for UI
+        res.json({ success: true, message: 'Default role permissions cannot be modified' });
+        return;
+      }
+
+      const role = customRolesStore.get(roleId);
+      if (!role) {
+        throw new ValidationError('Role not found');
+      }
+
+      role.permissions = permissions;
+      customRolesStore.set(roleId, role);
+
+      res.json({ success: true, message: 'Permissions updated' });
+    } else if (permissionId !== undefined && enabled !== undefined) {
+      // Single permission toggle
+      let role: any = null;
+      
+      // Check if it's a default role (we'll handle it differently)
+      if (roleId <= 6) {
+        // Default roles - cannot modify, but return success for UI
+        res.json({ success: true, message: 'Default role permissions cannot be modified' });
+        return;
+      }
+
+      role = customRolesStore.get(roleId);
+      if (!role) {
+        throw new ValidationError('Role not found');
+      }
+
+      const permId = parseInt(permissionId);
+      if (enabled) {
+        if (!role.permissions.includes(permId)) {
+          role.permissions.push(permId);
+        }
+      } else {
+        role.permissions = role.permissions.filter((p: number) => p !== permId);
+      }
+
+      customRolesStore.set(roleId, role);
+
+      res.json({ success: true, message: 'Permission updated' });
+    } else {
+      throw new ValidationError('Invalid request: provide either permissions array or permissionId+enabled');
+    }
   }
 
   async deleteRole(req: AuthenticatedRequest, res: Response) {
@@ -1349,6 +1461,26 @@ export class AdminController {
     if (user.role !== 'superadmin') {
       throw new ForbiddenError('Only superadmin can delete roles');
     }
+
+    const { id } = req.params;
+    const roleId = parseInt(id);
+
+    // Default roles (1-6) cannot be deleted
+    if (roleId <= 6) {
+      throw new ValidationError('Default system roles cannot be deleted');
+    }
+
+    const role = customRolesStore.get(roleId);
+    if (!role) {
+      throw new ValidationError('Role not found');
+    }
+
+    // Check if role has users
+    if (role.userCount > 0) {
+      throw new ValidationError('Cannot delete role with assigned users');
+    }
+
+    customRolesStore.delete(roleId);
 
     res.json({ success: true, message: 'Role deleted' });
   }

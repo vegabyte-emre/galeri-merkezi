@@ -60,7 +60,7 @@
             Düzenle
           </button>
           <button
-            v-if="!role.isDefault"
+            v-if="!role.isDefault && role.id > 6"
             @click="deleteRole(role.id)"
             class="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors font-semibold text-sm"
           >
@@ -103,7 +103,9 @@
                   type="checkbox"
                   :checked="role.permissions.includes(permission.id)"
                   @change="togglePermission(role.id, permission.id)"
+                  :disabled="role.isDefault || role.id <= 6"
                   class="rounded"
+                  :class="(role.isDefault || role.id <= 6) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
                 />
               </td>
             </tr>
@@ -181,11 +183,19 @@ const roles = ref<any[]>([])
 const loadRoles = async () => {
   loading.value = true
   try {
-    const data = await api.get<any>('/admin/roles')
-    roles.value = data.roles || data || []
+    const response = await api.get<any>('/admin/roles')
+    // Handle response format
+    if (response.success) {
+      roles.value = response.roles || []
+    } else if (Array.isArray(response)) {
+      roles.value = response
+    } else {
+      roles.value = []
+    }
   } catch (error: any) {
     console.error('Roller yüklenemedi:', error)
     toast.error('Roller yüklenemedi: ' + error.message)
+    roles.value = []
   } finally {
     loading.value = false
   }
@@ -193,8 +203,27 @@ const loadRoles = async () => {
 
 const loadPermissions = async () => {
   try {
-    const data = await api.get<any>('/admin/roles/permissions')
-    allPermissions.value = data.permissions || data || []
+    const response = await api.get<any>('/admin/roles/permissions')
+    // Handle response format
+    if (response.success) {
+      allPermissions.value = response.permissions || []
+    } else if (Array.isArray(response)) {
+      allPermissions.value = response
+    } else {
+      // Fallback to default permissions
+      allPermissions.value = [
+        { id: 1, name: 'Galerileri Görüntüle' },
+        { id: 2, name: 'Galerileri Düzenle' },
+        { id: 3, name: 'Galerileri Sil' },
+        { id: 4, name: 'Kullanıcıları Görüntüle' },
+        { id: 5, name: 'Kullanıcıları Düzenle' },
+        { id: 6, name: 'Kullanıcıları Sil' },
+        { id: 7, name: 'Raporları Görüntüle' },
+        { id: 8, name: 'Sistem Ayarları' },
+        { id: 9, name: 'Yedekleme Yönetimi' },
+        { id: 10, name: 'Entegrasyon Yönetimi' }
+      ]
+    }
   } catch (error: any) {
     console.error('İzinler yüklenemedi:', error)
     // Keep default permissions on error
@@ -215,24 +244,35 @@ const loadPermissions = async () => {
 
 const togglePermission = async (roleId: number, permissionId: number) => {
   const role = roles.value.find(r => r.id === roleId)
-  if (role) {
-    const index = role.permissions.indexOf(permissionId)
-    const hasPermission = index > -1
+  if (!role) return
+
+  // Default roles (id <= 6) cannot be modified
+  if (role.isDefault || roleId <= 6) {
+    toast.warning('Varsayılan sistem rollerinin izinleri değiştirilemez')
+    return
+  }
+
+  const index = role.permissions.indexOf(permissionId)
+  const hasPermission = index > -1
+  
+  try {
+    await api.put(`/admin/roles/${roleId}/permissions`, {
+      permissionId,
+      enabled: !hasPermission
+    })
     
-    try {
-      await api.put(`/admin/roles/${roleId}/permissions`, {
-        permissionId,
-        enabled: !hasPermission
-      })
-      
-      if (hasPermission) {
-        role.permissions.splice(index, 1)
-      } else {
-        role.permissions.push(permissionId)
-      }
-    } catch (error: any) {
-      toast.error('Hata: ' + error.message)
+    // Update local state optimistically
+    if (hasPermission) {
+      role.permissions.splice(index, 1)
+    } else {
+      role.permissions.push(permissionId)
     }
+    
+    toast.success('İzin güncellendi!')
+  } catch (error: any) {
+    toast.error('Hata: ' + error.message)
+    // Reload roles on error to sync state
+    await loadRoles()
   }
 }
 
@@ -251,10 +291,16 @@ const openCreateModal = () => {
 
 const editRole = (id: number) => {
   const role = roles.value.find(r => r.id === id)
-  if (role) {
-    editingRole.value = { ...role }
-    showEditModal.value = true
+  if (!role) return
+
+  // Default roles cannot be edited
+  if (role.isDefault || id <= 6) {
+    toast.warning('Varsayılan sistem rollerini düzenleyemezsiniz')
+    return
   }
+
+  editingRole.value = { ...role }
+  showEditModal.value = true
 }
 
 const saveRole = async () => {
@@ -265,19 +311,23 @@ const saveRole = async () => {
   
   try {
     if (editingRole.value.id) {
-      await api.put(`/admin/roles/${editingRole.value.id}`, editingRole.value)
-      const index = roles.value.findIndex(r => r.id === editingRole.value.id)
-      if (index > -1) {
-        roles.value[index] = { ...editingRole.value }
-      }
+      const response = await api.put(`/admin/roles/${editingRole.value.id}`, editingRole.value)
+      // Reload roles to get updated data
+      await loadRoles()
     } else {
-      const newRole = await api.post('/admin/roles', editingRole.value)
-      roles.value.push(newRole)
+      const response = await api.post('/admin/roles', editingRole.value)
+      // Handle response format
+      if (response.success && response.id) {
+        // Reload roles to get the new role with proper data
+        await loadRoles()
+      } else if (response.id) {
+        // Response is the role object itself
+        await loadRoles()
+      }
     }
     showEditModal.value = false
     editingRole.value = null
     toast.success('Rol kaydedildi!')
-    await loadRoles()
   } catch (error: any) {
     toast.error('Hata: ' + error.message)
   }
