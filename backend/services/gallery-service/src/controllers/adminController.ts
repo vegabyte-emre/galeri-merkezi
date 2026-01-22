@@ -2,6 +2,13 @@ import { Request, Response } from 'express';
 import { query } from '@galeri/shared/database/connection';
 import { v4 as uuidv4 } from 'uuid';
 import { ValidationError, ForbiddenError } from '@galeri/shared/utils/errors';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { existsSync, mkdirSync } from 'fs';
+
+const execAsync = promisify(exec);
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -1937,19 +1944,55 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can access backups');
     }
 
-    res.json({
-      success: true,
-      backups: [
-        { id: 1, name: 'backup_2024_01_20.sql', size: '125 MB', createdAt: new Date().toISOString(), status: 'completed' },
-        { id: 2, name: 'backup_2024_01_19.sql', size: '124 MB', createdAt: new Date(Date.now() - 86400000).toISOString(), status: 'completed' },
-        { id: 3, name: 'backup_2024_01_18.sql', size: '123 MB', createdAt: new Date(Date.now() - 172800000).toISOString(), status: 'completed' }
-      ],
-      settings: {
-        autoBackup: true,
-        frequency: 'daily',
-        retention: 30
-      }
-    });
+    try {
+      const result = await query(`
+        SELECT 
+          id,
+          filename as name,
+          file_size as size,
+          backup_type as type,
+          status,
+          created_at as "createdAt",
+          completed_at as "completedAt",
+          expires_at as "expiresAt"
+        FROM backups
+        ORDER BY created_at DESC
+        LIMIT 50
+      `);
+
+      const backups = result.rows.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        size: this.formatFileSize(b.size || 0),
+        type: b.type,
+        status: b.status,
+        createdAt: b.createdAt,
+        completedAt: b.completedAt,
+        expiresAt: b.expiresAt
+      }));
+
+      // Get backup settings from system_settings
+      const settingsResult = await query(`
+        SELECT value FROM system_settings WHERE key = 'backup_settings'
+      `);
+      
+      const settings = settingsResult.rows.length > 0 
+        ? settingsResult.rows[0].value 
+        : { autoBackup: false, frequency: 'daily', retention: 30 };
+
+      res.json({
+        success: true,
+        backups,
+        settings
+      });
+    } catch (e: any) {
+      // If table doesn't exist, return empty
+      res.json({
+        success: true,
+        backups: [],
+        settings: { autoBackup: false, frequency: 'daily', retention: 30 }
+      });
+    }
   }
 
   async createBackup(req: AuthenticatedRequest, res: Response) {
@@ -1958,7 +2001,169 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can create backups');
     }
 
-    res.json({ success: true, message: 'Backup started' });
+    try {
+      // Create backup directory if it doesn't exist
+      const backupDir = process.env.BACKUP_DIR || '/tmp/backups';
+      if (!existsSync(backupDir)) {
+        mkdirSync(backupDir, { recursive: true });
+      }
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `backup_${timestamp}.sql`;
+      const filePath = path.join(backupDir, filename);
+
+      // Create backup record
+      const backupResult = await query(`
+        INSERT INTO backups (filename, file_path, file_size, backup_type, status, created_by)
+        VALUES ($1, $2, 0, 'manual', 'pending', $3)
+        RETURNING id
+      `, [filename, filePath, user.sub]);
+
+      const backupId = backupResult.rows[0].id;
+
+      // Run pg_dump in background (async)
+      this.runBackup(filePath, backupId, user.sub).catch(err => {
+        console.error('Backup failed:', err);
+      });
+
+      res.json({
+        success: true,
+        message: 'Backup started',
+        id: backupId,
+        createdAt: new Date().toISOString()
+      });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Backups table not found. Please run database migrations.');
+      }
+      throw e;
+    }
+  }
+
+  private async runBackup(filePath: string, backupId: string, userId: string) {
+    try {
+      const dbConfig = {
+        host: process.env.DB_HOST || 'postgres',
+        port: process.env.DB_PORT || '5432',
+        database: process.env.DB_NAME || 'galeri_merkezi',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD || 'postgres'
+      };
+
+      const pgDumpCmd = `PGPASSWORD="${dbConfig.password}" pg_dump -h ${dbConfig.host} -p ${dbConfig.port} -U ${dbConfig.user} -d ${dbConfig.database} -F c -f ${filePath}`;
+
+      await execAsync(pgDumpCmd);
+
+      // Get file size
+      const stats = await fs.stat(filePath);
+      const fileSize = stats.size;
+
+      // Update backup record
+      await query(`
+        UPDATE backups 
+        SET status = 'completed', file_size = $1, completed_at = NOW()
+        WHERE id = $2
+      `, [fileSize, backupId]);
+
+    } catch (error: any) {
+      // Update backup record with error
+      await query(`
+        UPDATE backups 
+        SET status = 'failed'
+        WHERE id = $1
+      `, [backupId]);
+      throw error;
+    }
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  }
+
+  async downloadBackup(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can download backups');
+    }
+
+    const { id } = req.params;
+
+    try {
+      const result = await query('SELECT file_path, filename FROM backups WHERE id = $1', [id]);
+      if (result.rows.length === 0) {
+        throw new ValidationError('Backup not found');
+      }
+
+      const backup = result.rows[0];
+      const filePath = backup.file_path;
+
+      // Check if file exists
+      try {
+        await fs.access(filePath);
+        res.download(filePath, backup.filename);
+      } catch (e) {
+        throw new ValidationError('Backup file not found');
+      }
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async deleteBackup(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can delete backups');
+    }
+
+    const { id } = req.params;
+
+    try {
+      const result = await query('SELECT file_path FROM backups WHERE id = $1', [id]);
+      if (result.rows.length === 0) {
+        throw new ValidationError('Backup not found');
+      }
+
+      const filePath = result.rows[0].file_path;
+
+      // Delete file if exists
+      try {
+        await fs.unlink(filePath);
+      } catch (e) {
+        // File might not exist, continue
+      }
+
+      // Delete record
+      await query('DELETE FROM backups WHERE id = $1', [id]);
+
+      res.json({ success: true, message: 'Backup deleted' });
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async updateBackupSchedule(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can update backup schedule');
+    }
+
+    const { enabled, frequency, retention } = req.body;
+
+    try {
+      await query(`
+        INSERT INTO system_settings (key, value)
+        VALUES ('backup_settings', $1::jsonb)
+        ON CONFLICT (key) DO UPDATE SET value = $1::jsonb
+      `, [JSON.stringify({ autoBackup: enabled, frequency, retention })]);
+
+      res.json({ success: true, message: 'Backup schedule updated' });
+    } catch (e: any) {
+      throw e;
+    }
   }
 
   // ===================== INTEGRATIONS =====================
@@ -1969,16 +2174,83 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    res.json({
-      success: true,
-      integrations: [
-        { id: 1, name: 'Sahibinden.com', type: 'listing', status: 'active', lastSync: new Date().toISOString() },
-        { id: 2, name: 'Arabam.com', type: 'listing', status: 'inactive', lastSync: null },
-        { id: 3, name: 'Firebase', type: 'push_notification', status: 'active', lastSync: new Date().toISOString() },
-        { id: 4, name: 'Twilio', type: 'sms', status: 'active', lastSync: new Date().toISOString() },
-        { id: 5, name: 'SendGrid', type: 'email', status: 'active', lastSync: new Date().toISOString() }
-      ]
-    });
+    try {
+      const result = await query(`
+        SELECT 
+          id,
+          name,
+          type,
+          status,
+          config,
+          last_sync as "lastSync",
+          last_error as "lastError",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM integrations
+        ORDER BY name ASC
+      `);
+
+      const integrations = result.rows.map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        type: i.type,
+        status: i.status,
+        config: i.config || {},
+        lastSync: i.lastSync,
+        lastError: i.lastError,
+        createdAt: i.createdAt,
+        updatedAt: i.updatedAt
+      }));
+
+      res.json({
+        success: true,
+        integrations
+      });
+    } catch (e: any) {
+      // If table doesn't exist, return empty
+      res.json({
+        success: true,
+        integrations: []
+      });
+    }
+  }
+
+  async updateIntegration(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can update integrations');
+    }
+
+    const { id } = req.params;
+    const { status, config } = req.body;
+
+    try {
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+
+      if (status) {
+        updates.push(`status = $${paramCount++}`);
+        values.push(status);
+      }
+      if (config) {
+        updates.push(`config = $${paramCount++}::jsonb`);
+        values.push(JSON.stringify(config));
+      }
+
+      if (updates.length > 0) {
+        updates.push(`updated_at = NOW()`);
+        values.push(id);
+        await query(`UPDATE integrations SET ${updates.join(', ')} WHERE id = $${paramCount}`, values);
+      }
+
+      res.json({ success: true, message: 'Integration updated' });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Integrations table not found');
+      }
+      throw e;
+    }
   }
 
   // ===================== OTO SHORTS =====================
@@ -1989,19 +2261,76 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    res.json({
-      success: true,
-      videos: [
-        { id: 1, title: 'BMW M5 Tanıtım', galleryName: 'Premium Motors', status: 'pending', views: 0, createdAt: new Date().toISOString() },
-        { id: 2, title: 'Mercedes E Serisi', galleryName: 'Luxury Cars', status: 'approved', views: 1250, createdAt: new Date(Date.now() - 86400000).toISOString() },
-        { id: 3, title: 'Audi A6 Test Sürüşü', galleryName: 'Auto Gallery', status: 'approved', views: 890, createdAt: new Date(Date.now() - 172800000).toISOString() }
-      ],
-      stats: {
-        totalVideos: 45,
-        pendingApproval: 8,
-        totalViews: 125000
+    const { status, page = 1, limit = 20 } = req.query;
+
+    try {
+      let queryStr = `
+        SELECT 
+          os.id,
+          os.title,
+          os.video_url as "videoUrl",
+          os.thumbnail_url as "thumbnailUrl",
+          os.status,
+          os.views,
+          os.likes,
+          os.created_at as "createdAt",
+          g.name as "galleryName"
+        FROM oto_shorts os
+        LEFT JOIN galleries g ON os.gallery_id = g.id
+      `;
+
+      const conditions: string[] = [];
+      const params: any[] = [];
+      let paramCount = 1;
+
+      if (status) {
+        conditions.push(`os.status = $${paramCount++}`);
+        params.push(status);
       }
-    });
+
+      if (conditions.length > 0) {
+        queryStr += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      queryStr += ` ORDER BY os.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      params.push(parseInt(limit as string), (parseInt(page as string) - 1) * parseInt(limit as string));
+
+      const result = await query(queryStr, params);
+
+      // Get stats
+      const statsResult = await query(`
+        SELECT 
+          COUNT(*) as "totalVideos",
+          COUNT(*) FILTER (WHERE status = 'pending') as "pendingApproval",
+          SUM(views) as "totalViews"
+        FROM oto_shorts
+      `);
+
+      const stats = statsResult.rows[0];
+
+      res.json({
+        success: true,
+        videos: result.rows,
+        stats: {
+          totalVideos: parseInt(stats.totalVideos || '0'),
+          pendingApproval: parseInt(stats.pendingApproval || '0'),
+          totalViews: parseInt(stats.totalViews || '0')
+        },
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total: parseInt(stats.totalVideos || '0')
+        }
+      });
+    } catch (e: any) {
+      // If table doesn't exist, return empty
+      res.json({
+        success: true,
+        videos: [],
+        stats: { totalVideos: 0, pendingApproval: 0, totalViews: 0 },
+        pagination: { page: 1, limit: 20, total: 0 }
+      });
+    }
   }
 
   async approveVideo(req: AuthenticatedRequest, res: Response) {
@@ -2011,7 +2340,22 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    res.json({ success: true, message: 'Video approved' });
+    const { id } = req.params;
+
+    try {
+      await query(`
+        UPDATE oto_shorts 
+        SET status = 'approved', approved_by = $1, approved_at = NOW()
+        WHERE id = $2
+      `, [user.sub, id]);
+
+      res.json({ success: true, message: 'Video approved' });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Oto shorts table not found');
+      }
+      throw e;
+    }
   }
 
   async rejectVideo(req: AuthenticatedRequest, res: Response) {
@@ -2021,7 +2365,23 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    res.json({ success: true, message: 'Video rejected' });
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    try {
+      await query(`
+        UPDATE oto_shorts 
+        SET status = 'rejected', rejection_reason = $1
+        WHERE id = $2
+      `, [reason || 'No reason provided', id]);
+
+      res.json({ success: true, message: 'Video rejected' });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Oto shorts table not found');
+      }
+      throw e;
+    }
   }
 
   // ===================== SPLASH CONFIG =====================
@@ -2056,29 +2416,251 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    res.json({
-      success: true,
-      reports: [
-        { id: 1, name: 'Aylık Galeri Raporu', type: 'gallery', generatedAt: new Date().toISOString(), status: 'ready' },
-        { id: 2, name: 'Araç Satış Raporu', type: 'vehicle', generatedAt: new Date(Date.now() - 86400000).toISOString(), status: 'ready' },
-        { id: 3, name: 'Finansal Özet', type: 'financial', generatedAt: new Date(Date.now() - 172800000).toISOString(), status: 'ready' }
-      ]
-    });
+    try {
+      const result = await query(`
+        SELECT 
+          id,
+          name,
+          type,
+          format,
+          status,
+          file_size as "fileSize",
+          generated_at as "generatedAt",
+          expires_at as "expiresAt",
+          created_at as "createdAt"
+        FROM reports
+        ORDER BY created_at DESC
+        LIMIT 50
+      `);
+
+      const reports = result.rows.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        type: r.type,
+        format: r.format,
+        status: r.status,
+        fileSize: r.fileSize ? this.formatFileSize(r.fileSize) : null,
+        generatedAt: r.generatedAt,
+        expiresAt: r.expiresAt,
+        createdAt: r.createdAt
+      }));
+
+      res.json({
+        success: true,
+        reports
+      });
+    } catch (e: any) {
+      // If table doesn't exist, return empty
+      res.json({
+        success: true,
+        reports: []
+      });
+    }
   }
 
-  async exportReport(req: AuthenticatedRequest, res: Response) {
+  async generateReport(req: AuthenticatedRequest, res: Response) {
     const user = getUserFromHeaders(req);
     const allowedRoles = ['superadmin', 'admin'];
     if (!allowedRoles.includes(user.role || '')) {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    // Generate a simple report
-    const report = 'Tarih,Galeri,Araç Sayısı,Satış\n2024-01-20,Premium Motors,45,12';
-    
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=report.csv');
-    res.send(report);
+    const { name, type, format = 'csv', parameters = {} } = req.body;
+
+    if (!name || !type) {
+      throw new ValidationError('Report name and type are required');
+    }
+
+    try {
+      // Create report record
+      const reportResult = await query(`
+        INSERT INTO reports (name, type, format, status, parameters, generated_by)
+        VALUES ($1, $2, $3, 'generating', $4::jsonb, $5)
+        RETURNING id
+      `, [name, type, format, JSON.stringify(parameters), user.sub]);
+
+      const reportId = reportResult.rows[0].id;
+
+      // Generate report in background
+      this.generateReportFile(reportId, type, format, parameters).catch(err => {
+        console.error('Report generation failed:', err);
+      });
+
+      res.json({
+        success: true,
+        message: 'Report generation started',
+        id: reportId
+      });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        throw new ValidationError('Reports table not found. Please run database migrations.');
+      }
+      throw e;
+    }
+  }
+
+  private async generateReportFile(reportId: string, type: string, format: string, parameters: any) {
+    try {
+      let data: any[] = [];
+      let filename = '';
+
+      // Generate data based on report type
+      if (type === 'gallery') {
+        const result = await query(`
+          SELECT 
+            g.name as "Galeri",
+            g.city as "Şehir",
+            COUNT(DISTINCT u.id) as "Kullanıcı Sayısı",
+            COUNT(DISTINCT v.id) as "Araç Sayısı",
+            g.status as "Durum",
+            g.created_at as "Kayıt Tarihi"
+          FROM galleries g
+          LEFT JOIN users u ON u.gallery_id = g.id
+          LEFT JOIN vehicles v ON v.gallery_id = g.id
+          GROUP BY g.id, g.name, g.city, g.status, g.created_at
+          ORDER BY g.created_at DESC
+        `);
+        data = result.rows;
+        filename = `gallery_report_${new Date().toISOString().split('T')[0]}`;
+      } else if (type === 'vehicle') {
+        const result = await query(`
+          SELECT 
+            v.id as "Araç ID",
+            v.brand as "Marka",
+            v.model as "Model",
+            v.year as "Yıl",
+            v.price as "Fiyat",
+            g.name as "Galeri",
+            v.status as "Durum",
+            v.created_at as "Oluşturulma Tarihi"
+          FROM vehicles v
+          LEFT JOIN galleries g ON v.gallery_id = g.id
+          ORDER BY v.created_at DESC
+          LIMIT 1000
+        `);
+        data = result.rows;
+        filename = `vehicle_report_${new Date().toISOString().split('T')[0]}`;
+      } else if (type === 'financial') {
+        const result = await query(`
+          SELECT 
+            DATE(s.created_at) as "Tarih",
+            COUNT(*) as "Abonelik Sayısı",
+            SUM(s.price) as "Toplam Gelir",
+            s.currency as "Para Birimi"
+          FROM subscriptions s
+          WHERE s.status = 'active'
+          GROUP BY DATE(s.created_at), s.currency
+          ORDER BY DATE(s.created_at) DESC
+        `);
+        data = result.rows;
+        filename = `financial_report_${new Date().toISOString().split('T')[0]}`;
+      }
+
+      // Generate file based on format
+      const reportsDir = process.env.REPORTS_DIR || '/tmp/reports';
+      if (!existsSync(reportsDir)) {
+        mkdirSync(reportsDir, { recursive: true });
+      }
+
+      let filePath = '';
+      let fileSize = 0;
+
+      if (format === 'csv') {
+        filePath = path.join(reportsDir, `${filename}.csv`);
+        const csvContent = this.generateCSV(data);
+        await fs.writeFile(filePath, csvContent, 'utf8');
+        const stats = await fs.stat(filePath);
+        fileSize = stats.size;
+      } else if (format === 'json') {
+        filePath = path.join(reportsDir, `${filename}.json`);
+        await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+        const stats = await fs.stat(filePath);
+        fileSize = stats.size;
+      } else {
+        // For xlsx and pdf, we'd need additional libraries
+        // For now, generate as CSV
+        filePath = path.join(reportsDir, `${filename}.csv`);
+        const csvContent = this.generateCSV(data);
+        await fs.writeFile(filePath, csvContent, 'utf8');
+        const stats = await fs.stat(filePath);
+        fileSize = stats.size;
+      }
+
+      // Update report record
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // Expire in 30 days
+
+      await query(`
+        UPDATE reports 
+        SET status = 'ready', file_path = $1, file_size = $2, generated_at = NOW(), expires_at = $3
+        WHERE id = $4
+      `, [filePath, fileSize, expiresAt, reportId]);
+
+    } catch (error: any) {
+      // Update report record with error
+      await query(`
+        UPDATE reports 
+        SET status = 'failed'
+        WHERE id = $1
+      `, [reportId]);
+      throw error;
+    }
+  }
+
+  private generateCSV(data: any[]): string {
+    if (data.length === 0) return '';
+
+    const headers = Object.keys(data[0]);
+    const csvRows = [headers.join(',')];
+
+    for (const row of data) {
+      const values = headers.map(header => {
+        const value = row[header];
+        if (value === null || value === undefined) return '';
+        // Escape commas and quotes
+        const stringValue = String(value).replace(/"/g, '""');
+        return `"${stringValue}"`;
+      });
+      csvRows.push(values.join(','));
+    }
+
+    return csvRows.join('\n');
+  }
+
+  async downloadReport(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    const allowedRoles = ['superadmin', 'admin'];
+    if (!allowedRoles.includes(user.role || '')) {
+      throw new ForbiddenError('Insufficient permissions');
+    }
+
+    const { id } = req.params;
+
+    try {
+      const result = await query('SELECT file_path, name, format FROM reports WHERE id = $1 AND status = $2', [id, 'ready']);
+      if (result.rows.length === 0) {
+        throw new ValidationError('Report not found or not ready');
+      }
+
+      const report = result.rows[0];
+      const filePath = report.file_path;
+
+      // Check if file exists
+      try {
+        await fs.access(filePath);
+        const ext = report.format === 'json' ? 'json' : 'csv';
+        res.download(filePath, `${report.name}.${ext}`);
+      } catch (e) {
+        throw new ValidationError('Report file not found');
+      }
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async exportReport(req: AuthenticatedRequest, res: Response) {
+    // Legacy endpoint - redirect to generateReport
+    return this.generateReport(req, res);
   }
 }
 

@@ -9571,6 +9571,87 @@ ON CONFLICT DO NOTHING;
 -- Set sequence for roles to start after 100 (for custom roles)
 SELECT setval('roles_id_seq', 100, false);
 
+-- ========== 019_create_backups.sql ==========
+CREATE TABLE IF NOT EXISTS backups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    filename VARCHAR(255) NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size BIGINT NOT NULL,
+    backup_type VARCHAR(20) NOT NULL CHECK (backup_type IN ('manual', 'scheduled', 'automatic')),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed', 'expired')),
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    expires_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP
+);
+
+CREATE INDEX idx_backups_status ON backups(status);
+CREATE INDEX idx_backups_created_at ON backups(created_at DESC);
+CREATE INDEX idx_backups_type ON backups(backup_type);
+
+-- ========== 020_create_integrations.sql ==========
+CREATE TABLE IF NOT EXISTS integrations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    type VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'inactive' CHECK (status IN ('active', 'inactive', 'error')),
+    config JSONB DEFAULT '{}'::jsonb,
+    last_sync TIMESTAMP,
+    last_error TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default integrations
+INSERT INTO integrations (name, type, status, config) VALUES
+    ('Sahibinden.com', 'listing', 'inactive', '{"enabled": false}'::jsonb),
+    ('Arabam.com', 'listing', 'inactive', '{"enabled": false}'::jsonb),
+    ('Firebase', 'push_notification', 'active', '{"enabled": true}'::jsonb),
+    ('Twilio', 'sms', 'active', '{"enabled": true}'::jsonb),
+    ('SendGrid', 'email', 'active', '{"enabled": true}'::jsonb)
+ON CONFLICT (name) DO NOTHING;
+
+-- ========== 021_create_oto_shorts.sql ==========
+CREATE TABLE IF NOT EXISTS oto_shorts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    gallery_id UUID REFERENCES galleries(id) ON DELETE CASCADE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    video_url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    views INTEGER DEFAULT 0,
+    likes INTEGER DEFAULT 0,
+    approved_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    approved_at TIMESTAMP,
+    rejection_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_oto_shorts_gallery ON oto_shorts(gallery_id);
+CREATE INDEX idx_oto_shorts_status ON oto_shorts(status);
+CREATE INDEX idx_oto_shorts_created_at ON oto_shorts(created_at DESC);
+
+-- ========== 022_create_reports.sql ==========
+CREATE TABLE IF NOT EXISTS reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    format VARCHAR(20) NOT NULL DEFAULT 'csv' CHECK (format IN ('csv', 'xlsx', 'pdf', 'json')),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'generating', 'ready', 'failed', 'expired')),
+    file_path TEXT,
+    file_size BIGINT,
+    parameters JSONB DEFAULT '{}'::jsonb,
+    generated_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    generated_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_reports_type ON reports(type);
+CREATE INDEX idx_reports_status ON reports(status);
+CREATE INDEX idx_reports_created_at ON reports(created_at DESC);
+
 
 
 

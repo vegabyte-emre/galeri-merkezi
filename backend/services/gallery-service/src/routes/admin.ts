@@ -64,9 +64,13 @@ router.get('/email-templates', asyncHandler(controller.listEmailTemplates.bind(c
 // Backup
 router.get('/backups', asyncHandler(controller.listBackups.bind(controller)));
 router.post('/backups', asyncHandler(controller.createBackup.bind(controller)));
+router.get('/backups/:id/download', asyncHandler(controller.downloadBackup.bind(controller)));
+router.delete('/backups/:id', asyncHandler(controller.deleteBackup.bind(controller)));
+router.put('/backups/schedule', asyncHandler(controller.updateBackupSchedule.bind(controller)));
 
 // Integrations
 router.get('/integrations', asyncHandler(controller.listIntegrations.bind(controller)));
+router.put('/integrations/:id', asyncHandler(controller.updateIntegration.bind(controller)));
 
 // Oto Shorts
 router.get('/oto-shorts', asyncHandler(controller.listOtoShorts.bind(controller)));
@@ -79,6 +83,8 @@ router.put('/splash-config', asyncHandler(controller.updateSplashConfig.bind(con
 
 // Reports
 router.get('/reports', asyncHandler(controller.getReports.bind(controller)));
+router.post('/reports', asyncHandler(controller.generateReport.bind(controller)));
+router.get('/reports/:id/download', asyncHandler(controller.downloadReport.bind(controller)));
 router.get('/reports/export', asyncHandler(controller.exportReport.bind(controller)));
 
 export { router as adminRoutes };
