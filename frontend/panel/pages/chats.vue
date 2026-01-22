@@ -440,8 +440,7 @@ import { useToast } from '~/composables/useToast'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
-  layout: 'default',
-  middleware: ['auth']
+  layout: 'default'
 })
 
 useHead({
