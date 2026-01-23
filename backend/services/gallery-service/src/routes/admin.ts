@@ -94,6 +94,9 @@ router.post('/pricing-plans', asyncHandler(controller.createPricingPlan.bind(con
 router.put('/pricing-plans/:id', asyncHandler(controller.updatePricingPlan.bind(controller)));
 router.delete('/pricing-plans/:id', asyncHandler(controller.deletePricingPlan.bind(controller)));
 
+// Database Migrations
+router.post('/run-migration', asyncHandler(controller.runMigration.bind(controller)));
+
 export { router as adminRoutes };
 
 

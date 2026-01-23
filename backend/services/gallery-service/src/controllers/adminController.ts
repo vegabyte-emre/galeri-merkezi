@@ -3073,5 +3073,121 @@ export class AdminController {
       throw e;
     }
   }
+
+  // ===================== DATABASE MIGRATIONS =====================
+  async runMigration(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can run migrations');
+    }
+
+    const results: string[] = [];
+
+    try {
+      // 1. Update vehicles status constraint
+      try {
+        await query(`ALTER TABLE vehicles DROP CONSTRAINT IF EXISTS vehicles_status_check`);
+        results.push('Dropped old vehicles_status_check constraint');
+      } catch (e: any) {
+        results.push(`vehicles_status_check drop: ${e.message}`);
+      }
+
+      try {
+        await query(`ALTER TABLE vehicles ADD CONSTRAINT vehicles_status_check CHECK (status IN ('draft', 'pending_approval', 'published', 'paused', 'archived', 'sold', 'rejected'))`);
+        results.push('Added new vehicles_status_check constraint with pending_approval and rejected');
+      } catch (e: any) {
+        results.push(`vehicles_status_check add: ${e.message}`);
+      }
+
+      // 2. Add approval columns to vehicles
+      const columns = [
+        { name: 'submitted_at', type: 'TIMESTAMP' },
+        { name: 'submitted_by', type: 'UUID' },
+        { name: 'approved_at', type: 'TIMESTAMP' },
+        { name: 'approved_by', type: 'UUID' },
+        { name: 'rejected_at', type: 'TIMESTAMP' },
+        { name: 'rejected_by', type: 'UUID' },
+        { name: 'rejection_reason', type: 'TEXT' }
+      ];
+
+      for (const col of columns) {
+        try {
+          await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
+          results.push(`Added column ${col.name}`);
+        } catch (e: any) {
+          results.push(`Column ${col.name}: ${e.message}`);
+        }
+      }
+
+      // 3. Create index for pending approval
+      try {
+        await query(`CREATE INDEX IF NOT EXISTS idx_vehicles_pending_approval ON vehicles(status) WHERE status = 'pending_approval'`);
+        results.push('Created idx_vehicles_pending_approval index');
+      } catch (e: any) {
+        results.push(`Index: ${e.message}`);
+      }
+
+      // 4. Ensure integrations table exists
+      try {
+        await query(`
+          CREATE TABLE IF NOT EXISTS integrations (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name VARCHAR(100) UNIQUE NOT NULL,
+            type VARCHAR(50) NOT NULL,
+            status VARCHAR(20) DEFAULT 'inactive',
+            config JSONB DEFAULT '{}',
+            last_sync TIMESTAMP,
+            last_error TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        results.push('Ensured integrations table exists');
+      } catch (e: any) {
+        results.push(`Integrations table: ${e.message}`);
+      }
+
+      // 5. Insert NetGSM if not exists
+      try {
+        await query(`
+          INSERT INTO integrations (name, type, status, config) 
+          VALUES ('NetGSM', 'sms', 'active', '{"enabled": true, "username": "", "password": "", "msgHeader": "GALERIPLATFORM"}'::jsonb)
+          ON CONFLICT (name) DO NOTHING
+        `);
+        results.push('Ensured NetGSM integration exists');
+      } catch (e: any) {
+        results.push(`NetGSM insert: ${e.message}`);
+      }
+
+      // 6. Insert other integrations
+      try {
+        await query(`
+          INSERT INTO integrations (name, type, status, config) 
+          VALUES ('Firebase', 'push', 'inactive', '{"enabled": false}'::jsonb)
+          ON CONFLICT (name) DO NOTHING
+        `);
+        await query(`
+          INSERT INTO integrations (name, type, status, config) 
+          VALUES ('SendGrid', 'email', 'inactive', '{"enabled": false}'::jsonb)
+          ON CONFLICT (name) DO NOTHING
+        `);
+        results.push('Ensured Firebase and SendGrid integrations exist');
+      } catch (e: any) {
+        results.push(`Other integrations: ${e.message}`);
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Migration completed',
+        results 
+      });
+    } catch (e: any) {
+      res.json({ 
+        success: false, 
+        message: e.message,
+        results 
+      });
+    }
+  }
 }
 
