@@ -2666,6 +2666,7 @@ export class AdminController {
   // ===================== PRICING PLANS =====================
   async listPricingPlans(req: Request, res: Response) {
     // Public endpoint - no auth required for landing page
+    // No caching - always return fresh data for real-time sync
     try {
       const result = await query(`
         SELECT 

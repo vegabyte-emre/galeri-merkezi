@@ -100,8 +100,8 @@ const loading = ref(true)
 const loadPricingPlans = async () => {
   try {
     loading.value = true
-    const response = await api.get('/pricing-plans')
-    console.log('API Response:', response)
+    // Add cache busting to ensure fresh data
+    const response = await api.get(`/pricing-plans?t=${Date.now()}`)
     if (response.success && response.plans && Array.isArray(response.plans) && response.plans.length > 0) {
       // Transform API response to match frontend format
       plans.value = response.plans.map((plan: any) => ({
@@ -113,7 +113,6 @@ const loadPricingPlans = async () => {
         features: Array.isArray(plan.features) ? plan.features : []
       }))
     } else {
-      console.warn('API returned empty or invalid plans, using defaults')
       // Fallback to default plans if API fails
       plans.value = getDefaultPlans()
     }
