@@ -342,7 +342,7 @@ export class UserController {
   // ========== USER SELF-SERVICE ==========
   
   async getMe(req: AuthenticatedRequest, res: Response) {
-    const userId = req.user?.sub;
+    const userId = (req.headers['x-user-id'] as string) || req.user?.sub;
 
     const result = await query(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.avatar_url, u.role, u.gallery_id,
@@ -364,7 +364,7 @@ export class UserController {
   }
 
   async updateMe(req: AuthenticatedRequest, res: Response) {
-    const userId = req.user?.sub;
+    const userId = (req.headers['x-user-id'] as string) || req.user?.sub;
     const { firstName, lastName, email, avatarUrl } = req.body;
 
     if (email && !validateEmail(email)) {
@@ -411,7 +411,7 @@ export class UserController {
   }
 
   async changePassword(req: AuthenticatedRequest, res: Response) {
-    const userId = req.user?.sub;
+    const userId = (req.headers['x-user-id'] as string) || req.user?.sub;
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {

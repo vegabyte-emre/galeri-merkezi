@@ -115,6 +115,49 @@
             <Loader2 v-if="saving" class="w-4 h-4 animate-spin" />
             {{ saving ? 'Kaydediliyor...' : 'Kaydet' }}
           </button>
+
+          <!-- Password Change -->
+          <div class="pt-6 border-t border-gray-200 dark:border-gray-700 space-y-4">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Şifre Değiştir</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mevcut Şifre</label>
+                <input
+                  v-model="passwordForm.currentPassword"
+                  type="password"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Mevcut şifreniz"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yeni Şifre</label>
+                <input
+                  v-model="passwordForm.newPassword"
+                  type="password"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Yeni şifreniz"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yeni Şifre (Tekrar)</label>
+                <input
+                  v-model="passwordForm.newPasswordConfirm"
+                  type="password"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Yeni şifreniz (tekrar)"
+                />
+              </div>
+            </div>
+
+            <button
+              @click="changePassword"
+              :disabled="passwordChanging"
+              class="px-6 py-2.5 bg-gradient-to-r from-gray-800 to-gray-900 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              <Loader2 v-if="passwordChanging" class="w-4 h-4 animate-spin" />
+              {{ passwordChanging ? 'Değiştiriliyor...' : 'Şifreyi Değiştir' }}
+            </button>
+          </div>
         </div>
 
         <!-- Channel Settings -->
@@ -255,9 +298,11 @@ import { User, Link, Bell, Loader2 } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
+import { useAuthStore } from '~/stores/auth'
 
 const api = useApi()
 const toast = useToast()
+const authStore = useAuthStore()
 
 const activeTab = ref('profile')
 const loading = ref(true)
@@ -290,6 +335,13 @@ const notifications = ref({
   vehicleSold: true
 })
 
+const passwordChanging = ref(false)
+const passwordForm = ref({
+  currentPassword: '',
+  newPassword: '',
+  newPasswordConfirm: ''
+})
+
 // Load settings on mount
 onMounted(async () => {
   await loadSettings()
@@ -301,6 +353,7 @@ const loadSettings = async () => {
     const response = await api.get<{ success: boolean; data: any }>('/gallery/settings')
     if (response.success && response.data) {
       profile.value = { ...profile.value, ...response.data.profile }
+      authStore.setGallery({ ...(authStore.gallery || {}), ...(response.data.profile || {}) })
       channels.value = response.data.channels || []
       notifications.value = { ...notifications.value, ...response.data.notifications }
     }
@@ -320,10 +373,35 @@ const saveSettings = async () => {
       notifications: notifications.value
     })
     toast.success('Ayarlar kaydedildi!')
+    authStore.setGallery({ ...(authStore.gallery || {}), ...(profile.value || {}) })
   } catch (error: any) {
     toast.error('Hata: ' + error.message)
   } finally {
     saving.value = false
+  }
+}
+
+const changePassword = async () => {
+  if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword) {
+    toast.error('Mevcut şifre ve yeni şifre gerekli')
+    return
+  }
+  if (passwordForm.value.newPassword !== passwordForm.value.newPasswordConfirm) {
+    toast.error('Yeni şifreler eşleşmiyor')
+    return
+  }
+  passwordChanging.value = true
+  try {
+    await api.put('/user/change-password', {
+      currentPassword: passwordForm.value.currentPassword,
+      newPassword: passwordForm.value.newPassword
+    })
+    toast.success('Şifre başarıyla değiştirildi')
+    passwordForm.value = { currentPassword: '', newPassword: '', newPasswordConfirm: '' }
+  } catch (error: any) {
+    toast.error('Hata: ' + error.message)
+  } finally {
+    passwordChanging.value = false
   }
 }
 

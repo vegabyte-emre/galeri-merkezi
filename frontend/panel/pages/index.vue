@@ -237,7 +237,7 @@ const api = useApi()
 const toast = useToast()
 const loading = ref(false)
 const authStore = useAuthStore()
-const galleryName = computed(() => authStore.gallery?.name || authStore.user?.email || 'Galeri')
+const galleryName = computed(() => authStore.gallery?.name || 'Galeri')
 
 const stats = ref([
   {

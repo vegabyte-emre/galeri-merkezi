@@ -162,60 +162,60 @@
           >
             Kaydet
           </button>
+        </div>
 
-          <!-- NetGSM Settings -->
-          <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">NetGSM Ayarları</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              SMS sağlayıcısı olarak NetGSM kullanıyorsanız buradan yapılandırabilirsiniz.
-            </p>
+        <!-- NetGSM Settings -->
+        <div v-if="activeTab === 'netgsm'" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">NetGSM (SMS) Ayarları</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            SMS sağlayıcısı olarak NetGSM kullanıyorsanız buradan yapılandırabilirsiniz.
+          </p>
 
-            <div v-if="!netgsmLoaded" class="text-sm text-gray-500 dark:text-gray-400">
-              NetGSM ayarları yükleniyor...
+          <div v-if="!netgsmLoaded" class="text-sm text-gray-500 dark:text-gray-400">
+            NetGSM ayarları yükleniyor...
+          </div>
+
+          <div v-else-if="!netgsmId" class="text-sm text-red-600 dark:text-red-400">
+            NetGSM entegrasyonu bulunamadı. Lütfen önce `Entegrasyonlar` sayfasını yenileyin.
+          </div>
+
+          <div v-else class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kullanıcı Adı</label>
+              <input
+                v-model="netgsmUsername"
+                type="text"
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="NETGSM_USERNAME"
+              />
             </div>
 
-            <div v-else-if="!netgsmId" class="text-sm text-red-600 dark:text-red-400">
-              NetGSM entegrasyonu bulunamadı. Lütfen Entegrasyonlar sayfasını yenileyin.
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Şifre</label>
+              <input
+                v-model="netgsmPassword"
+                type="password"
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Değiştirmek için yazın (boş bırakılırsa korunur)"
+              />
             </div>
 
-            <div v-else class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kullanıcı Adı</label>
-                <input
-                  v-model="netgsmUsername"
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="NETGSM_USERNAME"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Şifre</label>
-                <input
-                  v-model="netgsmPassword"
-                  type="password"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Değiştirmek için yazın (boş bırakılırsa korunur)"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mesaj Başlığı (msgHeader)</label>
-                <input
-                  v-model="netgsmMsgHeader"
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="GALERIPLATFORM"
-                />
-              </div>
-
-              <button
-                @click="saveNetgsmSettings"
-                class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
-              >
-                NetGSM Ayarlarını Kaydet
-              </button>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mesaj Başlığı (msgHeader)</label>
+              <input
+                v-model="netgsmMsgHeader"
+                type="text"
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="GALERIPLATFORM"
+              />
             </div>
+
+            <button
+              @click="saveNetgsmSettings"
+              class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+            >
+              NetGSM Ayarlarını Kaydet
+            </button>
           </div>
         </div>
       </div>
@@ -224,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { Settings, Shield, Bell } from 'lucide-vue-next'
+import { Settings, Shield, Bell, MessageSquare } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
@@ -237,7 +237,8 @@ const activeTab = ref('general')
 const tabs = [
   { id: 'general', label: 'Genel', icon: Settings },
   { id: 'security', label: 'Güvenlik', icon: Shield },
-  { id: 'notifications', label: 'Bildirimler', icon: Bell }
+  { id: 'notifications', label: 'Bildirimler', icon: Bell },
+  { id: 'netgsm', label: 'NetGSM', icon: MessageSquare }
 ]
 
 const settings = ref({

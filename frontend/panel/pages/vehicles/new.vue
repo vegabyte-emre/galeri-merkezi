@@ -1230,12 +1230,7 @@ const saveVehicle = async (saveType: string = 'publish') => {
       if (videoFile.value) {
         const videoUrl = await uploadVideo(vehicleId)
         if (videoUrl) {
-          // Update vehicle with video URL
-          await api.put(`/vehicles/${vehicleId}`, { 
-            video_url: videoUrl,
-            publish_to_oto_shorts: form.publishToOtoShorts
-          })
-          
+          // Video route already updates vehicle + shorts flags
           if (form.publishToOtoShorts) {
             toast.success('Video Oto Shorts\'a gonderildi!')
           }

@@ -525,9 +525,22 @@ export class AdminController {
       galleryId = uuidv4();
       const slug = generateSlug(galleryName);
       await query(`
-        INSERT INTO galleries (id, name, slug, tax_type, tax_number, status, approved_at, approved_by, created_at)
-        VALUES ($1, $2, $3, $4, $5, 'active', NOW(), $6, NOW())
-      `, [galleryId, galleryName, slug, taxType || 'VKN', taxNumber || '0000000000', user.sub || null]);
+        INSERT INTO galleries (
+          id, name, slug, phone, whatsapp, email,
+          tax_type, tax_number, status, approved_at, approved_by, created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', NOW(), $9, NOW())
+      `, [
+        galleryId,
+        galleryName,
+        slug,
+        phone || null,
+        phone || null,
+        email || null,
+        taxType || 'VKN',
+        taxNumber || '0000000000',
+        user.sub || null
+      ]);
     }
 
     // Hash password

@@ -217,8 +217,8 @@ const pendingApprovalCount = ref<number>(0)
 const displayName = computed(() => {
   return (
     authStore.gallery?.name ||
-    authStore.user?.name ||
     [authStore.user?.firstName, authStore.user?.lastName].filter(Boolean).join(' ') ||
+    authStore.user?.name ||
     authStore.user?.email ||
     'Galeri'
   )
@@ -286,9 +286,28 @@ const navItems = computed(() => {
 
 const loadUserRole = async () => {
   try {
-    const response = await api.get<{ success: boolean; data: { role: string } }>('/auth/me')
+    const response = await api.get<{ success: boolean; data?: any }>('/auth/me')
     if (response.success && response.data) {
       userRole.value = response.data.role || ''
+      // Also hydrate store so UI shows real names even if gallery-service profile is empty
+      authStore.setUser({
+        ...(authStore.user || {}),
+        id: response.data.id,
+        email: response.data.email,
+        phone: response.data.phone,
+        role: response.data.role,
+        galleryId: response.data.gallery_id || response.data.galleryId,
+        firstName: response.data.first_name || response.data.firstName,
+        lastName: response.data.last_name || response.data.lastName
+      })
+
+      if (!authStore.gallery?.name && response.data.gallery_name) {
+        authStore.setGallery({
+          ...(authStore.gallery || {}),
+          name: response.data.gallery_name,
+          logo_url: response.data.gallery_logo || null,
+        })
+      }
     }
   } catch (e) {
     console.error('User role error:', e)
