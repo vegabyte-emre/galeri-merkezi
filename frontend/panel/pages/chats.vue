@@ -904,12 +904,24 @@ const deleteChat = async (chatId: string) => {
   }
 }
 
-// WebSocket listeners
-let messageListener: (() => void) | null = null
-let typingListener: (() => void) | null = null
+// WebSocket listeners - stored for cleanup
+let messageUnsubscribe: (() => void) | null = null
+let typingUnsubscribe: (() => void) | null = null
+let typingStopUnsubscribe: (() => void) | null = null
+let listenersSetup = false
 
 const setupWebSocketListeners = () => {
-  messageListener = wsOn('new_message', (data: any) => {
+  // Prevent duplicate listeners
+  if (listenersSetup) {
+    console.log('[Chat] Listeners already setup, skipping')
+    return
+  }
+  listenersSetup = true
+  console.log('[Chat] Setting up WebSocket listeners')
+  
+  messageUnsubscribe = wsOn('new_message', (data: any) => {
+    console.log('[Chat] new_message event received:', data)
+    
     if (data.roomId === selectedChatId.value) {
       const newMsg: Message = {
         id: data.message.id,
@@ -921,6 +933,7 @@ const setupWebSocketListeners = () => {
       
       // Kendi mesajımızı eklemeyelim (zaten optimistic olarak eklendi)
       if (newMsg.senderId !== authStore.user?.id) {
+        console.log('[Chat] Adding message to list:', newMsg)
         messages.value.push(newMsg)
         nextTick(() => scrollToBottom())
         markAsRead()
@@ -938,18 +951,29 @@ const setupWebSocketListeners = () => {
     }
   })
   
-  typingListener = wsOn('user_typing', (data: any) => {
+  typingUnsubscribe = wsOn('user_typing', (data: any) => {
     if (data.roomId === selectedChatId.value) {
       remoteTyping.value = true
       setTimeout(() => { remoteTyping.value = false }, 3000)
     }
   })
   
-  wsOn('user_stopped_typing', (data: any) => {
+  typingStopUnsubscribe = wsOn('user_stopped_typing', (data: any) => {
     if (data.roomId === selectedChatId.value) {
       remoteTyping.value = false
     }
   })
+}
+
+const cleanupWebSocketListeners = () => {
+  console.log('[Chat] Cleaning up WebSocket listeners')
+  if (messageUnsubscribe) messageUnsubscribe()
+  if (typingUnsubscribe) typingUnsubscribe()
+  if (typingStopUnsubscribe) typingStopUnsubscribe()
+  messageUnsubscribe = null
+  typingUnsubscribe = null
+  typingStopUnsubscribe = null
+  listenersSetup = false
 }
 
 // Click outside handler for dropdown
@@ -966,26 +990,21 @@ onMounted(async () => {
   window.addEventListener('resize', checkMobile)
   document.addEventListener('click', handleClickOutside)
   
-  // Connect to WebSocket
+  // Connect to WebSocket first
   console.log('[Chat] Mounting, connecting WebSocket...')
   connect()
   
-  // Setup listeners immediately
+  // Setup listeners (will work even before connection is established)
   setupWebSocketListeners()
   
-  // Watch for connection changes
+  // Watch for connection changes to rejoin room
   watch(wsConnected, (connected) => {
-    console.log('[Chat] WebSocket connected changed:', connected)
-    if (connected) {
-      // Re-setup listeners on reconnect
-      setupWebSocketListeners()
-      // Rejoin room if we have one selected
-      if (selectedChatId.value) {
-        console.log('[Chat] Rejoining room after reconnect:', selectedChatId.value)
-        joinRoom(selectedChatId.value)
-      }
+    console.log('[Chat] WebSocket connected:', connected)
+    if (connected && selectedChatId.value) {
+      console.log('[Chat] Rejoining room after connect:', selectedChatId.value)
+      joinRoom(selectedChatId.value)
     }
-  }, { immediate: true })
+  })
   
   await loadChats()
 })
@@ -998,8 +1017,7 @@ onUnmounted(() => {
     leaveRoom(selectedChatId.value)
   }
   
-  if (messageListener) messageListener()
-  if (typingListener) typingListener()
+  cleanupWebSocketListeners()
   if (typingTimeout) clearTimeout(typingTimeout)
   
   disconnect()
