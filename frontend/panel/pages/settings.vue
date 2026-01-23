@@ -350,10 +350,46 @@ onMounted(async () => {
 const loadSettings = async () => {
   loading.value = true
   try {
+    // First get basic info from /auth/me
+    try {
+      const meRes = await api.get<{ success: boolean; data?: any }>('/auth/me')
+      if (meRes.success && meRes.data) {
+        // Populate profile with available data
+        if (meRes.data.gallery_name) {
+          profile.value.name = meRes.data.gallery_name
+        }
+        if (meRes.data.email && !profile.value.email) {
+          profile.value.email = meRes.data.email
+        }
+        if (meRes.data.phone && !profile.value.phone) {
+          profile.value.phone = meRes.data.phone
+        }
+        if (meRes.data.city && !profile.value.city) {
+          profile.value.city = meRes.data.city
+        }
+        // Also update auth store
+        authStore.setGallery({ 
+          ...(authStore.gallery || {}), 
+          name: meRes.data.gallery_name,
+          logo_url: meRes.data.gallery_logo
+        })
+      }
+    } catch (e) {
+      console.error('Auth/me error:', e)
+    }
+
+    // Then try to get full gallery settings
     const response = await api.get<{ success: boolean; data: any }>('/gallery/settings')
     if (response.success && response.data) {
-      profile.value = { ...profile.value, ...response.data.profile }
-      authStore.setGallery({ ...(authStore.gallery || {}), ...(response.data.profile || {}) })
+      // Only merge profile data that has actual values
+      const profileData = response.data.profile || {}
+      const hasProfileData = Object.values(profileData).some(v => v != null && v !== '')
+      
+      if (hasProfileData) {
+        profile.value = { ...profile.value, ...profileData }
+        authStore.setGallery({ ...(authStore.gallery || {}), ...profileData })
+      }
+      
       channels.value = response.data.channels || []
       notifications.value = { ...notifications.value, ...response.data.notifications }
     }

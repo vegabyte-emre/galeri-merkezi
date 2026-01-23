@@ -2250,6 +2250,69 @@ export class AdminController {
     }
   }
 
+  async createIntegration(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can create integrations');
+    }
+
+    const { name, type, status, config } = req.body;
+
+    if (!name || !type) {
+      throw new ValidationError('Name and type are required');
+    }
+
+    try {
+      const result = await query(`
+        INSERT INTO integrations (name, type, status, config)
+        VALUES ($1, $2, $3, $4::jsonb)
+        ON CONFLICT (name) DO UPDATE SET
+          type = EXCLUDED.type,
+          status = EXCLUDED.status,
+          config = EXCLUDED.config,
+          updated_at = NOW()
+        RETURNING id
+      `, [name, type, status || 'active', JSON.stringify(config || {})]);
+
+      res.json({ 
+        success: true, 
+        message: 'Integration created',
+        id: result.rows[0]?.id 
+      });
+    } catch (e: any) {
+      if (e.code === '42P01') {
+        // Table doesn't exist, create it
+        await query(`
+          CREATE TABLE IF NOT EXISTS integrations (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name VARCHAR(100) UNIQUE NOT NULL,
+            type VARCHAR(50) NOT NULL,
+            status VARCHAR(20) DEFAULT 'inactive',
+            config JSONB DEFAULT '{}',
+            last_sync TIMESTAMP,
+            last_error TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        // Retry insert
+        const result = await query(`
+          INSERT INTO integrations (name, type, status, config)
+          VALUES ($1, $2, $3, $4::jsonb)
+          RETURNING id
+        `, [name, type, status || 'active', JSON.stringify(config || {})]);
+
+        res.json({ 
+          success: true, 
+          message: 'Integration created',
+          id: result.rows[0]?.id 
+        });
+        return;
+      }
+      throw e;
+    }
+  }
+
   async updateIntegration(req: AuthenticatedRequest, res: Response) {
     const user = getUserFromHeaders(req);
     if (user.role !== 'superadmin') {

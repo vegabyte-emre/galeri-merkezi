@@ -237,7 +237,42 @@ const api = useApi()
 const toast = useToast()
 const loading = ref(false)
 const authStore = useAuthStore()
-const galleryName = computed(() => authStore.gallery?.name || 'Galeri')
+
+// Get gallery name from multiple sources
+const galleryName = computed(() => {
+  // First try gallery name from store
+  if (authStore.gallery?.name) return authStore.gallery.name
+  // Then try user's gallery name from /auth/me response
+  if ((authStore.user as any)?.gallery_name) return (authStore.user as any).gallery_name
+  // Fallback
+  return 'Galeri'
+})
+
+// Load gallery info if not available
+const loadGalleryInfo = async () => {
+  if (authStore.gallery?.name) return // Already loaded
+  
+  try {
+    const meRes = await api.get<{ success: boolean; data?: any }>('/auth/me')
+    if (meRes.success && meRes.data) {
+      // Update user info
+      authStore.setUser({
+        ...(authStore.user || {}),
+        ...meRes.data
+      })
+      // If gallery_name is in the response, set the gallery
+      if (meRes.data.gallery_name) {
+        authStore.setGallery({
+          ...(authStore.gallery || {}),
+          name: meRes.data.gallery_name,
+          logo_url: meRes.data.gallery_logo
+        })
+      }
+    }
+  } catch (e) {
+    console.error('Auth/me error:', e)
+  }
+}
 
 const stats = ref([
   {
@@ -440,8 +475,9 @@ const loadDashboardData = async () => {
   }
 }
 
-onMounted(() => {
-  loadDashboardData()
+onMounted(async () => {
+  await loadGalleryInfo()
+  await loadDashboardData()
 })
 </script>
 

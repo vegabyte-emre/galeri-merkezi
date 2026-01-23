@@ -235,16 +235,42 @@ const avatarLetter = computed(() => {
 
 const loadGalleryProfile = async () => {
   try {
+    // First try to get gallery info from /auth/me which always works
+    const meRes = await api.get<{ success: boolean; data?: any }>('/auth/me')
+    if (meRes.success && meRes.data) {
+      // If gallery_name is available, set it
+      if (meRes.data.gallery_name) {
+        authStore.setGallery({
+          ...(authStore.gallery || {}),
+          name: meRes.data.gallery_name,
+          logo_url: meRes.data.gallery_logo || null
+        })
+      }
+    }
+
+    // Then try to get full gallery profile from /gallery/settings
     const res = await api.get<{ success: boolean; data?: any }>('/gallery/settings')
-    if (res.success && res.data?.profile) {
-      authStore.setGallery(res.data.profile)
-    } else {
-      // fallback: try /gallery/my
-      const my = await api.get<{ success: boolean; data?: any }>('/gallery/my')
-      if (my.success && my.data) authStore.setGallery(my.data)
+    if (res.success && res.data?.profile && Object.keys(res.data.profile).some(k => res.data.profile[k])) {
+      authStore.setGallery({
+        ...(authStore.gallery || {}),
+        ...res.data.profile
+      })
     }
   } catch (e) {
-    // ignore - keep placeholders
+    console.error('Gallery profile load error:', e)
+    // Try /auth/me as last resort
+    try {
+      const meRes = await api.get<{ success: boolean; data?: any }>('/auth/me')
+      if (meRes.success && meRes.data?.gallery_name) {
+        authStore.setGallery({
+          ...(authStore.gallery || {}),
+          name: meRes.data.gallery_name,
+          logo_url: meRes.data.gallery_logo || null
+        })
+      }
+    } catch (e2) {
+      // ignore
+    }
   }
 }
 

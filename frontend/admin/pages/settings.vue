@@ -175,8 +175,48 @@
             NetGSM ayarları yükleniyor...
           </div>
 
-          <div v-else-if="!netgsmId" class="text-sm text-red-600 dark:text-red-400">
-            NetGSM entegrasyonu bulunamadı. Lütfen önce `Entegrasyonlar` sayfasını yenileyin.
+          <div v-else-if="!netgsmId" class="space-y-4">
+            <div class="text-sm text-red-600 dark:text-red-400">
+              {{ netgsmError || 'NetGSM entegrasyonu bulunamadı.' }}
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Aşağıdaki bilgileri girerek NetGSM entegrasyonunu oluşturabilirsiniz:
+            </p>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kullanıcı Adı</label>
+                <input
+                  v-model="netgsmUsername"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="NETGSM_USERNAME"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Şifre</label>
+                <input
+                  v-model="netgsmPassword"
+                  type="password"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="NETGSM_PASSWORD"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mesaj Başlığı (msgHeader)</label>
+                <input
+                  v-model="netgsmMsgHeader"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="GALERIPLATFORM"
+                />
+              </div>
+              <button
+                @click="createNetgsmIntegration"
+                class="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+              >
+                NetGSM Entegrasyonu Oluştur
+              </button>
+            </div>
           </div>
 
           <div v-else class="space-y-4">
@@ -314,22 +354,57 @@ const saveNotificationSettings = async () => {
   }
 }
 
+const netgsmError = ref<string | null>(null)
+
 const loadNetgsmSettings = async () => {
+  netgsmError.value = null
   try {
+    console.log('Loading NetGSM settings...')
     const data = await api.get<any>('/admin/integrations')
-    const list = data.integrations || []
+    console.log('Integrations response:', data)
+    const list = data.integrations || data.data?.integrations || []
+    console.log('Integrations list:', list)
     const netgsm = list.find((i: any) => String(i.name || '').toLowerCase().includes('netgsm'))
+    console.log('Found NetGSM:', netgsm)
     if (netgsm) {
       netgsmId.value = netgsm.id
       netgsmUsername.value = netgsm.config?.username || ''
       netgsmMsgHeader.value = netgsm.config?.msgHeader || 'GALERIPLATFORM'
     } else {
       netgsmId.value = null
+      netgsmError.value = 'NetGSM entegrasyonu bulunamadı. Veritabanı migration çalıştırılmalı.'
     }
-  } catch {
+  } catch (error: any) {
+    console.error('NetGSM settings load error:', error)
     netgsmId.value = null
+    netgsmError.value = error.message || 'Entegrasyonlar yüklenemedi'
   } finally {
     netgsmLoaded.value = true
+  }
+}
+
+const createNetgsmIntegration = async () => {
+  if (!netgsmUsername.value || !netgsmPassword.value) {
+    toast.error('Kullanıcı adı ve şifre gerekli')
+    return
+  }
+  try {
+    await api.post('/admin/integrations', {
+      name: 'NetGSM',
+      type: 'sms',
+      status: 'active',
+      config: {
+        enabled: true,
+        username: netgsmUsername.value,
+        password: netgsmPassword.value,
+        msgHeader: netgsmMsgHeader.value || 'GALERIPLATFORM'
+      }
+    })
+    netgsmPassword.value = ''
+    toast.success('NetGSM entegrasyonu oluşturuldu!')
+    await loadNetgsmSettings()
+  } catch (error: any) {
+    toast.error('Hata: ' + error.message)
   }
 }
 

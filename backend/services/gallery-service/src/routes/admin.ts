@@ -70,6 +70,7 @@ router.put('/backups/schedule', asyncHandler(controller.updateBackupSchedule.bin
 
 // Integrations
 router.get('/integrations', asyncHandler(controller.listIntegrations.bind(controller)));
+router.post('/integrations', asyncHandler(controller.createIntegration.bind(controller)));
 router.put('/integrations/:id', asyncHandler(controller.updateIntegration.bind(controller)));
 
 // Oto Shorts
