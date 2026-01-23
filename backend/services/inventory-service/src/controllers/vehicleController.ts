@@ -362,34 +362,43 @@ export class VehicleController {
   async submitForApproval(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
     const userInfo = getUserFromHeaders(req);
-    const galleryId = userInfo.gallery_id;
+    let galleryId = userInfo.gallery_id;
 
-    if (!galleryId) {
-      throw new ValidationError('Gallery ID not found');
-    }
-
-    // Aracın mevcut durumunu kontrol et
-    const vehicle = await query(
-      'SELECT * FROM vehicles WHERE id = $1 AND gallery_id = $2',
-      [id, galleryId]
+    // Önce aracı bul (gallery_id kontrolü olmadan)
+    const vehicleCheck = await query(
+      'SELECT * FROM vehicles WHERE id = $1',
+      [id]
     );
 
-    if (vehicle.rows.length === 0) {
+    if (vehicleCheck.rows.length === 0) {
       throw new ValidationError('Vehicle not found');
     }
 
-    const currentStatus = vehicle.rows[0].status;
+    const vehicle = vehicleCheck.rows[0];
+
+    // Eğer kullanıcının gallery_id'si yoksa, aracın gallery_id'sini kullan
+    // Bu superadmin veya gallery_id eksik kullanıcılar için gerekli
+    if (!galleryId) {
+      galleryId = vehicle.gallery_id;
+    }
+
+    // Yetki kontrolü: Kullanıcı ya superadmin olmalı ya da aracın sahibi olmalı
+    if (userInfo.role !== 'superadmin' && vehicle.gallery_id !== galleryId) {
+      throw new ForbiddenError('You can only submit your own vehicles for approval');
+    }
+
+    const currentStatus = vehicle.status;
     if (currentStatus !== 'draft' && currentStatus !== 'rejected') {
       throw new ValidationError('Only draft or rejected vehicles can be submitted for approval');
     }
 
     await query(
-      `UPDATE vehicles SET status = 'pending_approval', submitted_at = NOW(), submitted_by = $3 WHERE id = $1 AND gallery_id = $2`,
-      [id, galleryId, userInfo.sub]
+      `UPDATE vehicles SET status = 'pending_approval', submitted_at = NOW(), submitted_by = $2 WHERE id = $1`,
+      [id, userInfo.sub]
     );
 
     // Superadmin'e bildirim gönder
-    await this.eventPublisher.publishVehicleSubmittedForApproval(id, galleryId);
+    await this.eventPublisher.publishVehicleSubmittedForApproval(id, vehicle.gallery_id);
 
     res.json({
       success: true,
