@@ -37,7 +37,8 @@ export const useApi = () => {
         let errorMessage = 'Request failed'
         try {
           const error = await response.json()
-          errorMessage = error.message || errorMessage
+          // Backend error shape is usually: { error: { message } }
+          errorMessage = error?.message || error?.error?.message || errorMessage
         } catch {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`
         }

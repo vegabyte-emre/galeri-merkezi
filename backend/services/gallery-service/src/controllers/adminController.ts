@@ -256,9 +256,10 @@ export class AdminController {
   async updateGallery(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
     const updates = req.body;
+    const user = getUserFromHeaders(req);
 
     // Only superadmin can update
-    if (req.user?.role !== 'superadmin') {
+    if (user.role !== 'superadmin') {
       throw new ForbiddenError('Only superadmin can update galleries');
     }
 
@@ -294,8 +295,9 @@ export class AdminController {
 
   async approveGallery(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
+    const user = getUserFromHeaders(req);
 
-    if (req.user?.role !== 'superadmin') {
+    if (user.role !== 'superadmin') {
       throw new ForbiddenError('Only superadmin can approve galleries');
     }
 
@@ -303,7 +305,7 @@ export class AdminController {
       `UPDATE galleries 
        SET status = 'active', approved_at = NOW(), approved_by = $1, updated_at = NOW()
        WHERE id = $2`,
-      [req.user?.sub, id]
+      [user.sub, id]
     );
 
     // Publish event for notification
@@ -335,8 +337,9 @@ export class AdminController {
   async rejectGallery(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
     const { reason, templateId } = req.body;
+    const user = getUserFromHeaders(req);
 
-    if (req.user?.role !== 'superadmin') {
+    if (user.role !== 'superadmin') {
       throw new ForbiddenError('Only superadmin can reject galleries');
     }
 
@@ -372,8 +375,9 @@ export class AdminController {
 
   async suspendGallery(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
+    const user = getUserFromHeaders(req);
 
-    if (req.user?.role !== 'superadmin') {
+    if (user.role !== 'superadmin') {
       throw new ForbiddenError('Only superadmin can suspend galleries');
     }
 
@@ -521,9 +525,9 @@ export class AdminController {
       galleryId = uuidv4();
       const slug = generateSlug(galleryName);
       await query(`
-        INSERT INTO galleries (id, name, slug, tax_type, tax_number, status, created_at)
-        VALUES ($1, $2, $3, $4, $5, 'pending', NOW())
-      `, [galleryId, galleryName, slug, taxType || 'VKN', taxNumber || '0000000000']);
+        INSERT INTO galleries (id, name, slug, tax_type, tax_number, status, approved_at, approved_by, created_at)
+        VALUES ($1, $2, $3, $4, $5, 'active', NOW(), $6, NOW())
+      `, [galleryId, galleryName, slug, taxType || 'VKN', taxNumber || '0000000000', user.sub || null]);
     }
 
     // Hash password
@@ -2175,6 +2179,17 @@ export class AdminController {
     }
 
     try {
+      // Ensure NetGSM exists (some environments were seeded with Twilio only)
+      try {
+        await query(`
+          INSERT INTO integrations (name, type, status, config)
+          VALUES ('NetGSM', 'sms', 'active', '{"enabled": true, "username": "", "password": "", "msgHeader": "GALERIPLATFORM"}'::jsonb)
+          ON CONFLICT (name) DO NOTHING
+        `);
+      } catch (e: any) {
+        // Ignore seed errors; list query below will handle missing table as well.
+      }
+
       const result = await query(`
         SELECT 
           id,
@@ -2195,7 +2210,14 @@ export class AdminController {
         name: i.name,
         type: i.type,
         status: i.status,
-        config: i.config || {},
+        // Avoid leaking secrets; allow updates by sending a new password explicitly
+        config: (() => {
+          const cfg = i.config || {};
+          if (cfg && typeof cfg === 'object' && 'password' in cfg && cfg.password) {
+            return { ...cfg, password: '***' };
+          }
+          return cfg;
+        })(),
         lastSync: i.lastSync,
         lastError: i.lastError,
         createdAt: i.createdAt,
@@ -2234,8 +2256,18 @@ export class AdminController {
         values.push(status);
       }
       if (config) {
+        // Don't overwrite stored password unless explicitly provided
+        const normalizedConfig = { ...(config || {}) };
+        if (typeof normalizedConfig === 'object' && normalizedConfig) {
+          if ('password' in normalizedConfig) {
+            const pw = normalizedConfig.password;
+            if (pw === '***' || pw === '' || pw === null) {
+              delete normalizedConfig.password;
+            }
+          }
+        }
         updates.push(`config = $${paramCount++}::jsonb`);
-        values.push(JSON.stringify(config));
+        values.push(JSON.stringify(normalizedConfig));
       }
 
       if (updates.length > 0) {

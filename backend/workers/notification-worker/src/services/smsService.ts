@@ -25,7 +25,8 @@ export class SMSService {
 
       // Send via provider
       if (config.sms.provider === 'netgsm') {
-        await this.sendViaNetGSM(phone, message);
+        const netgsm = await this.getNetgsmConfig();
+        await this.sendViaNetGSM(phone, message, netgsm);
       }
 
       // Log
@@ -42,14 +43,60 @@ export class SMSService {
     }
   }
 
-  private async sendViaNetGSM(phone: string, message: string) {
+  private async getNetgsmConfig(): Promise<{ username: string; password: string; msgHeader: string }> {
+    // Prefer DB integration config (superadmin-managed). Fallback to env config.
+    try {
+      const result = await query(
+        `SELECT status, config
+         FROM integrations
+         WHERE type = 'sms'
+           AND (LOWER(name) = 'netgsm' OR LOWER(name) LIKE '%netgsm%')
+         ORDER BY updated_at DESC
+         LIMIT 1`
+      );
+
+      if (result.rows.length > 0) {
+        const row = result.rows[0] as any;
+        const status = row.status;
+        const cfg = row.config || {};
+
+        if (status === 'active' && cfg.enabled !== false) {
+          const username = cfg.username || cfg.usercode || '';
+          const password = cfg.password || '';
+          const msgHeader = cfg.msgHeader || cfg.msgheader || 'GALERIPLATFORM';
+
+          if (username && password) {
+            return { username, password, msgHeader };
+          }
+        }
+      }
+    } catch (e: any) {
+      // Ignore DB errors and fallback to env
+    }
+
+    return {
+      username: config.sms.netgsm.username,
+      password: config.sms.netgsm.password,
+      msgHeader: config.sms.netgsm.msgHeader
+    };
+  }
+
+  private async sendViaNetGSM(
+    phone: string,
+    message: string,
+    creds: { username: string; password: string; msgHeader: string }
+  ) {
+    if (!creds.username || !creds.password) {
+      throw new Error('NetGSM credentials not configured');
+    }
+
     const response = await axios.get('https://api.netgsm.com.tr/sms/send/get', {
       params: {
-        usercode: config.sms.netgsm.username,
-        password: config.sms.netgsm.password,
+        usercode: creds.username,
+        password: creds.password,
         gsmno: phone.replace('+90', ''),
         message: message,
-        msgheader: config.sms.netgsm.msgHeader
+        msgheader: creds.msgHeader
       }
     });
 

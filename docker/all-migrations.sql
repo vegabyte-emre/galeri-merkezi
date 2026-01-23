@@ -9653,7 +9653,7 @@ INSERT INTO integrations (name, type, status, config) VALUES
     ('Sahibinden.com', 'listing', 'inactive', '{"enabled": false}'::jsonb),
     ('Arabam.com', 'listing', 'inactive', '{"enabled": false}'::jsonb),
     ('Firebase', 'push_notification', 'active', '{"enabled": true}'::jsonb),
-    ('Twilio', 'sms', 'active', '{"enabled": true}'::jsonb),
+    ('NetGSM', 'sms', 'active', '{"enabled": true, "username": "", "password": "", "msgHeader": "GALERIPLATFORM"}'::jsonb),
     ('SendGrid', 'email', 'active', '{"enabled": true}'::jsonb)
 ON CONFLICT (name) DO NOTHING;
 
