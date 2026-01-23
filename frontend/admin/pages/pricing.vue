@@ -6,13 +6,23 @@
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Fiyat Planları</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Landing sayfasında gösterilecek fiyat planlarını yönetin</p>
       </div>
-      <button
-        @click="showCreateModal = true"
-        class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
-      >
-        <Plus class="w-4 h-4 inline mr-2" />
-        Yeni Plan
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="plans.length === 0"
+          @click="loadDefaultPlans"
+          class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+        >
+          <Download class="w-4 h-4 inline mr-2" />
+          Landing Planlarını Yükle
+        </button>
+        <button
+          @click="showCreateModal = true"
+          class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+        >
+          <Plus class="w-4 h-4 inline mr-2" />
+          Yeni Plan
+        </button>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -26,13 +36,22 @@
       <Coins class="w-16 h-16 text-gray-400 mx-auto mb-4" />
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Henüz fiyat planı yok</h3>
       <p class="text-gray-600 dark:text-gray-400 mb-6">Landing sayfasında gösterilecek fiyat planlarını oluşturun</p>
-      <button
-        @click="showCreateModal = true"
-        class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
-      >
-        <Plus class="w-4 h-4 inline mr-2" />
-        İlk Planı Oluştur
-      </button>
+      <div class="flex items-center justify-center gap-4">
+        <button
+          @click="loadDefaultPlans"
+          class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+        >
+          <Download class="w-4 h-4 inline mr-2" />
+          Landing Sayfasındaki Planları Yükle
+        </button>
+        <button
+          @click="showCreateModal = true"
+          class="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+        >
+          <Plus class="w-4 h-4 inline mr-2" />
+          Yeni Plan Oluştur
+        </button>
+      </div>
     </div>
 
     <!-- Plans List -->
@@ -293,7 +312,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { Plus, X, Check, Trash2, Coins } from 'lucide-vue-next'
+import { Plus, X, Check, Trash2, Coins, Download } from 'lucide-vue-next'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
 
@@ -406,6 +425,103 @@ const toggleActive = async (plan: any) => {
     toast.success(`Plan ${plan.isActive ? 'aktif' : 'pasif'} edildi!`)
   } catch (error: any) {
     toast.error('Hata: ' + error.message)
+  }
+}
+
+const loadDefaultPlans = async () => {
+  if (!confirm('Landing sayfasındaki varsayılan planları yüklemek istediğinize emin misiniz? (Başlangıç, Profesyonel, Kurumsal)')) {
+    return
+  }
+
+  try {
+    const defaultPlans = [
+      {
+        name: 'Başlangıç',
+        slug: 'starter',
+        description: 'Küçük galeriler için',
+        priceMonthly: 499,
+        priceYearly: 4990,
+        priceCustom: false,
+        priceDisplay: null,
+        billingNote: 'Aylık ödeme',
+        isFeatured: false,
+        isActive: true,
+        sortOrder: 1,
+        features: [
+          '50 araç yükleme',
+          'Temel stok yönetimi',
+          'E-posta desteği',
+          'Temel raporlar',
+          '1 kanal bağlantısı'
+        ]
+      },
+      {
+        name: 'Profesyonel',
+        slug: 'professional',
+        description: 'Büyüyen galeriler için',
+        priceMonthly: 999,
+        priceYearly: 9990,
+        priceCustom: false,
+        priceDisplay: null,
+        billingNote: 'Aylık ödeme',
+        isFeatured: true,
+        isActive: true,
+        sortOrder: 2,
+        features: [
+          'Sınırsız araç yükleme',
+          'Gelişmiş stok yönetimi',
+          'Öncelikli destek',
+          'Detaylı analitik',
+          'Tüm kanal bağlantıları',
+          'API erişimi',
+          'Özel entegrasyonlar'
+        ]
+      },
+      {
+        name: 'Kurumsal',
+        slug: 'enterprise',
+        description: 'Büyük galeriler için',
+        priceMonthly: null,
+        priceYearly: null,
+        priceCustom: true,
+        priceDisplay: 'Özel',
+        billingNote: 'Özel fiyatlandırma',
+        isFeatured: false,
+        isActive: true,
+        sortOrder: 3,
+        features: [
+          'Sınırsız araç yükleme',
+          'Gelişmiş stok yönetimi',
+          '7/24 öncelikli destek',
+          'Özel analitik dashboard',
+          'Tüm kanal bağlantıları',
+          'API erişimi',
+          'Özel entegrasyonlar',
+          'Dedike hesap yöneticisi',
+          'Özel eğitim ve danışmanlık'
+        ]
+      }
+    ]
+
+    // Check if plans already exist
+    const existingPlans = plans.value.map(p => p.slug)
+    const plansToCreate = defaultPlans.filter(p => !existingPlans.includes(p.slug))
+
+    if (plansToCreate.length === 0) {
+      toast.info('Tüm varsayılan planlar zaten mevcut!')
+      return
+    }
+
+    // Create all plans
+    for (const plan of plansToCreate) {
+      await api.post('/admin/pricing-plans', plan)
+    }
+
+    toast.success(`${plansToCreate.length} plan başarıyla oluşturuldu!`)
+    await loadPlans()
+  } catch (error: any) {
+    console.error('Default plans yüklenemedi:', error)
+    toast.error('Hata: ' + (error.message || 'Planlar yüklenemedi'))
   }
 }
 
