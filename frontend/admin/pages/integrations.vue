@@ -182,7 +182,7 @@
                 v-model="configJson"
                 rows="6"
                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-xs"
-                placeholder="{\n  \"enabled\": true\n}"
+                :placeholder="jsonPlaceholder"
               ></textarea>
             </div>
           </div>
@@ -274,6 +274,7 @@ const configJson = ref('')
 const smsUsername = ref('')
 const smsPassword = ref('')
 const smsMsgHeader = ref('')
+const jsonPlaceholder = '{\\n  \"enabled\": true\\n}'
 
 const decorateIntegration = (i: any) => {
   const connected = i.status === 'active'
