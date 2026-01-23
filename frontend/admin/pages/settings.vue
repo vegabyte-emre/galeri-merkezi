@@ -162,6 +162,61 @@
           >
             Kaydet
           </button>
+
+          <!-- NetGSM Settings -->
+          <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">NetGSM Ayarları</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              SMS sağlayıcısı olarak NetGSM kullanıyorsanız buradan yapılandırabilirsiniz.
+            </p>
+
+            <div v-if="!netgsmLoaded" class="text-sm text-gray-500 dark:text-gray-400">
+              NetGSM ayarları yükleniyor...
+            </div>
+
+            <div v-else-if="!netgsmId" class="text-sm text-red-600 dark:text-red-400">
+              NetGSM entegrasyonu bulunamadı. Lütfen Entegrasyonlar sayfasını yenileyin.
+            </div>
+
+            <div v-else class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kullanıcı Adı</label>
+                <input
+                  v-model="netgsmUsername"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="NETGSM_USERNAME"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Şifre</label>
+                <input
+                  v-model="netgsmPassword"
+                  type="password"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Değiştirmek için yazın (boş bırakılırsa korunur)"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mesaj Başlığı (msgHeader)</label>
+                <input
+                  v-model="netgsmMsgHeader"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="GALERIPLATFORM"
+                />
+              </div>
+
+              <button
+                @click="saveNetgsmSettings"
+                class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+              >
+                NetGSM Ayarlarını Kaydet
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -203,6 +258,12 @@ const notificationSettings = ref({
   smsNotifications: false,
   pushNotifications: true
 })
+
+const netgsmLoaded = ref(false)
+const netgsmId = ref<string | null>(null)
+const netgsmUsername = ref('')
+const netgsmPassword = ref('')
+const netgsmMsgHeader = ref('GALERIPLATFORM')
 
 const loadSettings = async () => {
   loading.value = true
@@ -252,8 +313,54 @@ const saveNotificationSettings = async () => {
   }
 }
 
+const loadNetgsmSettings = async () => {
+  try {
+    const data = await api.get<any>('/admin/integrations')
+    const list = data.integrations || []
+    const netgsm = list.find((i: any) => String(i.name || '').toLowerCase().includes('netgsm'))
+    if (netgsm) {
+      netgsmId.value = netgsm.id
+      netgsmUsername.value = netgsm.config?.username || ''
+      netgsmMsgHeader.value = netgsm.config?.msgHeader || 'GALERIPLATFORM'
+    } else {
+      netgsmId.value = null
+    }
+  } catch {
+    netgsmId.value = null
+  } finally {
+    netgsmLoaded.value = true
+  }
+}
+
+const saveNetgsmSettings = async () => {
+  if (!netgsmId.value) {
+    toast.error('NetGSM entegrasyonu bulunamadı')
+    return
+  }
+  try {
+    const cfg: any = {
+      enabled: true,
+      username: netgsmUsername.value,
+      msgHeader: netgsmMsgHeader.value || 'GALERIPLATFORM'
+    }
+    if (netgsmPassword.value && netgsmPassword.value.trim()) {
+      cfg.password = netgsmPassword.value.trim()
+    }
+    await api.put(`/admin/integrations/${netgsmId.value}`, {
+      status: 'active',
+      config: cfg
+    })
+    netgsmPassword.value = ''
+    toast.success('NetGSM ayarları kaydedildi!')
+    await loadNetgsmSettings()
+  } catch (error: any) {
+    toast.error('Hata: ' + error.message)
+  }
+}
+
 onMounted(() => {
   loadSettings()
+  loadNetgsmSettings()
 })
 </script>
 

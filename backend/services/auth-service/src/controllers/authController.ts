@@ -269,11 +269,53 @@ export class AuthController {
       throw new ValidationError('Phone/email and password are required');
     }
 
+    const normalizePhoneCandidates = (input: string): string[] => {
+      const raw = String(input || '').trim();
+      const digits = raw.replace(/\D/g, '');
+      const candidates = new Set<string>();
+      if (raw) candidates.add(raw);
+      if (digits) candidates.add(digits);
+
+      // Turkey numbers: support 5XXXXXXXXX, 05XXXXXXXXX, 90XXXXXXXXXX, +90XXXXXXXXXX
+      if (digits.length === 10) {
+        candidates.add(`0${digits}`);
+        candidates.add(`90${digits}`);
+        candidates.add(`+90${digits}`);
+      }
+      if (digits.length === 11 && digits.startsWith('0')) {
+        const ten = digits.substring(1);
+        candidates.add(ten);
+        candidates.add(`90${ten}`);
+        candidates.add(`+90${ten}`);
+      }
+      if (digits.length === 12 && digits.startsWith('90')) {
+        const ten = digits.substring(2);
+        candidates.add(ten);
+        candidates.add(`0${ten}`);
+        candidates.add(`+90${ten}`);
+      }
+      if (digits.length === 13 && digits.startsWith('90')) {
+        // Rare: if somehow includes a leading 0 too; keep a +90 variant
+        candidates.add(`+${digits}`);
+      }
+
+      return Array.from(candidates);
+    };
+
     // Find user
-    const userResult = await query(
-      'SELECT u.*, g.status as gallery_status FROM users u LEFT JOIN galleries g ON u.gallery_id = g.id WHERE u.phone = $1 OR u.email = $1',
-      [phone || email]
-    );
+    let userResult;
+    if (email) {
+      userResult = await query(
+        'SELECT u.*, g.status as gallery_status FROM users u LEFT JOIN galleries g ON u.gallery_id = g.id WHERE LOWER(u.email) = LOWER($1) LIMIT 1',
+        [email]
+      );
+    } else {
+      const candidates = normalizePhoneCandidates(phone);
+      userResult = await query(
+        'SELECT u.*, g.status as gallery_status FROM users u LEFT JOIN galleries g ON u.gallery_id = g.id WHERE u.phone = ANY($1) LIMIT 1',
+        [candidates]
+      );
+    }
 
     if (userResult.rows.length === 0) {
       throw new UnauthorizedError('Invalid credentials');

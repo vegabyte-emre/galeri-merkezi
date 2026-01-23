@@ -11,7 +11,7 @@ interface AuthenticatedRequest extends Request {
 
 export class GalleryController {
   async getMyGallery(req: AuthenticatedRequest, res: Response) {
-    const galleryId = req.user?.gallery_id;
+    const galleryId = (req.headers['x-gallery-id'] as string) || req.user?.gallery_id;
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -33,7 +33,7 @@ export class GalleryController {
   }
 
   async updateMyGallery(req: AuthenticatedRequest, res: Response) {
-    const galleryId = req.user?.gallery_id;
+    const galleryId = (req.headers['x-gallery-id'] as string) || req.user?.gallery_id;
     const updates = req.body;
 
     if (!galleryId) {
@@ -75,7 +75,7 @@ export class GalleryController {
   }
 
   async uploadLogo(req: AuthenticatedRequest, res: Response) {
-    const galleryId = req.user?.gallery_id;
+    const galleryId = (req.headers['x-gallery-id'] as string) || req.user?.gallery_id;
     const { logoUrl } = req.body;
 
     if (!galleryId) {
@@ -94,7 +94,7 @@ export class GalleryController {
   }
 
   async uploadCover(req: AuthenticatedRequest, res: Response) {
-    const galleryId = req.user?.gallery_id;
+    const galleryId = (req.headers['x-gallery-id'] as string) || req.user?.gallery_id;
     const { coverUrl } = req.body;
 
     if (!galleryId) {
@@ -113,7 +113,7 @@ export class GalleryController {
   }
 
   async getMyGalleryStats(req: AuthenticatedRequest, res: Response) {
-    const galleryId = req.user?.gallery_id;
+    const galleryId = (req.headers['x-gallery-id'] as string) || req.user?.gallery_id;
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -136,7 +136,7 @@ export class GalleryController {
   }
 
   async getSettings(req: AuthenticatedRequest, res: Response) {
-    const galleryId = req.user?.gallery_id;
+    const galleryId = (req.headers['x-gallery-id'] as string) || req.user?.gallery_id;
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -199,7 +199,7 @@ export class GalleryController {
   }
 
   async updateSettings(req: AuthenticatedRequest, res: Response) {
-    const galleryId = req.user?.gallery_id;
+    const galleryId = (req.headers['x-gallery-id'] as string) || req.user?.gallery_id;
     const { profile, notifications } = req.body;
 
     if (!galleryId) {

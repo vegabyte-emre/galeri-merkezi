@@ -61,12 +61,12 @@
       <div class="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800">
         <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
           <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold">
-            G
+            {{ avatarLetter }}
           </div>
           <div class="flex-1 min-w-0">
             <NuxtLink to="/profile" class="block">
-              <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">Galeri Adı</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">galeri@example.com</p>
+              <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ displayName }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ displayEmail }}</p>
             </NuxtLink>
           </div>
           <div class="flex items-center gap-2">
@@ -169,6 +169,7 @@ import {
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApi } from '~/composables/useApi'
+import { useAuthStore } from '~/stores/auth'
 
 const storageKey = 'otobia-panel-theme'
 const isDark = ref(false)
@@ -209,8 +210,43 @@ watch(isDark, (dark) => {
 const isSidebarOpen = ref(false)
 const route = useRoute()
 const api = useApi()
+const authStore = useAuthStore()
 const userRole = ref<string>('')
 const pendingApprovalCount = ref<number>(0)
+
+const displayName = computed(() => {
+  return (
+    authStore.gallery?.name ||
+    authStore.user?.name ||
+    [authStore.user?.firstName, authStore.user?.lastName].filter(Boolean).join(' ') ||
+    authStore.user?.email ||
+    'Galeri'
+  )
+})
+
+const displayEmail = computed(() => {
+  return authStore.gallery?.email || authStore.user?.email || ''
+})
+
+const avatarLetter = computed(() => {
+  const n = displayName.value || 'G'
+  return n.trim().charAt(0).toUpperCase() || 'G'
+})
+
+const loadGalleryProfile = async () => {
+  try {
+    const res = await api.get<{ success: boolean; data?: any }>('/gallery/settings')
+    if (res.success && res.data?.profile) {
+      authStore.setGallery(res.data.profile)
+    } else {
+      // fallback: try /gallery/my
+      const my = await api.get<{ success: boolean; data?: any }>('/gallery/my')
+      if (my.success && my.data) authStore.setGallery(my.data)
+    }
+  } catch (e) {
+    // ignore - keep placeholders
+  }
+}
 
 // Base nav items for all users
 const baseNavItems = [
@@ -333,6 +369,7 @@ const loadSidebarCounts = async () => {
 
 onMounted(async () => {
   await loadUserRole()
+  await loadGalleryProfile()
   loadSidebarCounts()
   // Refresh counts every 30 seconds
   setInterval(loadSidebarCounts, 30000)

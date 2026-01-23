@@ -356,7 +356,7 @@
             :disabled="loading"
             class="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
           >
-            {{ loading ? 'Kaydediliyor...' : 'Kaydet ve Yayinla' }}
+            {{ loading ? 'Kaydediliyor...' : 'Kaydet ve Onaya Gönder' }}
           </button>
         </div>
       </div>
@@ -1231,7 +1231,7 @@ const saveVehicle = async (saveType: string = 'publish') => {
         const videoUrl = await uploadVideo(vehicleId)
         if (videoUrl) {
           // Update vehicle with video URL
-          await api.patch(`/vehicles/${vehicleId}`, { 
+          await api.put(`/vehicles/${vehicleId}`, { 
             video_url: videoUrl,
             publish_to_oto_shorts: form.publishToOtoShorts
           })
@@ -1243,9 +1243,9 @@ const saveVehicle = async (saveType: string = 'publish') => {
       }
       
       if (saveType === 'publish') {
-        // Publish the vehicle
-        await api.post(`/vehicles/${vehicleId}/publish`)
-        toast.success('Arac basariyla eklendi ve yayinlandi')
+        // Submit the vehicle for superadmin approval
+        await api.post(`/vehicles/${vehicleId}/submit-approval`)
+        toast.success('Araç onaya gönderildi (Süperadmin onayı bekleniyor)')
       } else {
         toast.success('Arac taslak olarak kaydedildi')
       }

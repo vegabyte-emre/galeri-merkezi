@@ -4,7 +4,7 @@
     <div class="bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
       <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
       <div class="relative z-10">
-        <h1 class="text-3xl font-bold mb-2">Hoş Geldiniz, Galeri Adı</h1>
+        <h1 class="text-3xl font-bold mb-2">Hoş Geldiniz, {{ galleryName }}</h1>
         <p class="text-primary-100 text-lg">Bugün işleriniz nasıl gidiyor? İşte özet bilgileriniz.</p>
       </div>
     </div>
@@ -228,13 +228,16 @@ import {
   Settings,
   BarChart3
 } from 'lucide-vue-next'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
+import { useAuthStore } from '~/stores/auth'
 
 const api = useApi()
 const toast = useToast()
 const loading = ref(false)
+const authStore = useAuthStore()
+const galleryName = computed(() => authStore.gallery?.name || authStore.user?.email || 'Galeri')
 
 const stats = ref([
   {

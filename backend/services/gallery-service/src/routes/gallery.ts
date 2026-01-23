@@ -5,6 +5,12 @@ import { query } from '@galeri/shared/database/connection';
 const router = Router();
 const controller = new GalleryController();
 
+// =========================
+// IMPORTANT: Route ordering
+// =========================
+// Static routes like /my and /settings MUST come before "/:id"
+// otherwise Express will treat "my" or "settings" as an :id param.
+
 // List all galleries (for both admin panel and mobile app)
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -91,6 +97,17 @@ router.get('/', async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// My gallery
+router.get('/my', controller.getMyGallery.bind(controller));
+router.put('/my', controller.updateMyGallery.bind(controller));
+router.put('/my/logo', controller.uploadLogo.bind(controller));
+router.put('/my/cover', controller.uploadCover.bind(controller));
+router.get('/my/stats', controller.getMyGalleryStats.bind(controller));
+
+// Settings  
+router.get('/settings', controller.getSettings.bind(controller));
+router.put('/settings', controller.updateSettings.bind(controller));
 
 // Get single gallery by ID
 router.get('/:id', async (req: Request, res: Response) => {
@@ -183,17 +200,6 @@ router.post('/:id/suspend', async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
-// My gallery
-router.get('/my', controller.getMyGallery.bind(controller));
-router.put('/my', controller.updateMyGallery.bind(controller));
-router.put('/my/logo', controller.uploadLogo.bind(controller));
-router.put('/my/cover', controller.uploadCover.bind(controller));
-router.get('/my/stats', controller.getMyGalleryStats.bind(controller));
-
-// Settings  
-router.get('/settings', controller.getSettings.bind(controller));
-router.put('/settings', controller.updateSettings.bind(controller));
 
 export { router as galleryRoutes };
 

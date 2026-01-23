@@ -153,11 +153,13 @@ const handleLogin = async () => {
       const token = useCookie('auth_token')
       token.value = response.accessToken
       
-      const user = useCookie('user')
-      user.value = response.user
+      // Store user as JSON string to avoid "[object Object]" cookie issues
+      const user = useCookie<string>('user')
+      user.value = JSON.stringify(response.user)
       
       toast.success('Giris basarili!')
-      await navigateTo('/')
+      // Full reload prevents a blank screen on first navigation after login
+      window.location.href = '/'
     } else {
       throw new Error('Giris basarisiz')
     }

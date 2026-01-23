@@ -29,7 +29,8 @@ export default defineNuxtPlugin(() => {
   // Watch for user changes
   watch(user, (newUser) => {
     if (newUser) {
-      authStore.setUser(newUser)
+      const userData = typeof newUser === 'string' ? JSON.parse(newUser) : newUser
+      authStore.setUser(userData)
     }
   })
 })
