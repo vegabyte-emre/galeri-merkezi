@@ -24,10 +24,26 @@ function getUserFromHeaders(req: AuthenticatedRequest) {
   };
 }
 
+// Helper function to get gallery_id, falling back to database lookup
+async function getGalleryId(userInfo: { sub?: string; gallery_id?: string }): Promise<string | null> {
+  if (userInfo.gallery_id) {
+    return userInfo.gallery_id;
+  }
+  
+  if (userInfo.sub) {
+    const userResult = await query('SELECT gallery_id FROM users WHERE id = $1', [userInfo.sub]);
+    if (userResult.rows.length > 0 && userResult.rows[0].gallery_id) {
+      return userResult.rows[0].gallery_id;
+    }
+  }
+  
+  return null;
+}
+
 export class ChatController {
   async listRooms(req: AuthenticatedRequest, res: Response) {
     const userInfo = getUserFromHeaders(req);
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -64,7 +80,7 @@ export class ChatController {
   async getRoom(req: AuthenticatedRequest, res: Response) {
     const { roomId } = req.params;
     const userInfo = getUserFromHeaders(req);
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -102,7 +118,7 @@ export class ChatController {
 
   async createRoom(req: AuthenticatedRequest, res: Response) {
     const userInfo = getUserFromHeaders(req);
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
     const { roomType, offerId, vehicleId, otherGalleryId } = req.body;
 
     if (!galleryId) {
@@ -184,7 +200,7 @@ export class ChatController {
     const { roomId } = req.params;
     const { page = 1, limit = 50 } = req.query;
     const userInfo = getUserFromHeaders(req);
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');
@@ -234,7 +250,7 @@ export class ChatController {
     const { content, messageType = 'text', metadata } = req.body;
     const userInfo = getUserFromHeaders(req);
     const userId = userInfo.sub;
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
 
     if (!userId || !galleryId) {
       throw new ValidationError('User information not found');
@@ -295,7 +311,7 @@ export class ChatController {
     const { roomId } = req.params;
     const userInfo = getUserFromHeaders(req);
     const userId = userInfo.sub;
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
 
     if (!userId || !galleryId) {
       throw new ValidationError('User information not found');
@@ -329,7 +345,7 @@ export class ChatController {
     const { roomId, id } = req.params;
     const userInfo = getUserFromHeaders(req);
     const userId = userInfo.sub;
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
 
     if (!userId || !galleryId) {
       throw new ValidationError('User information not found');
@@ -363,7 +379,7 @@ export class ChatController {
     const { fileUrl, fileName, fileSize, fileType } = req.body;
     const userInfo = getUserFromHeaders(req);
     const userId = userInfo.sub;
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
 
     if (!userId || !galleryId) {
       throw new ValidationError('User information not found');
@@ -417,7 +433,7 @@ export class ChatController {
   async deleteRoom(req: AuthenticatedRequest, res: Response) {
     const { roomId } = req.params;
     const userInfo = getUserFromHeaders(req);
-    const galleryId = userInfo.gallery_id;
+    const galleryId = await getGalleryId(userInfo);
 
     if (!galleryId) {
       throw new ValidationError('Gallery ID not found');

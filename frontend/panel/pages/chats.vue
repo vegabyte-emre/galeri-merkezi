@@ -960,6 +960,31 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
+// Polling interval for fallback when WebSocket is not connected
+let pollingInterval: NodeJS.Timeout | null = null
+const POLLING_INTERVAL = 5000 // 5 seconds
+
+const startPolling = () => {
+  if (pollingInterval) return
+  
+  pollingInterval = setInterval(async () => {
+    // Only poll if WebSocket is not connected
+    if (!wsConnected.value && selectedChatId.value) {
+      console.log('Polling for new messages (WebSocket not connected)...')
+      await loadMessages()
+    }
+    // Also refresh chat list periodically
+    await loadChats()
+  }, POLLING_INTERVAL)
+}
+
+const stopPolling = () => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+    pollingInterval = null
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
   checkMobile()
@@ -982,6 +1007,9 @@ onMounted(async () => {
   })
   
   await loadChats()
+  
+  // Start polling as fallback
+  startPolling()
 })
 
 onUnmounted(() => {
@@ -996,6 +1024,7 @@ onUnmounted(() => {
   if (typingListener) typingListener()
   if (typingTimeout) clearTimeout(typingTimeout)
   
+  stopPolling()
   disconnect()
 })
 
