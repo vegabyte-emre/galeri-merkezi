@@ -11,11 +11,16 @@
         </p>
       </div>
 
+      <!-- Loading State -->
+      <div v-if="loading" class="text-center py-12">
+        <p class="text-gray-600 dark:text-gray-400">Fiyat planları yükleniyor...</p>
+      </div>
+
       <!-- Pricing Cards -->
-      <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+      <div v-else class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
         <div
           v-for="(plan, index) in plans"
-          :key="plan.name"
+          :key="plan.name || index"
           class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 p-8 relative"
           :class="plan.featured 
             ? 'border-primary-500 scale-105' 
@@ -96,9 +101,19 @@ const loadPricingPlans = async () => {
   try {
     loading.value = true
     const response = await api.get('/pricing-plans')
-    if (response.success && response.plans) {
-      plans.value = response.plans
+    console.log('API Response:', response)
+    if (response.success && response.plans && Array.isArray(response.plans) && response.plans.length > 0) {
+      // Transform API response to match frontend format
+      plans.value = response.plans.map((plan: any) => ({
+        name: plan.name,
+        description: plan.description || '',
+        price: plan.price || (plan.priceCustom ? plan.priceDisplay : (plan.priceMonthly?.toString() || '0')),
+        billing: plan.billing || plan.billingNote || 'Aylık ödeme',
+        featured: plan.featured || plan.isFeatured || false,
+        features: Array.isArray(plan.features) ? plan.features : []
+      }))
     } else {
+      console.warn('API returned empty or invalid plans, using defaults')
       // Fallback to default plans if API fails
       plans.value = getDefaultPlans()
     }

@@ -2664,7 +2664,7 @@ export class AdminController {
   }
 
   // ===================== PRICING PLANS =====================
-  async listPricingPlans(req: AuthenticatedRequest, res: Response) {
+  async listPricingPlans(req: Request, res: Response) {
     // Public endpoint - no auth required for landing page
     try {
       const result = await query(`
