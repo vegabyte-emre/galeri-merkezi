@@ -120,6 +120,11 @@ services:
       - "traefik.http.routers.chat.entrypoints=websecure"
       - "traefik.http.routers.chat.tls.certresolver=letsencrypt"
       - "traefik.http.services.chat.loadbalancer.server.port=3005"
+      # WebSocket sticky sessions for Socket.IO
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie.name=io"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie.httpOnly=true"
     networks:
       - otobia-network
     restart: unless-stopped

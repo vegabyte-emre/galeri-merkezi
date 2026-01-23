@@ -1,113 +1,163 @@
 import { io, Socket } from 'socket.io-client'
 import { ref, computed } from 'vue'
 
+// Singleton socket instance for the entire app
+let globalSocket: Socket | null = null
+const globalIsConnected = ref(false)
+const globalMessageHandlers = new Map<string, ((data: any) => void)[]>()
+
 export const useWebSocket = () => {
   const config = useRuntimeConfig()
   // Socket.IO uses HTTP/HTTPS, not ws://
   const wsUrl = config.public.wsUrl || 'https://chat.otobia.com'
   const token = useCookie('auth_token')
-  
-  let socket: Socket | null = null
-  const isConnected = ref(false)
-  const messageHandlers = new Map<string, ((data: any) => void)[]>()
 
   const connect = () => {
-    if (socket?.connected) {
-      isConnected.value = true
-      return socket
+    // Return existing connected socket
+    if (globalSocket?.connected) {
+      globalIsConnected.value = true
+      console.log('[WS] Already connected, reusing socket')
+      return globalSocket
     }
 
-    socket = io(wsUrl, {
+    // If socket exists but not connected, disconnect and recreate
+    if (globalSocket) {
+      console.log('[WS] Socket exists but not connected, recreating...')
+      globalSocket.disconnect()
+      globalSocket = null
+    }
+
+    console.log('[WS] Connecting to:', wsUrl)
+    console.log('[WS] Token available:', !!token.value)
+
+    globalSocket = io(wsUrl, {
       auth: {
         token: token.value
       },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      // Reconnection settings
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      randomizationFactor: 0.5,
+      timeout: 20000,
+      // Force new connection
+      forceNew: false,
+      // Upgrade from polling to websocket
+      upgrade: true
     })
 
-    socket.on('connect', () => {
-      console.log('WebSocket connected')
-      isConnected.value = true
+    globalSocket.on('connect', () => {
+      console.log('[WS] Connected! Socket ID:', globalSocket?.id)
+      globalIsConnected.value = true
     })
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected')
-      isConnected.value = false
+    globalSocket.on('disconnect', (reason) => {
+      console.log('[WS] Disconnected. Reason:', reason)
+      globalIsConnected.value = false
     })
 
-    socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error)
-      isConnected.value = false
+    globalSocket.on('connect_error', (error) => {
+      console.error('[WS] Connection error:', error.message)
+      globalIsConnected.value = false
+    })
+
+    globalSocket.on('reconnect', (attemptNumber) => {
+      console.log('[WS] Reconnected after', attemptNumber, 'attempts')
+      globalIsConnected.value = true
+    })
+
+    globalSocket.on('reconnect_attempt', (attemptNumber) => {
+      console.log('[WS] Reconnection attempt:', attemptNumber)
+    })
+
+    globalSocket.on('reconnect_error', (error) => {
+      console.error('[WS] Reconnection error:', error.message)
     })
 
     // Generic message handler
-    socket.onAny((event, data) => {
-      const handlers = messageHandlers.get(event)
+    globalSocket.onAny((event, data) => {
+      console.log('[WS] Event received:', event, data)
+      const handlers = globalMessageHandlers.get(event)
       if (handlers) {
         handlers.forEach(handler => handler(data))
       }
     })
 
-    return socket
+    return globalSocket
   }
 
   const disconnect = () => {
-    if (socket) {
-      socket.disconnect()
-      socket = null
-      isConnected.value = false
+    // Don't disconnect global socket - other components might be using it
+    // Just mark as disconnected for this component
+    console.log('[WS] Disconnect requested (not actually disconnecting singleton)')
+  }
+
+  const forceDisconnect = () => {
+    if (globalSocket) {
+      console.log('[WS] Force disconnecting...')
+      globalSocket.disconnect()
+      globalSocket = null
+      globalIsConnected.value = false
     }
   }
 
   const joinRoom = (roomId: string | number) => {
-    if (socket && isConnected.value) {
-      socket.emit('join_room', String(roomId))
+    if (globalSocket && globalIsConnected.value) {
+      console.log('[WS] Joining room:', roomId)
+      globalSocket.emit('join_room', String(roomId))
+    } else {
+      console.warn('[WS] Cannot join room - not connected')
     }
   }
 
   const leaveRoom = (roomId: string | number) => {
-    if (socket && isConnected.value) {
-      socket.emit('leave_room', String(roomId))
+    if (globalSocket && globalIsConnected.value) {
+      console.log('[WS] Leaving room:', roomId)
+      globalSocket.emit('leave_room', String(roomId))
     }
   }
 
   const send = (event: string, data: any) => {
-    if (socket && isConnected.value) {
-      socket.emit(event, data)
+    if (globalSocket && globalIsConnected.value) {
+      console.log('[WS] Sending event:', event, data)
+      globalSocket.emit(event, data)
     } else {
-      throw new Error('WebSocket is not connected')
+      console.warn('[WS] Cannot send - not connected. Event:', event)
     }
   }
 
   const on = (event: string, handler: (data: any) => void) => {
-    if (!messageHandlers.has(event)) {
-      messageHandlers.set(event, [])
+    if (!globalMessageHandlers.has(event)) {
+      globalMessageHandlers.set(event, [])
     }
-    messageHandlers.get(event)!.push(handler)
+    globalMessageHandlers.get(event)!.push(handler)
 
-    if (socket) {
-      socket.on(event, handler)
+    if (globalSocket) {
+      globalSocket.on(event, handler)
     }
 
     // Return unsubscribe function
     return () => {
-      const handlers = messageHandlers.get(event)
+      const handlers = globalMessageHandlers.get(event)
       if (handlers) {
         const index = handlers.indexOf(handler)
         if (index > -1) {
           handlers.splice(index, 1)
         }
       }
-      if (socket) {
-        socket.off(event, handler)
+      if (globalSocket) {
+        globalSocket.off(event, handler)
       }
     }
   }
 
   const off = (event: string, handler?: (data: any) => void) => {
-    if (socket) {
+    if (globalSocket) {
       if (handler) {
-        socket.off(event, handler)
-        const handlers = messageHandlers.get(event)
+        globalSocket.off(event, handler)
+        const handlers = globalMessageHandlers.get(event)
         if (handlers) {
           const index = handlers.indexOf(handler)
           if (index > -1) {
@@ -115,26 +165,28 @@ export const useWebSocket = () => {
           }
         }
       } else {
-        socket.off(event)
-        messageHandlers.delete(event)
+        globalSocket.off(event)
+        globalMessageHandlers.delete(event)
       }
     }
   }
 
-  onUnmounted(() => {
-    disconnect()
-  })
+  // Don't disconnect on unmount - keep connection alive
+  // onUnmounted(() => {
+  //   disconnect()
+  // })
 
   return {
     connect,
     disconnect,
+    forceDisconnect,
     joinRoom,
     leaveRoom,
     send,
     on,
     off,
-    socket: computed(() => socket),
-    isConnected: computed(() => isConnected.value)
+    socket: computed(() => globalSocket),
+    isConnected: computed(() => globalIsConnected.value)
   }
 }
 

@@ -960,56 +960,34 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
-// Polling interval for fallback when WebSocket is not connected
-let pollingInterval: NodeJS.Timeout | null = null
-const POLLING_INTERVAL = 5000 // 5 seconds
-
-const startPolling = () => {
-  if (pollingInterval) return
-  
-  pollingInterval = setInterval(async () => {
-    // Only poll if WebSocket is not connected
-    if (!wsConnected.value && selectedChatId.value) {
-      console.log('Polling for new messages (WebSocket not connected)...')
-      await loadMessages()
-    }
-    // Also refresh chat list periodically
-    await loadChats()
-  }, POLLING_INTERVAL)
-}
-
-const stopPolling = () => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval)
-    pollingInterval = null
-  }
-}
-
 // Lifecycle
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
   document.addEventListener('click', handleClickOutside)
   
+  // Connect to WebSocket
+  console.log('[Chat] Mounting, connecting WebSocket...')
   connect()
   
-  if (wsConnected.value) {
-    setupWebSocketListeners()
-  }
+  // Setup listeners immediately
+  setupWebSocketListeners()
   
+  // Watch for connection changes
   watch(wsConnected, (connected) => {
+    console.log('[Chat] WebSocket connected changed:', connected)
     if (connected) {
+      // Re-setup listeners on reconnect
       setupWebSocketListeners()
+      // Rejoin room if we have one selected
       if (selectedChatId.value) {
+        console.log('[Chat] Rejoining room after reconnect:', selectedChatId.value)
         joinRoom(selectedChatId.value)
       }
     }
-  })
+  }, { immediate: true })
   
   await loadChats()
-  
-  // Start polling as fallback
-  startPolling()
 })
 
 onUnmounted(() => {
@@ -1024,17 +1002,23 @@ onUnmounted(() => {
   if (typingListener) typingListener()
   if (typingTimeout) clearTimeout(typingTimeout)
   
-  stopPolling()
   disconnect()
 })
 
-// Watch selectedChatId to load messages
-watch(selectedChatId, async (newId) => {
+// Watch selectedChatId to load messages and join room
+watch(selectedChatId, async (newId, oldId) => {
+  // Leave old room first
+  if (oldId) {
+    console.log('[Chat] Leaving old room:', oldId)
+    leaveRoom(oldId)
+  }
+  
   if (newId) {
+    console.log('[Chat] Selected chat changed to:', newId)
     await loadMessages()
-    if (wsConnected.value) {
-      joinRoom(newId)
-    }
+    // Always try to join room - WebSocket will handle it when connected
+    console.log('[Chat] Joining room:', newId, 'WS connected:', wsConnected.value)
+    joinRoom(newId)
   } else {
     messages.value = []
   }
