@@ -2709,38 +2709,43 @@ export class AdminController {
         plans
       });
     } catch (e: any) {
-      // If table doesn't exist, return default plans
+      // Log error for debugging
+      console.error('Error fetching pricing plans:', e.message, e.code);
+      
+      // If table doesn't exist or query fails, return default plans
+      const defaultPlans = [
+        {
+          name: 'Başlangıç',
+          slug: 'starter',
+          description: 'Küçük galeriler için',
+          price: '499',
+          billing: 'Aylık ödeme',
+          featured: false,
+          features: ['50 araç yükleme', 'Temel stok yönetimi', 'E-posta desteği', 'Temel raporlar', '1 kanal bağlantısı']
+        },
+        {
+          name: 'Profesyonel',
+          slug: 'professional',
+          description: 'Büyüyen galeriler için',
+          price: '999',
+          billing: 'Aylık ödeme',
+          featured: true,
+          features: ['Sınırsız araç yükleme', 'Gelişmiş stok yönetimi', 'Öncelikli destek', 'Detaylı analitik', 'Tüm kanal bağlantıları', 'API erişimi', 'Özel entegrasyonlar']
+        },
+        {
+          name: 'Kurumsal',
+          slug: 'enterprise',
+          description: 'Büyük galeriler için',
+          price: 'Özel',
+          billing: 'Özel fiyatlandırma',
+          featured: false,
+          features: ['Sınırsız araç yükleme', 'Gelişmiş stok yönetimi', '7/24 öncelikli destek', 'Özel analitik dashboard', 'Tüm kanal bağlantıları', 'API erişimi', 'Özel entegrasyonlar', 'Dedike hesap yöneticisi', 'Özel eğitim ve danışmanlık']
+        }
+      ];
+      
       res.json({
         success: true,
-        plans: [
-          {
-            name: 'Başlangıç',
-            slug: 'starter',
-            description: 'Küçük galeriler için',
-            price: '499',
-            billing: 'Aylık ödeme',
-            featured: false,
-            features: ['50 araç yükleme', 'Temel stok yönetimi', 'E-posta desteği', 'Temel raporlar', '1 kanal bağlantısı']
-          },
-          {
-            name: 'Profesyonel',
-            slug: 'professional',
-            description: 'Büyüyen galeriler için',
-            price: '999',
-            billing: 'Aylık ödeme',
-            featured: true,
-            features: ['Sınırsız araç yükleme', 'Gelişmiş stok yönetimi', 'Öncelikli destek', 'Detaylı analitik', 'Tüm kanal bağlantıları', 'API erişimi', 'Özel entegrasyonlar']
-          },
-          {
-            name: 'Kurumsal',
-            slug: 'enterprise',
-            description: 'Büyük galeriler için',
-            price: 'Özel',
-            billing: 'Özel fiyatlandırma',
-            featured: false,
-            features: ['Sınırsız araç yükleme', 'Gelişmiş stok yönetimi', '7/24 öncelikli destek', 'Özel analitik dashboard', 'Tüm kanal bağlantıları', 'API erişimi', 'Özel entegrasyonlar', 'Dedike hesap yöneticisi', 'Özel eğitim ve danışmanlık']
-          }
-        ]
+        plans: defaultPlans
       });
     }
   }
