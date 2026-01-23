@@ -15,8 +15,28 @@
       </button>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+      <p class="mt-4 text-gray-600 dark:text-gray-400">Fiyat planları yükleniyor...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="!loading && plans.length === 0" class="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+      <Coins class="w-16 h-16 text-gray-400 mx-auto mb-4" />
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Henüz fiyat planı yok</h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">Landing sayfasında gösterilecek fiyat planlarını oluşturun</p>
+      <button
+        @click="showCreateModal = true"
+        class="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+      >
+        <Plus class="w-4 h-4 inline mr-2" />
+        İlk Planı Oluştur
+      </button>
+    </div>
+
     <!-- Plans List -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="plan in plans"
         :key="plan.id"
@@ -273,7 +293,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { Plus, X, Check, Trash2 } from 'lucide-vue-next'
+import { Plus, X, Check, Trash2, Coins } from 'lucide-vue-next'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
 
@@ -311,12 +331,20 @@ const loadPlans = async () => {
   loading.value = true
   try {
     const response = await api.get('/admin/pricing-plans')
+    console.log('Pricing plans API response:', response)
     if (response.success) {
       plans.value = response.plans || []
+      console.log('Loaded plans:', plans.value)
+      if (plans.value.length === 0) {
+        console.warn('No plans found in database. Default plans should be created via migration.')
+      }
+    } else {
+      console.error('API returned success=false:', response)
+      toast.error('Fiyat planları yüklenemedi')
     }
   } catch (error: any) {
     console.error('Fiyat planları yüklenemedi:', error)
-    toast.error('Fiyat planları yüklenemedi: ' + error.message)
+    toast.error('Fiyat planları yüklenemedi: ' + (error.message || 'Bilinmeyen hata'))
   } finally {
     loading.value = false
   }

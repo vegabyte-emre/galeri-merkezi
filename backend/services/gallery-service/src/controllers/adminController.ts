@@ -2802,13 +2802,21 @@ export class AdminController {
         plans
       });
     } catch (e: any) {
+      console.error('Error fetching pricing plans for admin:', e.message, e.code);
+      // If table doesn't exist, return empty array with error message
       if (e.code === '42P01') {
         res.json({
           success: true,
-          plans: []
+          plans: [],
+          message: 'Pricing plans table not found. Please run database migrations.'
         });
       } else {
-        throw e;
+        // For other errors, still return empty array but log the error
+        res.json({
+          success: true,
+          plans: [],
+          error: e.message
+        });
       }
     }
   }

@@ -159,7 +159,7 @@ import {
   Video,
   Car,
   CheckCircle,
-  DollarSign
+  Coins
 } from 'lucide-vue-next'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -304,7 +304,7 @@ const navItems = computed(() => [
   { path: '/users', label: 'Kullanıcılar', icon: Users },
   { path: '/oto-shorts', label: 'Oto Shorts', icon: Video, badge: otoShortsCount.value > 0 ? otoShortsCount.value.toString() : null },
   { path: '/subscriptions', label: 'Abonelikler', icon: CreditCard },
-  { path: '/pricing', label: 'Fiyat Planları', icon: DollarSign },
+  { path: '/pricing', label: 'Fiyat Planları', icon: Coins },
   { path: '/roles', label: 'Roller & İzinler', icon: Shield },
   { path: '/reports', label: 'Raporlar', icon: BarChart3 },
   { path: '/analytics', label: 'Analitik', icon: BarChart3 },
