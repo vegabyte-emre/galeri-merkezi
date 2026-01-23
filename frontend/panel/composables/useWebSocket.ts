@@ -25,7 +25,10 @@ function emitToHandlers(event: string, data: any) {
 
 export const useWebSocket = () => {
   const config = useRuntimeConfig()
-  const wsUrl = config.public.wsUrl || 'https://chat.otobia.com'
+  // Use API URL for Socket.IO (proxied through API Gateway)
+  const apiUrl = config.public.apiUrl || 'https://api.otobia.com/api/v1'
+  // Extract base URL without path
+  const wsUrl = apiUrl.replace(/\/api\/v1$/, '').replace(/\/api$/, '') || 'https://api.otobia.com'
   const token = useCookie('auth_token')
 
   const connect = () => {

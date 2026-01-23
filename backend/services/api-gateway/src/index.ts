@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'http';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -13,6 +14,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = config.port || 3000;
 
 // Trust proxy for rate limiting behind reverse proxy (Traefik)
@@ -579,13 +581,35 @@ app.use('/api/v1/system', createProxyMiddleware({
 
 app.use(errorHandler);
 
+// Socket.IO proxy for real-time chat
+const socketProxy = createProxyMiddleware({
+  target: services.chat,
+  changeOrigin: true,
+  ws: true, // Enable WebSocket proxy
+  logLevel: 'warn',
+  onError: (err, req, res) => {
+    logger.error('Socket.IO proxy error', { error: err.message });
+  }
+});
+
+// Handle Socket.IO requests
+app.use('/socket.io', socketProxy);
+
+// Upgrade handler for WebSocket connections
+httpServer.on('upgrade', (req, socket, head) => {
+  if (req.url?.startsWith('/socket.io')) {
+    logger.info('WebSocket upgrade request for Socket.IO');
+    (socketProxy as any).upgrade(req, socket, head);
+  }
+});
+
 process.on('SIGTERM', () => {
   logger.info('SIGTERM signal received: closing HTTP server');
   redis.quit();
   process.exit(0);
 });
 
-app.listen(PORT, () => {
-  logger.info(`API Gateway started on port ${PORT}`);
+httpServer.listen(PORT, () => {
+  logger.info(`API Gateway started on port ${PORT} with WebSocket support`);
 });
 
