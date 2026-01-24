@@ -1,73 +1,73 @@
 <template>
-  <section class="py-24 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
+  <section class="py-12 md:py-24 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
     <!-- Background -->
     <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute top-20 left-10 w-72 h-72 bg-primary-200 dark:bg-primary-900/30 rounded-full blur-3xl opacity-40"></div>
-      <div class="absolute bottom-20 right-10 w-96 h-96 bg-violet-200 dark:bg-violet-900/30 rounded-full blur-3xl opacity-40"></div>
+      <div class="absolute top-20 left-10 w-36 md:w-72 h-36 md:h-72 bg-primary-200 dark:bg-primary-900/30 rounded-full blur-3xl opacity-40"></div>
+      <div class="absolute bottom-20 right-10 w-48 md:w-96 h-48 md:h-96 bg-violet-200 dark:bg-violet-900/30 rounded-full blur-3xl opacity-40"></div>
     </div>
 
-    <div class="container-custom relative z-10">
+    <div class="container-custom relative z-10 px-4">
       <!-- Section Header -->
-      <div class="text-center mb-16">
-        <div class="inline-flex items-center gap-2 px-4 py-2 mb-4 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-semibold">
-          <Star class="w-4 h-4 fill-current" />
+      <div class="text-center mb-8 md:mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 mb-3 md:mb-4 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs md:text-sm font-semibold">
+          <Star class="w-3 h-3 md:w-4 md:h-4 fill-current" />
           Müşterilerimiz
         </div>
-        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4">
           <span class="text-primary-600">500+</span> Galeri Bize Güveniyor
         </h2>
-        <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+        <p class="text-sm md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-2">
           Gerçek kullanıcı deneyimlerini okuyun ve neden bizi tercih ettiklerini öğrenin
         </p>
       </div>
 
       <!-- Testimonials Grid -->
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
         <div 
           v-for="(testimonial, index) in testimonials" 
           :key="testimonial.name"
-          class="group bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+          class="group bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
           :class="{ 'lg:col-span-2': index === 0 }"
         >
           <!-- Quote Icon -->
-          <div class="mb-6">
-            <Quote class="w-10 h-10 text-primary-200 dark:text-primary-800" />
+          <div class="mb-3 md:mb-6">
+            <Quote class="w-6 h-6 md:w-10 md:h-10 text-primary-200 dark:text-primary-800" />
           </div>
 
           <!-- Rating -->
-          <div class="flex items-center gap-1 mb-4">
-            <Star v-for="i in 5" :key="i" class="w-5 h-5 text-amber-400 fill-current" />
+          <div class="flex items-center gap-0.5 md:gap-1 mb-3 md:mb-4">
+            <Star v-for="i in 5" :key="i" class="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-400 fill-current" />
           </div>
 
           <!-- Content -->
-          <p class="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6" :class="{ 'text-xl': index === 0 }">
+          <p class="text-gray-700 dark:text-gray-300 text-sm md:text-lg leading-relaxed mb-4 md:mb-6" :class="{ 'md:text-xl': index === 0 }">
             "{{ testimonial.content }}"
           </p>
 
           <!-- Stats (for featured) -->
-          <div v-if="testimonial.stats" class="grid grid-cols-3 gap-4 mb-6 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-2xl">
+          <div v-if="testimonial.stats" class="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6 p-3 md:p-4 bg-primary-50 dark:bg-primary-900/20 rounded-xl md:rounded-2xl">
             <div v-for="stat in testimonial.stats" :key="stat.label" class="text-center">
-              <div class="text-2xl font-bold text-primary-600 dark:text-primary-400">{{ stat.value }}</div>
-              <div class="text-xs text-gray-600 dark:text-gray-400">{{ stat.label }}</div>
+              <div class="text-lg md:text-2xl font-bold text-primary-600 dark:text-primary-400">{{ stat.value }}</div>
+              <div class="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{{ stat.label }}</div>
             </div>
           </div>
 
           <!-- Author -->
-          <div class="flex items-center gap-4">
-            <div class="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0"
+          <div class="flex items-center gap-3 md:gap-4">
+            <div class="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden flex-shrink-0"
                  :class="testimonial.avatarBg">
-              <div class="w-full h-full flex items-center justify-center text-white font-bold text-xl">
+              <div class="w-full h-full flex items-center justify-center text-white font-bold text-sm md:text-xl">
                 {{ testimonial.name.split(' ').map(n => n[0]).join('') }}
               </div>
             </div>
-            <div>
-              <div class="font-bold text-gray-900 dark:text-white">{{ testimonial.name }}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">{{ testimonial.role }}</div>
-              <div class="text-xs text-primary-600 dark:text-primary-400 font-medium">{{ testimonial.company }}</div>
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-sm md:text-base text-gray-900 dark:text-white truncate">{{ testimonial.name }}</div>
+              <div class="text-xs md:text-sm text-gray-600 dark:text-gray-400 truncate">{{ testimonial.role }}</div>
+              <div class="text-[10px] md:text-xs text-primary-600 dark:text-primary-400 font-medium">{{ testimonial.company }}</div>
             </div>
-            <div class="ml-auto">
-              <div class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                <MapPin class="w-4 h-4" />
+            <div class="hidden sm:block ml-auto flex-shrink-0">
+              <div class="flex items-center gap-1 text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                <MapPin class="w-3 h-3 md:w-4 md:h-4" />
                 {{ testimonial.location }}
               </div>
             </div>
@@ -76,26 +76,26 @@
       </div>
 
       <!-- Bottom Stats -->
-      <div class="mt-16 bg-gradient-to-r from-primary-600 to-violet-600 rounded-3xl p-8 md:p-12">
-        <div class="grid md:grid-cols-4 gap-8 text-center text-white">
+      <div class="mt-8 md:mt-16 bg-gradient-to-r from-primary-600 to-violet-600 rounded-2xl md:rounded-3xl p-6 md:p-12">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center text-white">
           <div>
-            <div class="text-4xl md:text-5xl font-bold mb-2">4.9</div>
-            <div class="flex items-center justify-center gap-1 mb-1">
-              <Star v-for="i in 5" :key="i" class="w-4 h-4 text-amber-400 fill-current" />
+            <div class="text-2xl sm:text-3xl md:text-5xl font-bold mb-1 md:mb-2">4.9</div>
+            <div class="flex items-center justify-center gap-0.5 md:gap-1 mb-1">
+              <Star v-for="i in 5" :key="i" class="w-2.5 h-2.5 md:w-4 md:h-4 text-amber-400 fill-current" />
             </div>
-            <div class="text-primary-200 text-sm">Ortalama Puan</div>
+            <div class="text-primary-200 text-[10px] md:text-sm">Ortalama Puan</div>
           </div>
           <div>
-            <div class="text-4xl md:text-5xl font-bold mb-2">500+</div>
-            <div class="text-primary-200 text-sm">Aktif Galeri</div>
+            <div class="text-2xl sm:text-3xl md:text-5xl font-bold mb-1 md:mb-2">500+</div>
+            <div class="text-primary-200 text-[10px] md:text-sm">Aktif Galeri</div>
           </div>
           <div>
-            <div class="text-4xl md:text-5xl font-bold mb-2">%99</div>
-            <div class="text-primary-200 text-sm">Memnuniyet Oranı</div>
+            <div class="text-2xl sm:text-3xl md:text-5xl font-bold mb-1 md:mb-2">%99</div>
+            <div class="text-primary-200 text-[10px] md:text-sm">Memnuniyet Oranı</div>
           </div>
           <div>
-            <div class="text-4xl md:text-5xl font-bold mb-2">7/24</div>
-            <div class="text-primary-200 text-sm">Destek</div>
+            <div class="text-2xl sm:text-3xl md:text-5xl font-bold mb-1 md:mb-2">7/24</div>
+            <div class="text-primary-200 text-[10px] md:text-sm">Destek</div>
           </div>
         </div>
       </div>
