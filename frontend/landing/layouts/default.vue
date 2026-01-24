@@ -2,17 +2,17 @@
   <div class="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
     <!-- Navigation -->
     <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm">
-      <nav class="container-custom py-4">
+      <nav class="container-custom py-3 sm:py-4">
         <div class="flex items-center justify-between">
           <!-- Logo -->
           <NuxtLink to="/" class="flex items-center gap-2 group">
-            <span class="text-2xl font-semibold text-gray-900 dark:text-white" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;">
+            <span class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;">
               Otobia
             </span>
           </NuxtLink>
 
           <!-- Desktop Navigation -->
-          <div class="hidden md:flex items-center gap-6">
+          <div class="hidden lg:flex items-center gap-6">
             <NuxtLink 
               to="/" 
               class="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors relative group"
@@ -51,8 +51,8 @@
             </NuxtLink>
           </div>
 
-          <!-- Auth Buttons -->
-          <div class="flex items-center gap-4">
+          <!-- Right Side Actions -->
+          <div class="flex items-center gap-2 sm:gap-4">
             <button
               @click="toggleDarkMode"
               class="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -63,18 +63,97 @@
             </button>
             <NuxtLink 
               to="/register" 
-              class="hidden sm:inline-flex px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors"
+              class="hidden md:inline-flex px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium transition-colors"
             >
               Kayıt Ol
             </NuxtLink>
             <NuxtLink 
               to="/login" 
-              class="px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+              class="hidden sm:inline-flex px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 text-sm sm:text-base"
             >
               Giriş Yap
             </NuxtLink>
+            
+            <!-- Mobile Menu Button -->
+            <button
+              @click="mobileMenuOpen = !mobileMenuOpen"
+              class="lg:hidden p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <Menu v-if="!mobileMenuOpen" class="w-6 h-6" />
+              <X v-else class="w-6 h-6" />
+            </button>
           </div>
         </div>
+        
+        <!-- Mobile Menu -->
+        <Transition
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="opacity-0 -translate-y-2"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 -translate-y-2"
+        >
+          <div v-if="mobileMenuOpen" class="lg:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+            <div class="flex flex-col gap-3">
+              <NuxtLink 
+                to="/" 
+                @click="mobileMenuOpen = false"
+                class="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors"
+              >
+                Anasayfa
+              </NuxtLink>
+              <NuxtLink 
+                to="/about" 
+                @click="mobileMenuOpen = false"
+                class="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors"
+              >
+                Kurumsal
+              </NuxtLink>
+              <NuxtLink 
+                to="/integrations" 
+                @click="mobileMenuOpen = false"
+                class="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors"
+              >
+                Entegrasyonlar
+              </NuxtLink>
+              <NuxtLink 
+                to="/pricing" 
+                @click="mobileMenuOpen = false"
+                class="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors"
+              >
+                Fiyatlar
+              </NuxtLink>
+              <NuxtLink 
+                to="/contact" 
+                @click="mobileMenuOpen = false"
+                class="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors"
+              >
+                İletişim
+              </NuxtLink>
+              
+              <div class="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
+              
+              <div class="flex gap-3 px-4">
+                <NuxtLink 
+                  to="/register" 
+                  @click="mobileMenuOpen = false"
+                  class="flex-1 py-2.5 text-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Kayıt Ol
+                </NuxtLink>
+                <NuxtLink 
+                  to="/login" 
+                  @click="mobileMenuOpen = false"
+                  class="flex-1 py-2.5 text-center bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg"
+                >
+                  Giriş Yap
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </nav>
     </header>
 
@@ -156,11 +235,12 @@
 </template>
 
 <script setup lang="ts">
-import { Sun, Moon } from 'lucide-vue-next'
+import { Sun, Moon, Menu, X } from 'lucide-vue-next'
 import { ref, watch, onMounted } from 'vue'
 
 const storageKey = 'otobia-landing-theme'
 const isDark = ref(false)
+const mobileMenuOpen = ref(false)
 
 const applyTheme = (dark: boolean) => {
   if (typeof document === 'undefined') return

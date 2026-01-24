@@ -82,97 +82,98 @@
         </div>
 
         <!-- Phone Mockup -->
-        <div class="relative flex justify-center lg:justify-end">
+        <div class="relative flex justify-center lg:justify-end mt-12 lg:mt-0">
           <div class="relative">
             <!-- Glow Effect -->
             <div class="absolute -inset-4 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 rounded-[3rem] blur-2xl opacity-30 animate-pulse"></div>
             
             <!-- Phone Frame -->
-            <div class="relative w-72 h-[580px] bg-slate-900 rounded-[3rem] border-4 border-slate-700 shadow-2xl overflow-hidden">
+            <div class="relative w-64 sm:w-72 md:w-80 h-[520px] sm:h-[580px] md:h-[640px] bg-slate-900 rounded-[2.5rem] sm:rounded-[3rem] border-4 border-slate-700 shadow-2xl overflow-hidden">
               <!-- Notch -->
-              <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-2xl z-20"></div>
+              <div class="absolute top-0 left-1/2 -translate-x-1/2 w-24 sm:w-32 h-6 sm:h-7 bg-slate-900 rounded-b-2xl z-20"></div>
               
               <!-- Screen Content -->
-              <div class="absolute inset-2 rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900">
+              <div class="absolute inset-2 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900">
                 <!-- Video Placeholder -->
-                <div class="h-full w-full relative">
-                  <!-- Car Image Placeholder -->
-                  <div class="absolute inset-0 bg-gradient-to-b from-violet-900/50 to-slate-900 flex items-center justify-center">
-                    <div class="text-center">
-                      <Car class="w-20 h-20 text-violet-400 mx-auto mb-4 animate-bounce" />
-                      <div class="text-white font-bold text-lg">2024 BMW 320i</div>
+                <div class="h-full w-full relative flex flex-col">
+                  <!-- Car Image Area - Takes most of the space -->
+                  <div class="flex-1 bg-gradient-to-b from-violet-900/50 to-slate-900 flex items-center justify-center">
+                    <div class="text-center px-4">
+                      <Car class="w-16 sm:w-20 h-16 sm:h-20 text-violet-400 mx-auto mb-3 sm:mb-4 animate-bounce" />
+                      <div class="text-white font-bold text-base sm:text-lg">2024 BMW 320i</div>
                       <div class="text-violet-300 text-sm">850.000 ₺</div>
                     </div>
                   </div>
 
-                  <!-- Video Controls Overlay -->
-                  <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                  <!-- Video Controls Overlay - Fixed at bottom -->
+                  <div class="bg-gradient-to-t from-black/90 via-black/70 to-transparent p-3 sm:p-4">
                     <!-- Progress Bar -->
-                    <div class="w-full h-1 bg-white/30 rounded-full mb-4 overflow-hidden">
+                    <div class="w-full h-1 bg-white/30 rounded-full mb-3 overflow-hidden">
                       <div class="w-3/4 h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full animate-progress"></div>
                     </div>
                     
                     <!-- User Info -->
-                    <div class="flex items-center gap-3 mb-3">
-                      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold text-sm">
+                    <div class="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0">
                         OT
                       </div>
-                      <div>
-                        <div class="text-white font-semibold text-sm">Otobia</div>
-                        <div class="text-white/60 text-xs">İstanbul, Türkiye</div>
+                      <div class="min-w-0">
+                        <div class="text-white font-semibold text-xs sm:text-sm truncate">Otobia</div>
+                        <div class="text-white/60 text-[10px] sm:text-xs truncate">İstanbul, Türkiye</div>
                       </div>
                     </div>
 
                     <!-- Description -->
-                    <p class="text-white/80 text-sm mb-4">
+                    <p class="text-white/80 text-xs sm:text-sm mb-3 line-clamp-2">
                       2024 Model BMW 320i 🚗 Sıfır araç, full donanımlı! #otoshorts #bmw #istanbul
                     </p>
 
-                    <!-- Action Buttons -->
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-4">
-                        <button class="flex items-center gap-1 text-white">
-                          <Heart class="w-6 h-6" />
-                          <span class="text-sm">2.4K</span>
-                        </button>
-                        <button class="flex items-center gap-1 text-white">
-                          <MessageCircle class="w-6 h-6" />
-                          <span class="text-sm">128</span>
-                        </button>
-                        <button class="flex items-center gap-1 text-white">
-                          <Share2 class="w-6 h-6" />
-                        </button>
-                      </div>
-                      <button class="px-4 py-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-semibold rounded-full">
-                        Teklif Ver
+                    <!-- Action Buttons Row -->
+                    <div class="flex items-center gap-3 sm:gap-4 mb-3">
+                      <button class="flex items-center gap-1 text-white hover:text-pink-400 transition-colors">
+                        <Heart class="w-5 h-5 sm:w-6 sm:h-6" />
+                        <span class="text-xs sm:text-sm">2.4K</span>
+                      </button>
+                      <button class="flex items-center gap-1 text-white hover:text-blue-400 transition-colors">
+                        <MessageCircle class="w-5 h-5 sm:w-6 sm:h-6" />
+                        <span class="text-xs sm:text-sm">128</span>
+                      </button>
+                      <button class="flex items-center gap-1 text-white hover:text-green-400 transition-colors">
+                        <Share2 class="w-5 h-5 sm:w-6 sm:h-6" />
                       </button>
                     </div>
+
+                    <!-- Teklif Ver Button - Full Width, Prominent -->
+                    <button class="w-full py-2.5 sm:py-3 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 text-white text-sm sm:text-base font-bold rounded-xl shadow-lg shadow-fuchsia-500/30 hover:shadow-fuchsia-500/50 hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2">
+                      <Send class="w-4 h-4 sm:w-5 sm:h-5" />
+                      Teklif Ver
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Floating Stats -->
-            <div class="absolute -right-8 top-20 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 animate-float">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-                  <Eye class="w-5 h-5 text-white" />
+            <!-- Floating Stats - Responsive positioning -->
+            <div class="absolute -right-2 sm:-right-6 md:-right-10 top-16 sm:top-20 bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-white/20 animate-float">
+              <div class="flex items-center gap-2 sm:gap-3">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+                  <Eye class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div>
-                  <div class="text-white font-bold">12.5K</div>
-                  <div class="text-white/60 text-xs">Görüntülenme</div>
+                  <div class="text-white font-bold text-sm sm:text-base">12.5K</div>
+                  <div class="text-white/60 text-[10px] sm:text-xs">Görüntülenme</div>
                 </div>
               </div>
             </div>
 
-            <div class="absolute -left-8 bottom-32 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 animate-float-delayed">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
-                  <Heart class="w-5 h-5 text-white fill-white" />
+            <div class="absolute -left-2 sm:-left-6 md:-left-10 bottom-24 sm:bottom-32 bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-white/20 animate-float-delayed">
+              <div class="flex items-center gap-2 sm:gap-3">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
+                  <Heart class="w-4 h-4 sm:w-5 sm:h-5 text-white fill-white" />
                 </div>
                 <div>
-                  <div class="text-white font-bold">3.2K</div>
-                  <div class="text-white/60 text-xs">Beğeni</div>
+                  <div class="text-white font-bold text-sm sm:text-base">3.2K</div>
+                  <div class="text-white/60 text-[10px] sm:text-xs">Beğeni</div>
                 </div>
               </div>
             </div>
@@ -186,7 +187,7 @@
 <script setup lang="ts">
 import { 
   Sparkles, Video, TrendingUp, Zap, Play, ArrowRight, 
-  Car, Heart, MessageCircle, Share2, Eye 
+  Car, Heart, MessageCircle, Share2, Eye, Send 
 } from 'lucide-vue-next'
 </script>
 
