@@ -116,9 +116,34 @@
 
 <script setup lang="ts">
 import { 
-  Route, UserPlus, Car, BadgeDollarSign, CheckCircle2, ChevronRight, 
+  Route, UserPlus, Car, CheckCircle2, ChevronRight, 
   Rocket, ArrowRight 
 } from 'lucide-vue-next'
+import { h } from 'vue'
+
+// Custom TL (Turkish Lira) Icon
+const TurkishLiraIcon = {
+  name: 'TurkishLiraIcon',
+  render() {
+    return h('svg', {
+      xmlns: 'http://www.w3.org/2000/svg',
+      width: '24',
+      height: '24',
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '2',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      class: 'lucide'
+    }, [
+      h('path', { d: 'M7 20V4' }),
+      h('path', { d: 'M7 12h10c2.5 0 4 1.5 4 4s-1.5 4-4 4H7' }),
+      h('path', { d: 'M4 9h10' }),
+      h('path', { d: 'M4 14h10' })
+    ])
+  }
+}
 
 const steps = [
   {
@@ -148,7 +173,7 @@ const steps = [
     ]
   },
   {
-    icon: BadgeDollarSign,
+    icon: TurkishLiraIcon,
     title: 'Satış Yapın',
     description: 'Diğer galerilerle teklif alın/verin, pazarlık yapın ve satış gerçekleştirin.',
     gradient: 'from-fuchsia-500 to-fuchsia-600',
