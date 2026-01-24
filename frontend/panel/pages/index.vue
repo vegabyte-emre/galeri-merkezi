@@ -4,7 +4,7 @@
     <div class="bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
       <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
       <div class="relative z-10">
-        <h1 class="text-3xl font-bold mb-2">Hoş Geldiniz, {{ galleryName }}</h1>
+        <h1 class="text-3xl font-bold mb-2">Hoş Geldiniz, {{ userName }}</h1>
         <p class="text-primary-100 text-lg">Bugün işleriniz nasıl gidiyor? İşte özet bilgileriniz.</p>
       </div>
     </div>
@@ -238,14 +238,23 @@ const toast = useToast()
 const loading = ref(false)
 const authStore = useAuthStore()
 
-// Get gallery name from multiple sources
-const galleryName = computed(() => {
-  // First try gallery name from store
-  if (authStore.gallery?.name) return authStore.gallery.name
-  // Then try user's gallery name from /auth/me response
-  if ((authStore.user as any)?.gallery_name) return (authStore.user as any).gallery_name
-  // Fallback
-  return 'Galeri'
+// Get user name for welcome message
+const userName = computed(() => {
+  const user = authStore.user as any
+  if (!user) return 'Kullanıcı'
+  
+  // Try first_name + last_name
+  if (user.first_name && user.last_name) {
+    return `${user.first_name} ${user.last_name}`
+  }
+  // Try just first_name
+  if (user.first_name) return user.first_name
+  // Try name field
+  if (user.name) return user.name
+  // Fallback to email username
+  if (user.email) return user.email.split('@')[0]
+  
+  return 'Kullanıcı'
 })
 
 // Load gallery info if not available
