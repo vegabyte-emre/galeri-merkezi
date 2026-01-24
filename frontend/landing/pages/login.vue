@@ -8,10 +8,10 @@
             <Car class="w-8 h-8 text-white" />
           </div>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Hesabiniza Giris Yapin
+            Hesabınıza Giriş Yapın
           </h2>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            Otobia platformuna hos geldiniz
+            Otobia platformuna hoş geldiniz
           </p>
         </div>
 
@@ -33,12 +33,12 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Sifre
+              Şifre
             </label>
             <input
               v-model="form.password"
               type="password"
-              placeholder="Sifrenizi girin"
+              placeholder="Şifrenizi girin"
               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
               :class="{ 'border-red-500': errors.password }"
             />
@@ -52,13 +52,13 @@
                 type="checkbox"
                 class="w-4 h-4 text-primary-600 rounded"
               />
-              <span class="text-sm text-gray-600 dark:text-gray-400">Beni hatirla</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">Beni hatırla</span>
             </label>
             <NuxtLink
               to="/forgot-password"
               class="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
             >
-              Sifremi Unuttum
+              Şifremi Unuttum
             </NuxtLink>
           </div>
 
@@ -67,7 +67,7 @@
             :disabled="loading"
             class="w-full px-4 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading ? 'Giris yapiliyor...' : 'Giris Yap' }}
+            {{ loading ? 'Giriş yapılıyor...' : 'Giriş Yap' }}
           </button>
         </form>
 
@@ -81,12 +81,12 @@
         <!-- Register Link -->
         <div class="text-center">
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Hesabiniz yok mu?
+            Hesabınız yok mu?
             <NuxtLink
               to="/register"
               class="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
             >
-              Kayit Olun
+              Kayıt Olun
             </NuxtLink>
           </p>
         </div>
@@ -101,7 +101,7 @@ import { reactive, ref } from 'vue'
 import { useApi } from '~/composables/useApi'
 
 useHead({
-  title: 'Giris Yap - Otobia'
+  title: 'Giriş Yap - Otobia'
 })
 
 const api = useApi()
@@ -123,12 +123,12 @@ const handleLogin = async () => {
   errors.password = ''
 
   if (!form.identifier) {
-    errors.identifier = 'Email veya telefon numarasi gereklidir'
+    errors.identifier = 'Email veya telefon numarası gereklidir'
     return
   }
 
   if (!form.password) {
-    errors.password = 'Sifre gereklidir'
+    errors.password = 'Şifre gereklidir'
     return
   }
 
@@ -153,11 +153,11 @@ const handleLogin = async () => {
       const panelUrl = 'https://panel.otobia.com'
       window.location.href = panelUrl
     } else {
-      throw new Error('Giris basarisiz')
+      throw new Error('Giriş başarısız')
     }
   } catch (error: any) {
     console.error('Login error:', error)
-    errors.password = error.message || 'Giris basarisiz. Lutfen bilgilerinizi kontrol edin.'
+    errors.password = error.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.'
   } finally {
     loading.value = false
   }
