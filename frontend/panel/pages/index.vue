@@ -243,12 +243,16 @@ const userName = computed(() => {
   const user = authStore.user as any
   if (!user) return 'Kullanıcı'
   
-  // Try first_name + last_name
-  if (user.first_name && user.last_name) {
-    return `${user.first_name} ${user.last_name}`
+  // Get first and last name (support both camelCase and snake_case)
+  const firstName = user.firstName || user.first_name
+  const lastName = user.lastName || user.last_name
+  
+  // Try firstName + lastName
+  if (firstName && lastName) {
+    return `${firstName} ${lastName}`
   }
-  // Try just first_name
-  if (user.first_name) return user.first_name
+  // Try just firstName
+  if (firstName) return firstName
   // Try name field
   if (user.name) return user.name
   // Fallback to email username
