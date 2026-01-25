@@ -422,8 +422,10 @@ export class AdminController {
     const { id } = req.params;
     const user = getUserFromHeaders(req);
 
-    if (user.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can delete galleries');
+    // Allow superadmin and admin to delete galleries
+    const allowedRoles = ['superadmin', 'admin'];
+    if (!allowedRoles.includes(user.role || '')) {
+      throw new ForbiddenError('Only superadmin or admin can delete galleries');
     }
 
     // Check if gallery exists

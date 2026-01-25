@@ -138,13 +138,13 @@
                   >
                     Aktifleştir
                   </button>
-                  <NuxtLink
-                    :to="`/galleries/${gallery.id}`"
+                  <button
+                    @click="viewDetails(gallery.id)"
                     class="px-3 py-1.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors text-xs font-semibold inline-flex items-center gap-1"
                   >
                     <Eye class="w-3 h-3" />
                     Detay
-                  </NuxtLink>
+                  </button>
                   <button
                     @click="deleteGallery(gallery)"
                     class="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-xs font-semibold inline-flex items-center gap-1"
@@ -389,6 +389,10 @@ const deleteGallery = async (gallery: any) => {
   } catch (error: any) {
     toast.error('Silme hatası: ' + error.message)
   }
+}
+
+const viewDetails = (id: string) => {
+  navigateTo(`/galleries/${id}`)
 }
 
 onMounted(() => {
