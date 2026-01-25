@@ -248,15 +248,64 @@ export class AdminController {
   async getGallery(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
 
-    const result = await query('SELECT * FROM galleries WHERE id = $1', [id]);
+    // Get gallery with owner info and stats
+    const result = await query(`
+      SELECT 
+        g.*,
+        (SELECT COUNT(*) FROM vehicles v WHERE v.gallery_id = g.id AND v.status != 'deleted') as vehicle_count,
+        (SELECT COUNT(*) FROM offers o WHERE o.seller_gallery_id = g.id AND o.status = 'pending') as active_offers,
+        (SELECT COUNT(*) FROM offers o WHERE o.seller_gallery_id = g.id AND o.status = 'accepted') as total_sales
+      FROM galleries g
+      WHERE g.id = $1
+    `, [id]);
 
     if (result.rows.length === 0) {
       throw new ValidationError('Gallery not found');
     }
 
+    const gallery = result.rows[0];
+
+    // Get owner info
+    const ownerResult = await query(`
+      SELECT id, first_name, last_name, email, phone, created_at
+      FROM users 
+      WHERE gallery_id = $1 AND role = 'gallery_owner' AND status != 'deleted'
+      LIMIT 1
+    `, [id]);
+
+    const owner = ownerResult.rows[0];
+
+    // Format response for frontend (camelCase)
     res.json({
       success: true,
-      data: result.rows[0]
+      data: {
+        id: gallery.id,
+        name: gallery.name,
+        slug: gallery.slug,
+        status: gallery.status,
+        email: gallery.email,
+        phone: gallery.phone,
+        whatsapp: gallery.whatsapp,
+        city: gallery.city,
+        district: gallery.district,
+        neighborhood: gallery.neighborhood,
+        address: gallery.address,
+        location: gallery.city ? `${gallery.city}${gallery.district ? ', ' + gallery.district : ''}` : 'Belirtilmemiş',
+        logoUrl: gallery.logo_url,
+        coverUrl: gallery.cover_url,
+        taxType: gallery.tax_type,
+        taxNumber: gallery.tax_number,
+        createdAt: gallery.created_at,
+        updatedAt: gallery.updated_at,
+        approvedAt: gallery.approved_at,
+        vehicleCount: parseInt(gallery.vehicle_count) || 0,
+        activeOffers: parseInt(gallery.active_offers) || 0,
+        totalSales: parseInt(gallery.total_sales) || 0,
+        ownerName: owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.trim() : 'Belirtilmemiş',
+        ownerEmail: owner?.email || 'Belirtilmemiş',
+        ownerPhone: owner?.phone || 'Belirtilmemiş',
+        ownerCreatedAt: owner?.created_at || gallery.created_at
+      }
     });
   }
 
@@ -557,7 +606,7 @@ export class AdminController {
       throw new ForbiddenError('Only superadmin can create users');
     }
 
-    const { name, email, phone, password, role, status, galleryName, taxType, taxNumber } = req.body;
+    const { name, email, phone, password, role, status, galleryName, taxType, taxNumber, city, district, address } = req.body;
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -569,17 +618,17 @@ export class AdminController {
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    // Check if email exists
-    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
+    // Check if email exists (only check non-deleted users)
+    const existingUser = await query('SELECT id FROM users WHERE email = $1 AND status != $2', [email, 'deleted']);
     if (existingUser.rows.length > 0) {
-      throw new ValidationError('Email already exists');
+      throw new ValidationError('Bu e-posta adresi zaten kullanılıyor');
     }
 
-    // Check if phone exists
+    // Check if phone exists (only check non-deleted users)
     if (phone) {
-      const existingPhone = await query('SELECT id FROM users WHERE phone = $1', [phone]);
+      const existingPhone = await query('SELECT id FROM users WHERE phone = $1 AND status != $2', [phone, 'deleted']);
       if (existingPhone.rows.length > 0) {
-        throw new ValidationError('Phone already exists');
+        throw new ValidationError('Bu telefon numarası zaten kullanılıyor');
       }
     }
 
@@ -603,9 +652,10 @@ export class AdminController {
       await query(`
         INSERT INTO galleries (
           id, name, slug, phone, whatsapp, email,
-          tax_type, tax_number, status, approved_at, approved_by, created_at
+          tax_type, tax_number, city, district, address,
+          status, approved_at, approved_by, created_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', NOW(), $9, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'active', NOW(), $12, NOW())
       `, [
         galleryId,
         galleryName,
@@ -615,6 +665,9 @@ export class AdminController {
         email || null,
         taxType || 'VKN',
         taxNumber || '0000000000',
+        city || null,
+        district || null,
+        address || null,
         user.sub || null
       ]);
     }

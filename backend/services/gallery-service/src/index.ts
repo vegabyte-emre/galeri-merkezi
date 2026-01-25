@@ -54,6 +54,31 @@ async function runStartupMigrations() {
       logger.warn(`vehicles slug migration: ${e.message}`);
     }
 
+    // Fix unique constraint on phone to allow soft-deleted users' phones to be reused
+    try {
+      // Drop old unique constraint
+      await query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_phone_key`);
+      // Drop old unique index if exists
+      await query(`DROP INDEX IF EXISTS users_phone_key`);
+      await query(`DROP INDEX IF EXISTS idx_users_phone_unique_active`);
+      // Create partial unique index that only applies to non-deleted users
+      await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_unique_active ON users(phone) WHERE status != 'deleted'`);
+      logger.info('Updated users phone unique constraint for soft delete');
+    } catch (e: any) {
+      logger.warn(`users phone constraint migration: ${e.message}`);
+    }
+
+    // Fix unique constraint on galleries slug to allow soft-deleted galleries' slugs to be reused
+    try {
+      await query(`ALTER TABLE galleries DROP CONSTRAINT IF EXISTS galleries_slug_key`);
+      await query(`DROP INDEX IF EXISTS galleries_slug_key`);
+      await query(`DROP INDEX IF EXISTS idx_galleries_slug_unique_active`);
+      await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_galleries_slug_unique_active ON galleries(slug) WHERE status != 'deleted'`);
+      logger.info('Updated galleries slug unique constraint for soft delete');
+    } catch (e: any) {
+      logger.warn(`galleries slug constraint migration: ${e.message}`);
+    }
+
     logger.info('Startup migrations completed');
   } catch (error: any) {
     logger.error('Startup migrations failed:', error.message);

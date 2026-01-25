@@ -267,6 +267,43 @@
                     :placeholder="formData.taxType === 'TCKN' ? '11 haneli TC Kimlik No' : '10 haneli Vergi Kimlik No'"
                   />
                 </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    İl <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    v-model="formData.city"
+                    @change="loadDistricts"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  >
+                    <option value="">İl Seçin</option>
+                    <option v-for="city in cities" :key="city.id" :value="city.name">{{ city.name }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    İlçe <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    v-model="formData.district"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    :disabled="!formData.city"
+                  >
+                    <option value="">İlçe Seçin</option>
+                    <option v-for="district in districts" :key="district.id" :value="district.name">{{ district.name }}</option>
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Açık Adres <span class="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    v-model="formData.address"
+                    rows="2"
+                    class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    placeholder="Mahalle, Sokak, Bina No..."
+                  ></textarea>
+                </div>
               </div>
             </div>
           </div>
@@ -470,8 +507,15 @@ const formData = ref({
   status: 'active',
   galleryName: '',
   taxType: 'VKN',
-  taxNumber: ''
+  taxNumber: '',
+  city: '',
+  district: '',
+  address: ''
 })
+
+// Cities and districts
+const cities = ref<any[]>([])
+const districts = ref<any[]>([])
 
 // Form data for edit
 const editFormData = ref({
@@ -554,8 +598,12 @@ const resetFormData = () => {
     status: 'active',
     galleryName: '',
     taxType: 'VKN',
-    taxNumber: ''
+    taxNumber: '',
+    city: '',
+    district: '',
+    address: ''
   }
+  districts.value = []
 }
 
 const openCreateModal = () => {
@@ -609,6 +657,18 @@ const createUser = async () => {
     }
     if (formData.value.taxType === 'VKN' && formData.value.taxNumber.length !== 10) {
       toast.warning('Vergi Kimlik No 10 haneli olmalıdır')
+      return
+    }
+    if (!formData.value.city) {
+      toast.warning('İl seçimi zorunludur')
+      return
+    }
+    if (!formData.value.district) {
+      toast.warning('İlçe seçimi zorunludur')
+      return
+    }
+    if (!formData.value.address) {
+      toast.warning('Açık adres zorunludur')
       return
     }
   }
@@ -678,8 +738,40 @@ const deleteUser = async (id: string) => {
   }
 }
 
+// Load Turkish cities
+const loadCities = async () => {
+  try {
+    const response = await fetch('https://api.turkiyeapi.dev/api/v1/provinces')
+    const data = await response.json()
+    cities.value = data.data || []
+  } catch (error) {
+    console.error('Cities could not be loaded:', error)
+  }
+}
+
+// Load districts for selected city
+const loadDistricts = async () => {
+  if (!formData.value.city) {
+    districts.value = []
+    formData.value.district = ''
+    return
+  }
+  
+  try {
+    const city = cities.value.find(c => c.name === formData.value.city)
+    if (city) {
+      const response = await fetch(`https://api.turkiyeapi.dev/api/v1/provinces/${city.id}?fields=districts`)
+      const data = await response.json()
+      districts.value = data.data?.districts || []
+    }
+  } catch (error) {
+    console.error('Districts could not be loaded:', error)
+  }
+}
+
 onMounted(() => {
   loadUsers()
+  loadCities()
 })
 </script>
 
