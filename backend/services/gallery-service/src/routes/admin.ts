@@ -16,6 +16,7 @@ router.get('/dashboard', asyncHandler(controller.getDashboard.bind(controller)))
 router.get('/galleries', asyncHandler(controller.listGalleries.bind(controller)));
 router.get('/galleries/:id', asyncHandler(controller.getGallery.bind(controller)));
 router.put('/galleries/:id', asyncHandler(controller.updateGallery.bind(controller)));
+router.delete('/galleries/:id', asyncHandler(controller.deleteGallery.bind(controller)));
 router.post('/galleries/:id/approve', asyncHandler(controller.approveGallery.bind(controller)));
 router.post('/galleries/:id/reject', asyncHandler(controller.rejectGallery.bind(controller)));
 router.post('/galleries/:id/suspend', asyncHandler(controller.suspendGallery.bind(controller)));
