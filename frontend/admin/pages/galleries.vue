@@ -383,16 +383,21 @@ const deleteGallery = async (gallery: any) => {
   if (!confirm(confirmMessage)) return
   
   try {
-    await api.delete(`/admin/galleries/${gallery.id}`)
+    console.log('Deleting gallery:', gallery.id)
+    const response = await api.delete(`/admin/galleries/${gallery.id}`)
+    console.log('Delete response:', response)
     toast.success(`"${gallery.name}" galerisi silindi!`)
     await loadGalleries()
   } catch (error: any) {
-    toast.error('Silme hatası: ' + error.message)
+    console.error('Delete error:', error)
+    const errorMessage = error.message || error.error?.message || 'Bilinmeyen bir hata oluştu'
+    toast.error('Silme hatası: ' + errorMessage)
   }
 }
 
 const viewDetails = (id: string) => {
-  navigateTo(`/galleries/${id}`)
+  console.log('Navigating to gallery:', id)
+  router.push(`/galleries/${id}`)
 }
 
 onMounted(() => {
