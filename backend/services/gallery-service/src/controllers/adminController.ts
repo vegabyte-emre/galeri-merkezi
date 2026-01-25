@@ -3622,6 +3622,23 @@ export class AdminController {
     const results: string[] = [];
 
     try {
+      // 0. Add 'deleted' status to galleries, users, and vehicles for soft delete
+      try {
+        await query(`ALTER TABLE galleries DROP CONSTRAINT IF EXISTS galleries_status_check`);
+        await query(`ALTER TABLE galleries ADD CONSTRAINT galleries_status_check CHECK (status IN ('pending', 'active', 'suspended', 'rejected', 'deleted'))`);
+        results.push('Updated galleries status constraint with deleted');
+      } catch (e: any) {
+        results.push(`galleries_status_check: ${e.message}`);
+      }
+
+      try {
+        await query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check`);
+        await query(`ALTER TABLE users ADD CONSTRAINT users_status_check CHECK (status IN ('pending', 'active', 'suspended', 'deleted'))`);
+        results.push('Updated users status constraint with deleted');
+      } catch (e: any) {
+        results.push(`users_status_check: ${e.message}`);
+      }
+
       // 1. Update vehicles status constraint
       try {
         await query(`ALTER TABLE vehicles DROP CONSTRAINT IF EXISTS vehicles_status_check`);
@@ -3631,8 +3648,8 @@ export class AdminController {
       }
 
       try {
-        await query(`ALTER TABLE vehicles ADD CONSTRAINT vehicles_status_check CHECK (status IN ('draft', 'pending_approval', 'published', 'paused', 'archived', 'sold', 'rejected'))`);
-        results.push('Added new vehicles_status_check constraint with pending_approval and rejected');
+        await query(`ALTER TABLE vehicles ADD CONSTRAINT vehicles_status_check CHECK (status IN ('draft', 'pending_approval', 'published', 'paused', 'archived', 'sold', 'rejected', 'deleted'))`);
+        results.push('Added new vehicles_status_check constraint with deleted');
       } catch (e: any) {
         results.push(`vehicles_status_check add: ${e.message}`);
       }
