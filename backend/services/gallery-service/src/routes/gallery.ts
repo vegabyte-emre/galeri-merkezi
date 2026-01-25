@@ -109,10 +109,13 @@ router.get('/my/stats', controller.getMyGalleryStats.bind(controller));
 router.get('/settings', controller.getSettings.bind(controller));
 router.put('/settings', controller.updateSettings.bind(controller));
 
-// Get single gallery by ID
-router.get('/:id', async (req: Request, res: Response) => {
+// Get single gallery by ID or slug (SEO-friendly)
+router.get('/:idOrSlug', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { idOrSlug } = req.params;
+    
+    // Check if it's a UUID or a slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
     
     const result = await query(
       `SELECT g.id, g.name, g.slug, g.phone, g.email, g.city, g.district, 
@@ -120,8 +123,8 @@ router.get('/:id', async (req: Request, res: Response) => {
               g.working_hours, g.latitude, g.longitude, g.created_at,
               (SELECT COUNT(*) FROM vehicles WHERE gallery_id = g.id AND status = 'published') as vehicle_count
        FROM galleries g
-       WHERE g.id = $1`,
-      [id]
+       WHERE ${isUUID ? 'g.id = $1' : 'g.slug = $1'}`,
+      [idOrSlug]
     );
     
     if (result.rows.length === 0) {

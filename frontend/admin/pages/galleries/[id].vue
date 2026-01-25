@@ -36,6 +36,20 @@
         >
           Askıya Al
         </button>
+        <button
+          v-if="gallery.status === 'suspended'"
+          @click="activateGallery"
+          class="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors font-semibold"
+        >
+          Aktifleştir
+        </button>
+        <button
+          @click="deleteGallery"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold inline-flex items-center gap-2"
+        >
+          <Trash2 class="w-4 h-4" />
+          Galeriyi Sil
+        </button>
       </div>
     </div>
 
@@ -153,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft, Trash2 } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
@@ -161,6 +175,7 @@ import { useToast } from '~/composables/useToast'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const api = useApi()
 
 const statusLabels: Record<string, string> = {
   pending: 'Bekleyen',
@@ -178,7 +193,6 @@ const activities = ref([
 
 const loadGallery = async () => {
   try {
-    const api = useApi()
     const response = await api.get(`/admin/galleries/${route.params.id}`)
     gallery.value = response.data || response
   } catch (error: any) {
@@ -198,7 +212,6 @@ const formatDate = (date: string) => {
 const approveGallery = async () => {
   if (gallery.value) {
     try {
-      const api = useApi()
       await api.post(`/admin/galleries/${gallery.value.id}/approve`)
       gallery.value.status = 'active'
       toast.success('Galeri onaylandı!')
@@ -213,7 +226,6 @@ const rejectGallery = async () => {
   if (confirm('Bu galeriyi reddetmek istediğinize emin misiniz?')) {
     if (gallery.value) {
       try {
-        const api = useApi()
         await api.post(`/admin/galleries/${gallery.value.id}/reject`, { reason: 'Reddedildi' })
         gallery.value.status = 'rejected'
         toast.success('Galeri reddedildi!')
@@ -229,7 +241,6 @@ const suspendGallery = async () => {
   if (confirm('Bu galeriyi askıya almak istediğinize emin misiniz?')) {
     if (gallery.value) {
       try {
-        const api = useApi()
         await api.post(`/admin/galleries/${gallery.value.id}/suspend`)
         gallery.value.status = 'suspended'
         toast.success('Galeri askıya alındı!')
@@ -237,6 +248,37 @@ const suspendGallery = async () => {
       } catch (error: any) {
         toast.error('Hata: ' + error.message)
       }
+    }
+  }
+}
+
+const activateGallery = async () => {
+  if (confirm('Bu galeriyi aktifleştirmek istediğinize emin misiniz?')) {
+    if (gallery.value) {
+      try {
+        await api.post(`/admin/galleries/${gallery.value.id}/activate`)
+        gallery.value.status = 'active'
+        toast.success('Galeri aktifleştirildi!')
+        await loadGallery()
+      } catch (error: any) {
+        toast.error('Hata: ' + error.message)
+      }
+    }
+  }
+}
+
+const deleteGallery = async () => {
+  if (!gallery.value) return
+  
+  const confirmMessage = `"${gallery.value.name}" galerisini silmek istediğinize emin misiniz?\n\nBu işlem:\n- Galeriyi\n- Galerideki tüm kullanıcıları\n- Galerideki tüm araçları\n\nsilecektir. Bu işlem geri alınamaz!`
+  
+  if (confirm(confirmMessage)) {
+    try {
+      await api.delete(`/admin/galleries/${gallery.value.id}`)
+      toast.success(`"${gallery.value.name}" galerisi silindi!`)
+      router.push('/galleries')
+    } catch (error: any) {
+      toast.error('Silme hatası: ' + error.message)
     }
   }
 }

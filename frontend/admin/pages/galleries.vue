@@ -25,6 +25,13 @@
           <option value="active">Aktif</option>
           <option value="suspended">Askıya Alınmış</option>
         </select>
+        <button
+          @click="loadGalleries"
+          class="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          title="Yenile"
+        >
+          <RefreshCw class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+        </button>
       </div>
     </div>
 
@@ -125,10 +132,25 @@
                     Askıya Al
                   </button>
                   <button
-                    @click="viewDetails(gallery.id)"
-                    class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-semibold"
+                    v-if="gallery.status === 'suspended'"
+                    @click="activateGallery(gallery.id)"
+                    class="px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-xs font-semibold"
                   >
+                    Aktifleştir
+                  </button>
+                  <NuxtLink
+                    :to="`/galleries/${gallery.id}`"
+                    class="px-3 py-1.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors text-xs font-semibold inline-flex items-center gap-1"
+                  >
+                    <Eye class="w-3 h-3" />
                     Detay
+                  </NuxtLink>
+                  <button
+                    @click="deleteGallery(gallery)"
+                    class="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-xs font-semibold inline-flex items-center gap-1"
+                  >
+                    <Trash2 class="w-3 h-3" />
+                    Sil
                   </button>
                 </div>
               </td>
@@ -181,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import { Search } from 'lucide-vue-next'
+import { Search, RefreshCw, Eye, Trash2 } from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '~/composables/useApi'
@@ -191,6 +213,8 @@ const router = useRouter()
 const api = useApi()
 const toast = useToast()
 const loading = ref(false)
+const showDeleteModal = ref(false)
+const deletingGallery = ref<any>(null)
 
 const searchQuery = ref('')
 const filterStatus = ref('')
@@ -336,8 +360,35 @@ const suspendGallery = async (id: number) => {
   }
 }
 
-const viewDetails = (id: number) => {
-  router.push(`/galleries/${id}`)
+const activateGallery = async (id: number) => {
+  const gallery = galleries.value.find(g => g.id === id)
+  if (!gallery) return
+  
+  if (!confirm('Bu galeriyi aktifleştirmek istediğinize emin misiniz?')) return
+  
+  try {
+    await api.post(`/admin/galleries/${id}/activate`)
+    toast.success('Galeri aktifleştirildi!')
+    await loadGalleries()
+  } catch (error: any) {
+    toast.error('Aktifleştirme hatası: ' + error.message)
+  }
+}
+
+const deleteGallery = async (gallery: any) => {
+  if (!gallery) return
+  
+  const confirmMessage = `"${gallery.name}" galerisini silmek istediğinize emin misiniz?\n\nBu işlem:\n- Galeriyi\n- Galerideki tüm kullanıcıları\n- Galerideki tüm araçları\n\nsilecektir. Bu işlem geri alınamaz!`
+  
+  if (!confirm(confirmMessage)) return
+  
+  try {
+    await api.delete(`/admin/galleries/${gallery.id}`)
+    toast.success(`"${gallery.name}" galerisi silindi!`)
+    await loadGalleries()
+  } catch (error: any) {
+    toast.error('Silme hatası: ' + error.message)
+  }
 }
 
 onMounted(() => {

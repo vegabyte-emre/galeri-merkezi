@@ -83,11 +83,11 @@ router.get('/', async (req: Request, res: Response) => {
 
     const result = await query(
       `SELECT 
-        v.id, v.listing_no, v.brand, v.series, v.model, v.year, 
+        v.id, v.listing_no, v.slug, v.brand, v.series, v.model, v.year, 
         v.fuel_type, v.transmission, v.body_type, v.color,
         v.mileage, v.base_price, v.currency, v.description,
         v.has_warranty, v.published_at, v.created_at,
-        g.id as gallery_id, g.name as gallery_name, g.city, g.district,
+        g.id as gallery_id, g.name as gallery_name, g.slug as gallery_slug, g.city, g.district,
         g.logo_url as gallery_logo, g.phone as gallery_phone,
         (SELECT original_url FROM vehicle_media WHERE vehicle_id = v.id AND is_cover = true LIMIT 1) as primary_image,
         (SELECT COUNT(*) FROM vehicle_media WHERE vehicle_id = v.id) as image_count
@@ -123,40 +123,45 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Get single vehicle details (public)
-router.get('/:id', async (req: Request, res: Response) => {
+// Get single vehicle details (public) - supports both ID and SEO-friendly slug
+router.get('/:idOrSlug', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { idOrSlug } = req.params;
+
+    // Check if it's a UUID or a slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
 
     const result = await query(
       `SELECT 
         v.*,
-        g.id as gallery_id, g.name as gallery_name, g.city, g.district,
+        g.id as gallery_id, g.name as gallery_name, g.slug as gallery_slug, g.city, g.district,
         g.logo_url as gallery_logo, g.phone as gallery_phone, g.address as gallery_address,
         g.working_hours
       FROM vehicles v
       LEFT JOIN galleries g ON v.gallery_id = g.id
-      WHERE v.id = $1 AND v.status = 'published'`,
-      [id]
+      WHERE v.${isUUID ? 'id' : 'slug'} = $1 AND v.status = 'published'`,
+      [idOrSlug]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Vehicle not found' });
     }
 
+    const vehicle = result.rows[0];
+
     // Get all images
     const mediaResult = await query(
       `SELECT * FROM vehicle_media WHERE vehicle_id = $1 ORDER BY sort_order, created_at`,
-      [id]
+      [vehicle.id]
     );
 
     // Increment view count
-    await query('UPDATE vehicles SET view_count = COALESCE(view_count, 0) + 1 WHERE id = $1', [id]);
+    await query('UPDATE vehicles SET view_count = COALESCE(view_count, 0) + 1 WHERE id = $1', [vehicle.id]);
 
     res.json({
       success: true,
       data: {
-        ...result.rows[0],
+        ...vehicle,
         images: mediaResult.rows
       }
     });

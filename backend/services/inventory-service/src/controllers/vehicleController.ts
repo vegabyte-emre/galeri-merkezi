@@ -135,10 +135,26 @@ export class VehicleController {
     const userInfo = getUserFromHeaders(req);
     const galleryId = userInfo.gallery_id;
 
-    const result = await query(
-      'SELECT * FROM vehicles WHERE id = $1 AND gallery_id = $2',
-      [id, galleryId]
-    );
+    // Check if it's a UUID or a slug (SEO-friendly URL support)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    let result;
+    if (galleryId) {
+      // Gallery user: only their vehicles
+      result = await query(
+        `SELECT * FROM vehicles WHERE ${isUUID ? 'id' : 'slug'} = $1 AND gallery_id = $2`,
+        [id, galleryId]
+      );
+    } else {
+      // Public access (no gallery restriction)
+      result = await query(
+        `SELECT v.*, g.name as gallery_name, g.slug as gallery_slug, g.phone as gallery_phone, g.city as gallery_city
+         FROM vehicles v
+         LEFT JOIN galleries g ON v.gallery_id = g.id
+         WHERE v.${isUUID ? 'id' : 'slug'} = $1 AND v.status = 'published'`,
+        [id]
+      );
+    }
 
     if (result.rows.length === 0) {
       throw new ValidationError('Vehicle not found');
