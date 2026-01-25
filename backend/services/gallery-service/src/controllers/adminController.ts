@@ -172,20 +172,27 @@ export class AdminController {
     const { page = 1, limit = 20, status } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
     
-    let whereClause = 'WHERE 1=1';
+    // Always exclude deleted galleries unless specifically requested
+    let whereClause = "WHERE g.status != 'deleted'";
     const params: any[] = [];
     let paramCount = 1;
 
-    if (status) {
-      whereClause += ` AND g.status = $${paramCount++}`;
+    // If a specific status is requested
+    if (status && status !== 'all') {
+      if (status === 'deleted') {
+        // Allow viewing deleted galleries if explicitly requested
+        whereClause = `WHERE g.status = $${paramCount++}`;
+      } else {
+        whereClause = `WHERE g.status = $${paramCount++}`;
+      }
       params.push(status);
     }
 
-    // Get galleries with vehicle count
+    // Get galleries with vehicle count (excluding deleted vehicles)
     const result = await query(
       `SELECT 
         g.id, g.name, g.email, g.phone, g.city as location, g.status, g.created_at,
-        (SELECT COUNT(*) FROM vehicles v WHERE v.gallery_id = g.id) as "vehicleCount"
+        (SELECT COUNT(*) FROM vehicles v WHERE v.gallery_id = g.id AND v.status != 'deleted') as "vehicleCount"
       FROM galleries g 
       ${whereClause} 
       ORDER BY g.created_at DESC 
@@ -198,10 +205,10 @@ export class AdminController {
       params
     );
 
-    // Get stats for all galleries (not filtered)
+    // Get stats for all galleries (excluding deleted)
     const statsResult = await query(`
       SELECT 
-        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status != 'deleted') as total,
         COUNT(*) FILTER (WHERE status = 'pending') as pending,
         COUNT(*) FILTER (WHERE status = 'active') as active,
         COUNT(*) FILTER (WHERE status = 'suspended') as suspended
@@ -419,8 +426,19 @@ export class AdminController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
-    const { page = 1, limit = 50 } = req.query;
+    const { page = 1, limit = 50, status } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
+
+    // Build where clause - always exclude deleted users unless specifically requested
+    let whereClause = "WHERE u.status != 'deleted'";
+    const params: any[] = [];
+    let paramCount = 1;
+
+    // If a specific status is requested, filter by it
+    if (status && status !== 'all') {
+      whereClause = `WHERE u.status = $${paramCount++}`;
+      params.push(status);
+    }
 
     const result = await query(`
       SELECT 
@@ -430,13 +448,25 @@ export class AdminController {
         g.name as gallery
       FROM users u
       LEFT JOIN galleries g ON u.gallery_id = g.id
+      ${whereClause}
       ORDER BY u.created_at DESC
-      LIMIT $1 OFFSET $2
-    `, [Number(limit), offset]);
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `, [...params, Number(limit), offset]);
+
+    // Get total count for pagination
+    const countResult = await query(`
+      SELECT COUNT(*) as total FROM users u ${whereClause}
+    `, params);
 
     res.json({
       success: true,
-      users: result.rows
+      users: result.rows,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: parseInt(countResult.rows[0]?.total || '0'),
+        totalPages: Math.ceil(parseInt(countResult.rows[0]?.total || '0') / Number(limit))
+      }
     });
   }
 
@@ -617,10 +647,48 @@ export class AdminController {
 
     const { id } = req.params;
 
-    // Soft delete
+    // First, get the user to check their role and gallery
+    const userResult = await query(
+      `SELECT id, role, gallery_id FROM users WHERE id = $1`,
+      [id]
+    );
+
+    if (userResult.rows.length === 0) {
+      throw new ValidationError('User not found');
+    }
+
+    const targetUser = userResult.rows[0];
+
+    // Soft delete the user
     await query(`UPDATE users SET status = 'deleted', updated_at = NOW() WHERE id = $1`, [id]);
 
-    res.json({ success: true, message: 'User deleted' });
+    // If the user is a gallery_owner, also soft-delete the gallery and all its users
+    if (targetUser.role === 'gallery_owner' && targetUser.gallery_id) {
+      // Soft delete the gallery
+      await query(
+        `UPDATE galleries SET status = 'deleted', updated_at = NOW() WHERE id = $1`,
+        [targetUser.gallery_id]
+      );
+
+      // Soft delete all other users in this gallery
+      await query(
+        `UPDATE users SET status = 'deleted', updated_at = NOW() WHERE gallery_id = $1 AND id != $2`,
+        [targetUser.gallery_id, id]
+      );
+
+      // Soft delete all vehicles in this gallery
+      await query(
+        `UPDATE vehicles SET status = 'deleted', updated_at = NOW() WHERE gallery_id = $1`,
+        [targetUser.gallery_id]
+      );
+    }
+
+    res.json({ 
+      success: true, 
+      message: targetUser.role === 'gallery_owner' 
+        ? 'User and associated gallery deleted' 
+        : 'User deleted' 
+    });
   }
 
   // ===================== SETTINGS =====================

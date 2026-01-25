@@ -26,8 +26,12 @@ export class UserController {
       throw new ForbiddenError('Only gallery owner can manage users');
     }
 
+    // Exclude deleted users from the list
     const result = await query(
-      'SELECT id, email, first_name, last_name, role, status, last_login, created_at FROM users WHERE gallery_id = $1',
+      `SELECT id, email, first_name, last_name, role, status, last_login, created_at 
+       FROM users 
+       WHERE gallery_id = $1 AND status != 'deleted'
+       ORDER BY created_at DESC`,
       [galleryId]
     );
 
