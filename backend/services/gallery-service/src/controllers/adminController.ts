@@ -747,6 +747,321 @@ export class AdminController {
     res.json({ success: true, message: 'Notification settings updated' });
   }
 
+  // ===================== EMAIL SETTINGS =====================
+  async getEmailSettings(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can view email settings');
+    }
+
+    const result = await query(`
+      SELECT email_settings FROM system_settings WHERE id = 1
+    `);
+
+    const defaultSettings = {
+      provider: 'smtp',
+      smtp: {
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: false,
+        user: process.env.SMTP_USER || '',
+        password: '', // Never return password
+        fromEmail: process.env.SMTP_FROM || '',
+        fromName: 'Otobia'
+      },
+      gmail: {
+        clientId: '',
+        clientSecret: '', // Never return secret
+        fromEmail: '',
+        fromName: 'Otobia',
+        isConfigured: false
+      }
+    };
+
+    if (result.rows[0]?.email_settings) {
+      const stored = result.rows[0].email_settings;
+      defaultSettings.provider = stored.provider || 'smtp';
+      if (stored.smtp) {
+        defaultSettings.smtp = {
+          ...defaultSettings.smtp,
+          host: stored.smtp.host || defaultSettings.smtp.host,
+          port: stored.smtp.port || defaultSettings.smtp.port,
+          secure: stored.smtp.secure || false,
+          user: stored.smtp.user || '',
+          fromEmail: stored.smtp.fromEmail || '',
+          fromName: stored.smtp.fromName || 'Otobia'
+        };
+      }
+      if (stored.gmail) {
+        defaultSettings.gmail = {
+          clientId: stored.gmail.clientId ? '***configured***' : '',
+          clientSecret: stored.gmail.clientSecret ? '***configured***' : '',
+          fromEmail: stored.gmail.fromEmail || '',
+          fromName: stored.gmail.fromName || 'Otobia',
+          isConfigured: !!stored.gmail.refreshToken
+        };
+      }
+    }
+
+    res.json(defaultSettings);
+  }
+
+  async updateEmailSettings(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can update email settings');
+    }
+
+    const { provider, smtp, gmail } = req.body;
+
+    // Get existing settings first
+    const existingResult = await query(`
+      SELECT email_settings FROM system_settings WHERE id = 1
+    `);
+    const existing = existingResult.rows[0]?.email_settings || {};
+
+    // Build new settings object
+    const emailSettings: any = {
+      provider: provider || 'smtp',
+      updatedAt: new Date().toISOString()
+    };
+
+    if (provider === 'smtp' && smtp) {
+      emailSettings.smtp = {
+        host: smtp.host || existing.smtp?.host || 'smtp.gmail.com',
+        port: smtp.port || existing.smtp?.port || 587,
+        secure: smtp.secure ?? existing.smtp?.secure ?? false,
+        user: smtp.user || existing.smtp?.user || '',
+        password: smtp.password || existing.smtp?.password || '',
+        fromEmail: smtp.fromEmail || existing.smtp?.fromEmail || '',
+        fromName: smtp.fromName || existing.smtp?.fromName || 'Otobia'
+      };
+    } else if (existing.smtp) {
+      emailSettings.smtp = existing.smtp;
+    }
+
+    if (provider === 'gmail' && gmail) {
+      emailSettings.gmail = {
+        clientId: gmail.clientId || existing.gmail?.clientId || '',
+        clientSecret: gmail.clientSecret || existing.gmail?.clientSecret || '',
+        refreshToken: existing.gmail?.refreshToken || '',
+        accessToken: existing.gmail?.accessToken || '',
+        fromEmail: gmail.fromEmail || existing.gmail?.fromEmail || '',
+        fromName: gmail.fromName || existing.gmail?.fromName || 'Otobia'
+      };
+    } else if (existing.gmail) {
+      emailSettings.gmail = existing.gmail;
+    }
+
+    await query(`
+      INSERT INTO system_settings (id, email_settings, updated_at)
+      VALUES (1, $1, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        email_settings = $1,
+        updated_at = NOW()
+    `, [JSON.stringify(emailSettings)]);
+
+    res.json({ success: true, message: 'Email settings updated' });
+  }
+
+  async testEmailSettings(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can test email settings');
+    }
+
+    const { to, provider } = req.body;
+    if (!to) {
+      throw new ValidationError('Recipient email is required');
+    }
+
+    // Get email settings
+    const result = await query(`
+      SELECT email_settings FROM system_settings WHERE id = 1
+    `);
+    const settings = result.rows[0]?.email_settings;
+
+    if (!settings) {
+      throw new ValidationError('Email settings not configured');
+    }
+
+    const nodemailer = require('nodemailer');
+    let transporter;
+
+    try {
+      if (provider === 'gmail' && settings.gmail?.refreshToken) {
+        // Gmail OAuth transport
+        const { google } = require('googleapis');
+        const oauth2Client = new google.auth.OAuth2(
+          settings.gmail.clientId,
+          settings.gmail.clientSecret,
+          `${process.env.API_URL || 'https://api.otobia.com'}/api/v1/admin/settings/email/gmail/callback`
+        );
+        oauth2Client.setCredentials({ refresh_token: settings.gmail.refreshToken });
+
+        const accessToken = await oauth2Client.getAccessToken();
+
+        transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            type: 'OAuth2',
+            user: settings.gmail.fromEmail,
+            clientId: settings.gmail.clientId,
+            clientSecret: settings.gmail.clientSecret,
+            refreshToken: settings.gmail.refreshToken,
+            accessToken: accessToken.token
+          }
+        });
+      } else {
+        // SMTP transport
+        const smtpConfig = settings.smtp || {
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          user: process.env.SMTP_USER,
+          password: process.env.SMTP_PASSWORD
+        };
+
+        transporter = nodemailer.createTransport({
+          host: smtpConfig.host,
+          port: smtpConfig.port,
+          secure: smtpConfig.secure || smtpConfig.port === 465,
+          auth: {
+            user: smtpConfig.user,
+            pass: smtpConfig.password
+          }
+        });
+      }
+
+      await transporter.sendMail({
+        from: `"${settings.smtp?.fromName || settings.gmail?.fromName || 'Otobia'}" <${settings.smtp?.fromEmail || settings.gmail?.fromEmail || 'noreply@otobia.com'}>`,
+        to: to,
+        subject: 'Otobia - Test E-postası',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #f97316, #ea580c); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+              <h1 style="color: white; margin: 0;">Otobia</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 10px 10px;">
+              <h2 style="color: #111827;">Test E-postası Başarılı!</h2>
+              <p style="color: #6b7280;">E-posta ayarlarınız doğru çalışıyor.</p>
+              <p style="color: #6b7280; font-size: 12px;">Gönderim zamanı: ${new Date().toLocaleString('tr-TR')}</p>
+            </div>
+          </div>
+        `
+      });
+
+      res.json({ success: true, message: 'Test email sent successfully' });
+    } catch (error: any) {
+      console.error('Email test error:', error);
+      throw new ValidationError(`Email test failed: ${error.message}`);
+    }
+  }
+
+  async getGmailAuthUrl(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can configure Gmail');
+    }
+
+    // Get Gmail settings
+    const result = await query(`
+      SELECT email_settings FROM system_settings WHERE id = 1
+    `);
+    const settings = result.rows[0]?.email_settings;
+
+    if (!settings?.gmail?.clientId || !settings?.gmail?.clientSecret) {
+      throw new ValidationError('Gmail Client ID and Client Secret are required');
+    }
+
+    const { google } = require('googleapis');
+    const oauth2Client = new google.auth.OAuth2(
+      settings.gmail.clientId,
+      settings.gmail.clientSecret,
+      `${process.env.API_URL || 'https://api.otobia.com'}/api/v1/admin/settings/email/gmail/callback`
+    );
+
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: ['https://mail.google.com/'],
+      prompt: 'consent'
+    });
+
+    res.json({ authUrl });
+  }
+
+  async handleGmailCallback(req: AuthenticatedRequest, res: Response) {
+    const { code } = req.query;
+
+    if (!code) {
+      return res.status(400).send('Authorization code is required');
+    }
+
+    try {
+      // Get Gmail settings
+      const result = await query(`
+        SELECT email_settings FROM system_settings WHERE id = 1
+      `);
+      const settings = result.rows[0]?.email_settings;
+
+      if (!settings?.gmail?.clientId || !settings?.gmail?.clientSecret) {
+        return res.status(400).send('Gmail not configured');
+      }
+
+      const { google } = require('googleapis');
+      const oauth2Client = new google.auth.OAuth2(
+        settings.gmail.clientId,
+        settings.gmail.clientSecret,
+        `${process.env.API_URL || 'https://api.otobia.com'}/api/v1/admin/settings/email/gmail/callback`
+      );
+
+      const { tokens } = await oauth2Client.getToken(code as string);
+
+      // Update settings with tokens
+      settings.gmail.refreshToken = tokens.refresh_token;
+      settings.gmail.accessToken = tokens.access_token;
+
+      await query(`
+        UPDATE system_settings SET email_settings = $1, updated_at = NOW() WHERE id = 1
+      `, [JSON.stringify(settings)]);
+
+      // Redirect to admin panel with success message
+      const adminUrl = process.env.ADMIN_URL || 'https://superadmin.otobia.com';
+      res.redirect(`${adminUrl}/settings?tab=email&gmail=success`);
+    } catch (error: any) {
+      console.error('Gmail callback error:', error);
+      const adminUrl = process.env.ADMIN_URL || 'https://superadmin.otobia.com';
+      res.redirect(`${adminUrl}/settings?tab=email&gmail=error&message=${encodeURIComponent(error.message)}`);
+    }
+  }
+
+  async disconnectGmail(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can disconnect Gmail');
+    }
+
+    // Get existing settings
+    const result = await query(`
+      SELECT email_settings FROM system_settings WHERE id = 1
+    `);
+    const settings = result.rows[0]?.email_settings || {};
+
+    // Remove Gmail tokens
+    if (settings.gmail) {
+      settings.gmail.refreshToken = '';
+      settings.gmail.accessToken = '';
+    }
+
+    // Switch to SMTP
+    settings.provider = 'smtp';
+
+    await query(`
+      UPDATE system_settings SET email_settings = $1, updated_at = NOW() WHERE id = 1
+    `, [JSON.stringify(settings)]);
+
+    res.json({ success: true, message: 'Gmail disconnected' });
+  }
+
   // ===================== ANALYTICS =====================
   async getAnalytics(req: AuthenticatedRequest, res: Response) {
     const user = getUserFromHeaders(req);
@@ -2358,6 +2673,115 @@ export class AdminController {
         throw new ValidationError('Integrations table not found');
       }
       throw e;
+    }
+  }
+
+  async testNetgsmSms(req: AuthenticatedRequest, res: Response) {
+    const user = getUserFromHeaders(req);
+    if (user.role !== 'superadmin') {
+      throw new ForbiddenError('Only superadmin can test SMS');
+    }
+
+    const { phone, message } = req.body;
+
+    if (!phone) {
+      throw new ValidationError('Phone number is required');
+    }
+
+    // Get NetGSM integration settings
+    let netgsmConfig: any = null;
+    try {
+      const result = await query(`
+        SELECT config FROM integrations 
+        WHERE LOWER(name) LIKE '%netgsm%' AND status = 'active'
+        LIMIT 1
+      `);
+      
+      if (result.rows.length > 0) {
+        netgsmConfig = result.rows[0].config;
+      }
+    } catch (e: any) {
+      console.error('Error fetching NetGSM config:', e);
+    }
+
+    if (!netgsmConfig || !netgsmConfig.username || !netgsmConfig.password) {
+      throw new ValidationError('NetGSM yapılandırması bulunamadı. Lütfen önce NetGSM ayarlarını kaydedin.');
+    }
+
+    // Format phone number (ensure it starts with 90)
+    let formattedPhone = phone.replace(/\s/g, '').replace(/[^0-9]/g, '');
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '90' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('90')) {
+      formattedPhone = '90' + formattedPhone;
+    }
+
+    const smsMessage = message || 'Otobia test mesajı - SMS entegrasyonu başarılı!';
+
+    try {
+      const axios = require('axios');
+      
+      // NetGSM API endpoint
+      const netgsmUrl = 'https://api.netgsm.com.tr/sms/send/get';
+      
+      const params = new URLSearchParams({
+        usercode: netgsmConfig.username,
+        password: netgsmConfig.password,
+        gsmno: formattedPhone,
+        message: smsMessage,
+        msgheader: netgsmConfig.msgHeader || 'GALERIPLATFORM',
+        dil: 'TR'
+      });
+
+      const response = await axios.get(`${netgsmUrl}?${params.toString()}`, {
+        timeout: 30000
+      });
+
+      const responseData = response.data?.toString() || '';
+      console.log('NetGSM Response:', responseData);
+
+      // NetGSM response codes:
+      // 00: Success
+      // 01: Username or password error
+      // 20: Post error
+      // 30: Sending error
+      // 40: System error
+      // 50: Session error
+      // 60: Inactive user
+      // 70: Invalid parameter
+      // 80: Query limit error
+      // 100: System maintenance
+
+      if (responseData.startsWith('00') || responseData.includes('00')) {
+        res.json({ 
+          success: true, 
+          message: `SMS ${formattedPhone} numarasına başarıyla gönderildi`,
+          jobId: responseData.split(' ')[1] || null
+        });
+      } else {
+        const errorMessages: Record<string, string> = {
+          '01': 'Kullanıcı adı veya şifre hatalı',
+          '20': 'Post hatası - mesaj veya numara formatı yanlış',
+          '30': 'Gönderim hatası',
+          '40': 'NetGSM sistem hatası',
+          '50': 'Oturum hatası',
+          '60': 'Kullanıcı aktif değil',
+          '70': 'Geçersiz parametre',
+          '80': 'Sorgu limiti aşıldı',
+          '100': 'Sistem bakımda'
+        };
+
+        const errorCode = responseData.substring(0, 2);
+        const errorMessage = errorMessages[errorCode] || `NetGSM hatası: ${responseData}`;
+        
+        throw new ValidationError(errorMessage);
+      }
+    } catch (error: any) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      console.error('NetGSM SMS test error:', error);
+      throw new ValidationError(`SMS gönderimi başarısız: ${error.message || 'Bilinmeyen hata'}`);
     }
   }
 

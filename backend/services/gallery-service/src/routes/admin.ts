@@ -34,6 +34,14 @@ router.put('/settings/general', asyncHandler(controller.updateGeneralSettings.bi
 router.put('/settings/security', asyncHandler(controller.updateSecuritySettings.bind(controller)));
 router.put('/settings/notifications', asyncHandler(controller.updateNotificationSettings.bind(controller)));
 
+// Email Settings
+router.get('/settings/email', asyncHandler(controller.getEmailSettings.bind(controller)));
+router.put('/settings/email', asyncHandler(controller.updateEmailSettings.bind(controller)));
+router.post('/settings/email/test', asyncHandler(controller.testEmailSettings.bind(controller)));
+router.get('/settings/email/gmail/auth-url', asyncHandler(controller.getGmailAuthUrl.bind(controller)));
+router.get('/settings/email/gmail/callback', asyncHandler(controller.handleGmailCallback.bind(controller)));
+router.post('/settings/email/gmail/disconnect', asyncHandler(controller.disconnectGmail.bind(controller)));
+
 // Analytics
 router.get('/analytics', asyncHandler(controller.getAnalytics.bind(controller)));
 
@@ -72,6 +80,7 @@ router.put('/backups/schedule', asyncHandler(controller.updateBackupSchedule.bin
 router.get('/integrations', asyncHandler(controller.listIntegrations.bind(controller)));
 router.post('/integrations', asyncHandler(controller.createIntegration.bind(controller)));
 router.put('/integrations/:id', asyncHandler(controller.updateIntegration.bind(controller)));
+router.post('/integrations/netgsm/test', asyncHandler(controller.testNetgsmSms.bind(controller)));
 
 // Oto Shorts
 router.get('/oto-shorts', asyncHandler(controller.listOtoShorts.bind(controller)));
