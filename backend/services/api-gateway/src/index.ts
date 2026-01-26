@@ -237,6 +237,19 @@ app.use('/api/v1/shorts', createProxyMiddleware({
   }
 }));
 
+// Gmail OAuth Callback (PUBLIC - Google redirects here without auth token)
+app.use('/api/v1/admin/settings/email/gmail/callback', createProxyMiddleware({
+  target: services.gallery,
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/admin': '/admin' },
+  onError: (err, req, res) => {
+    logger.error('Gmail callback proxy error', { error: err.message });
+    if (!res.headersSent) {
+      res.redirect(`${process.env.ADMIN_URL || 'https://admin.otobia.com'}/settings?tab=email&gmail=error&message=OAuth%20callback%20failed`);
+    }
+  }
+}));
+
 // ===== PROTECTED ROUTES (Auth required) =====
 app.use('/api/v1', generalLimiter);
 app.use('/api/v1', authMiddleware);
