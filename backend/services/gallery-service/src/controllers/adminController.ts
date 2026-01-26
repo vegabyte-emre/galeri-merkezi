@@ -490,21 +490,21 @@ export class AdminController {
 
     const galleryName = galleryResult.rows[0].name;
 
-    // Soft delete the gallery
+    // Clear gallery reference from users first (so they can be reassigned to new galleries)
     await query(
-      `UPDATE galleries SET status = 'deleted', updated_at = NOW() WHERE id = $1`,
-      [id]
-    );
-
-    // Soft delete all users in this gallery
-    await query(
-      `UPDATE users SET status = 'deleted', updated_at = NOW() WHERE gallery_id = $1`,
+      `UPDATE users SET gallery_id = NULL, updated_at = NOW() WHERE gallery_id = $1`,
       [id]
     );
 
     // Soft delete all vehicles in this gallery
     await query(
       `UPDATE vehicles SET status = 'deleted', updated_at = NOW() WHERE gallery_id = $1`,
+      [id]
+    );
+
+    // Now soft delete the gallery
+    await query(
+      `UPDATE galleries SET status = 'deleted', updated_at = NOW() WHERE id = $1`,
       [id]
     );
 

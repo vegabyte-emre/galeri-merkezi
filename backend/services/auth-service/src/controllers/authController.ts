@@ -302,17 +302,27 @@ export class AuthController {
       return Array.from(candidates);
     };
 
-    // Find user
+    // Find user - prioritize active users, exclude deleted ones
     let userResult;
     if (email) {
       userResult = await query(
-        'SELECT u.*, g.status as gallery_status FROM users u LEFT JOIN galleries g ON u.gallery_id = g.id WHERE LOWER(u.email) = LOWER($1) LIMIT 1',
+        `SELECT u.*, g.status as gallery_status 
+         FROM users u 
+         LEFT JOIN galleries g ON u.gallery_id = g.id 
+         WHERE LOWER(u.email) = LOWER($1) AND u.status != 'deleted'
+         ORDER BY CASE u.status WHEN 'active' THEN 0 ELSE 1 END
+         LIMIT 1`,
         [email]
       );
     } else {
       const candidates = normalizePhoneCandidates(phone);
       userResult = await query(
-        'SELECT u.*, g.status as gallery_status FROM users u LEFT JOIN galleries g ON u.gallery_id = g.id WHERE u.phone = ANY($1) LIMIT 1',
+        `SELECT u.*, g.status as gallery_status 
+         FROM users u 
+         LEFT JOIN galleries g ON u.gallery_id = g.id 
+         WHERE u.phone = ANY($1) AND u.status != 'deleted'
+         ORDER BY CASE u.status WHEN 'active' THEN 0 ELSE 1 END
+         LIMIT 1`,
         [candidates]
       );
     }
@@ -325,19 +335,23 @@ export class AuthController {
 
     // Check if gallery is suspended (for gallery users)
     // Allow login for active, pending, pending_approval galleries
-    // Block only for suspended or deleted galleries
+    // Block only for suspended galleries
     if (user.gallery_id) {
-      const blockedStatuses = ['suspended', 'deleted'];
-      if (blockedStatuses.includes(user.gallery_status)) {
-        console.log('Login failed - Gallery blocked:', {
+      // If gallery is deleted or doesn't exist, clear the user's gallery_id
+      if (user.gallery_status === 'deleted' || user.gallery_status === null) {
+        console.log('Clearing deleted gallery reference:', {
           userId: user.id,
           email: user.email,
           galleryId: user.gallery_id,
           galleryStatus: user.gallery_status
         });
-        if (user.gallery_status === 'deleted') {
-          throw new UnauthorizedError('Galeri silinmiş. Lütfen yönetici ile iletişime geçin.');
-        }
+        await query('UPDATE users SET gallery_id = NULL WHERE id = $1', [user.id]);
+        user.gallery_id = null;
+        user.gallery_status = null;
+      }
+      
+      // Block only suspended galleries
+      if (user.gallery_status === 'suspended') {
         throw new UnauthorizedError('Galeri askıya alınmış. Lütfen yönetici ile iletişime geçin.');
       }
     }
