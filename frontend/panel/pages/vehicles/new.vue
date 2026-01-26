@@ -344,19 +344,11 @@
             Iptal
           </NuxtLink>
           <button
-            type="button"
-            @click="saveVehicle('draft')"
-            :disabled="loading"
-            class="px-6 py-3 bg-gray-600 text-white font-semibold rounded-xl hover:bg-gray-700 transition-all disabled:opacity-50"
-          >
-            Taslak Kaydet
-          </button>
-          <button
             type="submit"
             :disabled="loading"
             class="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
           >
-            {{ loading ? 'Kaydediliyor...' : 'Kaydet ve Onaya Gönder' }}
+            {{ loading ? 'Kaydediliyor...' : 'Araç Ekle' }}
           </button>
         </div>
       </div>
@@ -1237,13 +1229,8 @@ const saveVehicle = async (saveType: string = 'publish') => {
         }
       }
       
-      if (saveType === 'publish') {
-        // Submit the vehicle for superadmin approval
-        await api.post(`/vehicles/${vehicleId}/submit-approval`)
-        toast.success('Araç onaya gönderildi (Süperadmin onayı bekleniyor)')
-      } else {
-        toast.success('Arac taslak olarak kaydedildi')
-      }
+      // Araç otomatik olarak onaya gönderildi (backend'de pending_approval olarak oluşturuldu)
+      toast.success('Araç oluşturuldu ve Süperadmin onayına gönderildi')
     }
     
     router.push('/vehicles')

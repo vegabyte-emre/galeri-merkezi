@@ -184,15 +184,16 @@ export class VehicleController {
     // Generate listing number
     const listingNo = `GM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
+    // Yeni araçlar direkt olarak onaya gider (pending_approval)
     const result = await query(
       `INSERT INTO vehicles (
         gallery_id, listing_no, brand, series, model, year, fuel_type, transmission,
         body_type, engine_power, engine_cc, drivetrain, color, vehicle_condition,
         mileage, has_warranty, warranty_details, heavy_damage_record, plate_number,
         seller_type, trade_in_acceptable, base_price, currency, description,
-        status, created_by
+        status, submitted_at, submitted_by, created_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, 'draft', $25
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, 'pending_approval', NOW(), $25, $25
       ) RETURNING *`,
       [
         galleryId, listingNo, vehicleData.brand, vehicleData.series, vehicleData.model,
@@ -207,12 +208,20 @@ export class VehicleController {
       ]
     );
 
+    const vehicle = result.rows[0];
+
     // Publish event for search indexing
-    await this.eventPublisher.publishVehicleCreated(result.rows[0].id);
+    await this.eventPublisher.publishVehicleCreated(vehicle.id);
+
+    // Superadmin'e bildirim gönder (araç otomatik onaya gönderildi)
+    await this.eventPublisher.publishVehicleSubmittedForApproval(vehicle.id, galleryId);
+
+    logger.info('Vehicle created and submitted for approval', { vehicleId: vehicle.id, galleryId });
 
     res.json({
       success: true,
-      data: result.rows[0]
+      data: vehicle,
+      message: 'Araç oluşturuldu ve onaya gönderildi'
     });
   }
 
