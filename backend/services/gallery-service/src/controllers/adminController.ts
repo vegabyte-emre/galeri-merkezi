@@ -1053,7 +1053,26 @@ export class AdminController {
     const result = await query(`
       SELECT value as email_settings FROM system_settings WHERE key = 'email_settings'
     `);
-    const settings = result.rows[0]?.email_settings;
+    let settings = result.rows[0]?.email_settings;
+
+    // Parse if string
+    if (typeof settings === 'string') {
+      try {
+        settings = JSON.parse(settings);
+      } catch (e) {
+        logger.error('Failed to parse email settings', { settings });
+      }
+    }
+
+    logger.info('Email test - loaded settings', { 
+      provider, 
+      hasSettings: !!settings,
+      settingsProvider: settings?.provider,
+      hasSmtp: !!settings?.smtp,
+      smtpUser: settings?.smtp?.user ? 'SET' : 'MISSING',
+      smtpPassword: settings?.smtp?.password ? 'SET' : 'MISSING',
+      hasGmail: !!settings?.gmail
+    });
 
     if (!settings) {
       throw new ValidationError('Email settings not configured');
@@ -1094,6 +1113,18 @@ export class AdminController {
           user: process.env.SMTP_USER,
           password: process.env.SMTP_PASSWORD
         };
+
+        logger.info('Email test - SMTP config', {
+          host: smtpConfig.host,
+          port: smtpConfig.port,
+          secure: smtpConfig.secure,
+          user: smtpConfig.user ? 'SET' : 'MISSING',
+          password: smtpConfig.password ? 'SET' : 'MISSING'
+        });
+
+        if (!smtpConfig.user || !smtpConfig.password) {
+          throw new ValidationError('SMTP credentials not configured. Please enter username and password in settings.');
+        }
 
         transporter = nodemailer.createTransport({
           host: smtpConfig.host,
