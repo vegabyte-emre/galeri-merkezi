@@ -8,10 +8,10 @@
           class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 mb-2 inline-flex items-center gap-1"
         >
           <ArrowLeft class="w-4 h-4" />
-          Araclara Don
+          Araçlara Dön
         </NuxtLink>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Yeni Arac Ekle
+          Yeni Araç Ekle
         </h1>
       </div>
       <!-- Ilan Bilgileri -->
@@ -28,15 +28,15 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <Car class="w-5 h-5 text-primary-500" />
-            Arac Secimi
+            Araç Seçimi
           </h2>
           
-          <!-- Row 1: Sinif, Marka, Seri -->
+          <!-- Row 1: Sınıf, Marka, Seri -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            <!-- Sinif Selection -->
+            <!-- Sınıf Selection -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Sinif *
+                Sınıf *
               </label>
               <select 
                 v-model="selectedClassId" 
@@ -45,7 +45,7 @@
                 class="input-field"
                 :disabled="loadingClasses"
               >
-                <option value="">{{ loadingClasses ? 'Yukleniyor...' : 'Sinif Secin' }}</option>
+                <option value="">{{ loadingClasses ? 'Yükleniyor...' : 'Sınıf Seçin' }}</option>
                 <option v-for="cls in classes" :key="cls.id" :value="cls.id">
                   {{ cls.name }}
                 </option>
@@ -64,13 +64,13 @@
                 class="input-field"
                 :disabled="!selectedClassId || loadingBrands"
               >
-                <option value="">{{ loadingBrands ? 'Yukleniyor...' : (selectedClassId ? 'Marka Secin' : 'Once sinif secin') }}</option>
-                <optgroup v-if="popularBrands.length > 0" label="Populer Markalar">
+                <option value="">{{ loadingBrands ? 'Yükleniyor...' : (selectedClassId ? 'Marka Seçin' : 'Önce sınıf seçin') }}</option>
+                <optgroup v-if="popularBrands.length > 0" label="Popüler Markalar">
                   <option v-for="brand in popularBrands" :key="'pop-' + brand.id" :value="brand.id">
                     {{ brand.name }}
                   </option>
                 </optgroup>
-                <optgroup v-if="otherBrands.length > 0" label="Tum Markalar">
+                <optgroup v-if="otherBrands.length > 0" label="Tüm Markalar">
                   <option v-for="brand in otherBrands" :key="'other-' + brand.id" :value="brand.id">
                     {{ brand.name }}
                   </option>
@@ -90,7 +90,7 @@
                 class="input-field"
                 :disabled="!selectedBrandId || loadingSeries"
               >
-                <option value="">{{ loadingSeries ? 'Yukleniyor...' : (selectedBrandId ? 'Seri Secin' : 'Once marka secin') }}</option>
+                <option value="">{{ loadingSeries ? 'Yükleniyor...' : (selectedBrandId ? 'Seri Seçin' : 'Önce marka seçin') }}</option>
                 <option v-for="s in series" :key="s.id" :value="s.id">
                   {{ s.name }}
                 </option>
@@ -112,7 +112,7 @@
                 class="input-field"
                 :disabled="!selectedSeriesId || loadingModels"
               >
-                <option value="">{{ loadingModels ? 'Yukleniyor...' : (selectedSeriesId ? 'Model Secin' : 'Once seri secin') }}</option>
+                <option value="">{{ loadingModels ? 'Yükleniyor...' : (selectedSeriesId ? 'Model Seçin' : 'Önce seri seçin') }}</option>
                 <option v-for="m in models" :key="m.id" :value="m.id">
                   {{ m.name }}
                 </option>
@@ -130,7 +130,7 @@
                 class="input-field"
                 :disabled="!selectedModelId || loadingAltModels"
               >
-                <option value="">{{ loadingAltModels ? 'Yukleniyor...' : (selectedModelId ? 'Alt Model Secin (Opsiyonel)' : 'Once model secin') }}</option>
+                <option value="">{{ loadingAltModels ? 'Yükleniyor...' : (selectedModelId ? 'Alt Model Seçin (Opsiyonel)' : 'Önce model seçin') }}</option>
                 <option v-for="am in altModels" :key="am.id" :value="am.id">
                   {{ am.name }}
                 </option>
@@ -151,7 +151,7 @@
                   class="input-field"
                   :disabled="loadingTrims"
                 >
-                  <option value="">{{ loadingTrims ? 'Yukleniyor...' : 'Trim Secin' }}</option>
+                  <option value="">{{ loadingTrims ? 'Yükleniyor...' : 'Trim Seçin' }}</option>
                   <option v-for="t in trims" :key="t.id" :value="t.id">
                     {{ t.name || 'Standart' }}
                   </option>
@@ -205,7 +205,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <Settings class="w-5 h-5 text-primary-500" />
-            Teknik Ozellikler
+            Teknik Özellikler
             <span v-if="autoFilledSpecs" class="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full ml-2">
               Otomatik Dolduruldu
             </span>
@@ -216,16 +216,16 @@
                 Kasa Tipi *
               </label>
               <select v-model="form.bodyType" required class="input-field">
-                <option value="">Seciniz</option>
+                <option value="">Seçiniz</option>
                 <option v-for="bt in bodyTypes" :key="bt.value" :value="bt.value">{{ bt.label }}</option>
               </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Yakit Tipi *
+                Yakıt Tipi *
               </label>
               <select v-model="form.fuelType" required class="input-field">
-                <option value="">Seciniz</option>
+                <option value="">Seçiniz</option>
                 <option v-for="ft in fuelTypes" :key="ft.value" :value="ft.value">{{ ft.label }}</option>
               </select>
             </div>
@@ -234,13 +234,13 @@
                 Vites *
               </label>
               <select v-model="form.transmission" required class="input-field">
-                <option value="">Seciniz</option>
+                <option value="">Seçiniz</option>
                 <option v-for="t in transmissions" :key="t.value" :value="t.value">{{ t.label }}</option>
               </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Motor Gucu (HP)
+                Motor Gücü (HP)
               </label>
               <input v-model.number="form.enginePower" type="number" class="input-field" placeholder="184" />
             </div>
@@ -255,7 +255,7 @@
                 Renk *
               </label>
               <select v-model="form.color" required class="input-field">
-                <option value="">Seciniz</option>
+                <option value="">Seçiniz</option>
                 <option v-for="c in colors" :key="c.value" :value="c.value">{{ c.label }}</option>
               </select>
             </div>
@@ -286,26 +286,26 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Yil *
+                Yıl *
               </label>
               <input v-model.number="form.year" type="number" required min="1900" :max="new Date().getFullYear() + 1" class="input-field" placeholder="2024" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Arac Durumu *
+                Araç Durumu *
               </label>
               <select v-model="form.vehicleCondition" required class="input-field">
-                <option value="">Seciniz</option>
-                <option value="Sifir">Sifir</option>
+                <option value="">Seçiniz</option>
+                <option value="Sıfır">Sıfır</option>
                 <option value="2. El">2. El</option>
               </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Agir Hasar Kayitli *
+                Ağır Hasar Kayıtlı *
               </label>
               <select v-model="form.heavyDamageRecord" required class="input-field">
-                <option :value="false">Hayir</option>
+                <option :value="false">Hayır</option>
                 <option :value="true">Evet</option>
               </select>
             </div>
@@ -314,7 +314,7 @@
                 Takas *
               </label>
               <select v-model="form.tradeInAcceptable" required class="input-field">
-                <option :value="false">Hayir</option>
+                <option :value="false">Hayır</option>
                 <option :value="true">Evet</option>
               </select>
             </div>
@@ -359,7 +359,7 @@
             to="/vehicles"
             class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
           >
-            Iptal
+            İptal
           </NuxtLink>
           <button
             type="submit"
@@ -377,7 +377,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <ImageIcon class="w-5 h-5 text-primary-500" />
-            Fotograflar
+            Fotoğraflar
           </h3>
           <div class="grid grid-cols-2 gap-3 mb-4">
             <div
@@ -392,7 +392,7 @@
             </div>
           </div>
           <button type="button" class="w-full px-4 py-2.5 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-xl hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors font-semibold">
-            Fotograf Yukle
+            Fotoğraf Yükle
           </button>
         </div>
 
@@ -400,7 +400,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <Video class="w-5 h-5 text-rose-500" />
-            Arac Videosu
+            Araç Videosu
             <span class="text-xs bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full ml-auto">
               Oto Shorts
             </span>
@@ -417,7 +417,7 @@
             :class="videoDragOver ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20'"
           >
             <Video class="w-10 h-10 text-gray-400 mb-2" :class="videoDragOver ? 'text-rose-500' : ''" />
-            <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">Video Yukle</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">Video Yükle</span>
             <span class="text-xs text-gray-400 mt-1">Maks. 30 MB • MP4, MOV, WebM</span>
           </div>
 
@@ -433,7 +433,7 @@
             <!-- Upload Progress -->
             <div v-if="videoUploading" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
               <Loader2 class="w-8 h-8 text-white animate-spin mb-2" />
-              <span class="text-white text-sm font-medium">Yukleniyor... {{ videoUploadProgress }}%</span>
+              <span class="text-white text-sm font-medium">Yükleniyor... {{ videoUploadProgress }}%</span>
               <div class="w-32 h-1.5 bg-gray-700 rounded-full mt-2 overflow-hidden">
                 <div class="h-full bg-rose-500 transition-all" :style="{ width: videoUploadProgress + '%' }"></div>
               </div>
@@ -475,10 +475,10 @@
               <div class="flex-1">
                 <span class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <Play class="w-4 h-4 text-rose-500" />
-                  Oto Shorts'da Yayinla
+                  Oto Shorts'da Yayınla
                 </span>
                 <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Video, mobil uygulamadaki Oto Shorts bolumunde gosterilsin
+                  Video, mobil uygulamadaki Oto Shorts bölümünde gösterilsin
                 </p>
               </div>
             </label>
@@ -488,36 +488,36 @@
           <div class="mt-4 space-y-2 text-xs text-gray-500 dark:text-gray-400">
             <p class="flex items-center gap-1.5">
               <CheckCircle class="w-3.5 h-3.5 text-green-500" />
-              Dikey video (9:16) Oto Shorts icin ideal
+              Dikey video (9:16) Oto Shorts için ideal
             </p>
             <p class="flex items-center gap-1.5">
               <CheckCircle class="w-3.5 h-3.5 text-green-500" />
-              15-60 saniye arasi sureler oneriliyor
+              15-60 saniye arası süreler öneriliyor
             </p>
           </div>
         </div>
 
-        <!-- Ilan Bilgileri -->
+        <!-- İlan Bilgileri -->
         <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
-          <h3 class="text-lg font-bold mb-3">Ilan Bilgileri</h3>
+          <h3 class="text-lg font-bold mb-3">İlan Bilgileri</h3>
           <div class="space-y-3 text-sm">
             <div class="flex justify-between">
-              <span class="opacity-80">Ilan No:</span>
-              <span class="font-semibold">{{ form.listingNumber || 'Otomatik olusturulacak' }}</span>
+              <span class="opacity-80">İlan No:</span>
+              <span class="font-semibold">{{ form.listingNumber || 'Otomatik oluşturulacak' }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="opacity-80">Ilan Tarihi:</span>
-              <span class="font-semibold">{{ form.listingDate || 'Kayit tarihinde' }}</span>
+              <span class="opacity-80">İlan Tarihi:</span>
+              <span class="font-semibold">{{ form.listingDate || 'Kayıt tarihinde' }}</span>
             </div>
           </div>
         </div>
 
         <!-- Status Card -->
         <div class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-6 text-white">
-          <h3 class="text-lg font-bold mb-3">Yayinlama Durumu</h3>
+          <h3 class="text-lg font-bold mb-3">Yayınlama Durumu</h3>
           <div class="space-y-2 text-sm opacity-90">
-            <p>* Arac eklendikten sonra Oto Pazari'nda listelenir</p>
-            <p>* Diger bayiler aracinizi gorebilir</p>
+            <p>* Araç eklendikten sonra Oto Pazarı'nda listelenir</p>
+            <p>* Diğer bayiler aracınızı görebilir</p>
             <p>* Mesaj ve teklif alabilirsiniz</p>
           </div>
         </div>
@@ -526,20 +526,20 @@
         <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-6 border border-amber-200 dark:border-amber-800">
           <h3 class="text-lg font-bold text-amber-900 dark:text-amber-100 mb-3 flex items-center gap-2">
             <AlertCircle class="w-5 h-5" />
-            Ipuclari
+            İpuçları
           </h3>
           <ul class="space-y-2 text-sm text-amber-800 dark:text-amber-200">
             <li class="flex items-start gap-2">
               <CheckCircle class="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Yuksek kaliteli fotograflar ekleyin</span>
+              <span>Yüksek kaliteli fotoğraflar ekleyin</span>
             </li>
             <li class="flex items-start gap-2">
               <CheckCircle class="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Detayli aciklama yazin</span>
+              <span>Detaylı açıklama yazın</span>
             </li>
             <li class="flex items-start gap-2">
               <CheckCircle class="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Rekabetci fiyat belirleyin</span>
+              <span>Rekabetçi fiyat belirleyin</span>
             </li>
           </ul>
         </div>
@@ -722,7 +722,7 @@ const showTrimField = computed(() => {
   return false
 })
 
-// Ilan numarasi olusturma fonksiyonu
+// İlan numarası oluşturma fonksiyonu
 const generateListingNumber = () => {
   const date = new Date()
   const year = date.getFullYear().toString().slice(-2)
@@ -809,8 +809,8 @@ const loadClasses = async () => {
       }
     }
   } catch (error: any) {
-    console.error('Siniflar yuklenemedi:', error)
-    toast.error('Siniflar yuklenemedi')
+    console.error('Sınıflar yüklenemedi:', error)
+    toast.error('Sınıflar yüklenemedi')
   } finally {
     loadingClasses.value = false
   }
@@ -845,8 +845,8 @@ const loadBrands = async () => {
       brands.value = response.data
     }
   } catch (error: any) {
-    console.error('Markalar yuklenemedi:', error)
-    toast.error('Markalar yuklenemedi')
+    console.error('Markalar yüklenemedi:', error)
+    toast.error('Markalar yüklenemedi')
   } finally {
     loadingBrands.value = false
   }
@@ -881,8 +881,8 @@ const loadSeries = async () => {
       series.value = response.data
     }
   } catch (error: any) {
-    console.error('Seriler yuklenemedi:', error)
-    toast.error('Seriler yuklenemedi')
+    console.error('Seriler yüklenemedi:', error)
+    toast.error('Seriler yüklenemedi')
   } finally {
     loadingSeries.value = false
   }
@@ -915,8 +915,8 @@ const loadModels = async () => {
       models.value = response.data
     }
   } catch (error: any) {
-    console.error('Modeller yuklenemedi:', error)
-    toast.error('Modeller yuklenemedi')
+    console.error('Modeller yüklenemedi:', error)
+    toast.error('Modeller yüklenemedi')
   } finally {
     loadingModels.value = false
   }
@@ -966,7 +966,7 @@ const loadAltModels = async () => {
       altModels.value = response.data
     }
   } catch (error: any) {
-    console.error('Alt modeller yuklenemedi:', error)
+    console.error('Alt modeller yüklenemedi:', error)
   } finally {
     loadingAltModels.value = false
   }
@@ -1010,7 +1010,7 @@ const loadTrimsForAltModel = async () => {
       trims.value = response.data
     }
   } catch (error: any) {
-    console.error('Trimler yuklenemedi:', error)
+    console.error('Trimler yüklenemedi:', error)
   } finally {
     loadingTrims.value = false
   }
@@ -1027,7 +1027,7 @@ const loadTrimsForModel = async () => {
       trims.value = response.data
     }
   } catch (error: any) {
-    console.error('Trimler yuklenemedi:', error)
+    console.error('Trimler yüklenemedi:', error)
   } finally {
     loadingTrims.value = false
   }
@@ -1096,7 +1096,7 @@ const loadSpecifications = async () => {
       }
     }
   } catch (error: any) {
-    console.error('Spesifikasyonlar yuklenemedi:', error)
+    console.error('Spesifikasyonlar yüklenemedi:', error)
     // Fallback to old behavior - load trims normally
     if (altModelId) {
       await loadTrimsForAltModel()
@@ -1144,14 +1144,14 @@ const formatFileSize = (bytes: number): string => {
 const validateVideoFile = (file: File): boolean => {
   // Check file size (max 30MB)
   if (file.size > MAX_VIDEO_SIZE) {
-    toast.error(`Video boyutu cok buyuk. Maksimum ${formatFileSize(MAX_VIDEO_SIZE)} yuklenebilir.`)
+    toast.error(`Video boyutu çok büyük. Maksimum ${formatFileSize(MAX_VIDEO_SIZE)} yüklenebilir.`)
     return false
   }
   
   // Check file type
   const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v']
   if (!allowedTypes.includes(file.type)) {
-    toast.error('Gecersiz video formati. MP4, MOV veya WebM yukleyebilirsiniz.')
+    toast.error('Geçersiz video formatı. MP4, MOV veya WebM yükleyebilirsiniz.')
     return false
   }
   
@@ -1170,7 +1170,7 @@ const handleVideoSelect = (event: Event) => {
   
   videoFile.value = file
   videoPreviewUrl.value = URL.createObjectURL(file)
-  toast.success('Video secildi. Arac kaydedildiginde yuklenecek.')
+  toast.success('Video seçildi. Araç kaydedildiğinde yüklenecek.')
 }
 
 const handleVideoDrop = (event: DragEvent) => {
@@ -1179,7 +1179,7 @@ const handleVideoDrop = (event: DragEvent) => {
   if (!file) return
   
   if (!file.type.startsWith('video/')) {
-    toast.error('Lutfen bir video dosyasi surukleyin.')
+    toast.error('Lütfen bir video dosyası sürükleyin.')
     return
   }
   
@@ -1187,7 +1187,7 @@ const handleVideoDrop = (event: DragEvent) => {
   
   videoFile.value = file
   videoPreviewUrl.value = URL.createObjectURL(file)
-  toast.success('Video secildi. Arac kaydedildiginde yuklenecek.')
+  toast.success('Video seçildi. Araç kaydedildiğinde yüklenecek.')
 }
 
 const removeVideo = () => {
@@ -1231,7 +1231,7 @@ const uploadVideo = async (vehicleId: string): Promise<string | null> => {
     }
     return null
   } catch (error: any) {
-    toast.error('Video yuklenirken hata olustu: ' + error.message)
+    toast.error('Video yüklenirken hata oluştu: ' + error.message)
     return null
   } finally {
     videoUploading.value = false
@@ -1240,7 +1240,7 @@ const uploadVideo = async (vehicleId: string): Promise<string | null> => {
 
 const saveVehicle = async (saveType: string = 'publish') => {
   if (!form.brand || !form.series || !form.model || !form.year || !form.mileage || !form.basePrice || !form.fuelType || !form.transmission || !form.vehicleCondition || !form.bodyType || !form.color) {
-    toast.error('Lutfen zorunlu alanlari doldurun')
+    toast.error('Lütfen zorunlu alanları doldurun')
     return
   }
 
@@ -1264,7 +1264,7 @@ const saveVehicle = async (saveType: string = 'publish') => {
         if (videoUrl) {
           // Video route already updates vehicle + shorts flags
           if (form.publishToOtoShorts) {
-            toast.success('Video Oto Shorts\'a gonderildi!')
+            toast.success('Video Oto Shorts\'a gönderildi!')
           }
         }
       }
