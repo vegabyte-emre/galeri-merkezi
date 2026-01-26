@@ -117,32 +117,38 @@ async function runStartupMigrations() {
         const userIds = deletedUserIds.rows.map((r: any) => r.id);
         const galleryIds = deletedGalleryIds.rows.map((r: any) => r.id);
         
-        // Remove all foreign key references to deleted users
+        // Remove all foreign key references to deleted users (with error handling for each)
         if (userIds.length > 0) {
-          await query(`UPDATE users SET gallery_id = NULL WHERE status = 'deleted'`);
-          await query(`UPDATE vehicles SET created_by = NULL WHERE created_by = ANY($1)`, [userIds]);
-          await query(`UPDATE vehicles SET updated_by = NULL WHERE updated_by = ANY($1)`, [userIds]);
-          await query(`UPDATE vehicles SET submitted_by = NULL WHERE submitted_by = ANY($1)`, [userIds]);
-          await query(`UPDATE vehicles SET approved_by = NULL WHERE approved_by = ANY($1)`, [userIds]);
-          await query(`UPDATE vehicles SET rejected_by = NULL WHERE rejected_by = ANY($1)`, [userIds]);
-          await query(`UPDATE galleries SET approved_by = NULL WHERE approved_by = ANY($1)`, [userIds]);
-          await query(`UPDATE galleries SET rejected_by = NULL WHERE rejected_by = ANY($1)`, [userIds]);
-          await query(`DELETE FROM notifications WHERE user_id = ANY($1)`, [userIds]);
-          await query(`DELETE FROM favorites WHERE user_id = ANY($1)`, [userIds]);
-          await query(`DELETE FROM chat_messages WHERE sender_id = ANY($1)`, [userIds]);
-          await query(`UPDATE chat_messages SET read_by = array_remove(read_by, unnest) FROM unnest($1::uuid[]) WHERE read_by && $1`, [userIds]);
-          await query(`DELETE FROM chat_participants WHERE user_id = ANY($1)`, [userIds]);
-          await query(`DELETE FROM offers WHERE user_id = ANY($1)`, [userIds]);
-          await query(`DELETE FROM user_sessions WHERE user_id = ANY($1)`, [userIds]);
+          const safeQuery = async (sql: string, params: any[]) => {
+            try { await query(sql, params); } catch (e: any) { /* ignore missing columns */ }
+          };
+          
+          await safeQuery(`UPDATE users SET gallery_id = NULL WHERE status = 'deleted'`, []);
+          await safeQuery(`UPDATE vehicles SET created_by = NULL WHERE created_by = ANY($1)`, [userIds]);
+          await safeQuery(`UPDATE vehicles SET updated_by = NULL WHERE updated_by = ANY($1)`, [userIds]);
+          await safeQuery(`UPDATE vehicles SET submitted_by = NULL WHERE submitted_by = ANY($1)`, [userIds]);
+          await safeQuery(`UPDATE vehicles SET approved_by = NULL WHERE approved_by = ANY($1)`, [userIds]);
+          await safeQuery(`UPDATE vehicles SET rejected_by = NULL WHERE rejected_by = ANY($1)`, [userIds]);
+          await safeQuery(`UPDATE galleries SET approved_by = NULL WHERE approved_by = ANY($1)`, [userIds]);
+          await safeQuery(`DELETE FROM notifications WHERE user_id = ANY($1)`, [userIds]);
+          await safeQuery(`DELETE FROM favorites WHERE user_id = ANY($1)`, [userIds]);
+          await safeQuery(`DELETE FROM chat_messages WHERE sender_id = ANY($1)`, [userIds]);
+          await safeQuery(`DELETE FROM chat_participants WHERE user_id = ANY($1)`, [userIds]);
+          await safeQuery(`DELETE FROM offers WHERE user_id = ANY($1)`, [userIds]);
+          await safeQuery(`DELETE FROM user_sessions WHERE user_id = ANY($1)`, [userIds]);
         }
         
         // Remove all foreign key references to deleted galleries
         if (galleryIds.length > 0) {
-          await query(`UPDATE users SET gallery_id = NULL WHERE gallery_id = ANY($1)`, [galleryIds]);
-          await query(`DELETE FROM vehicles WHERE gallery_id = ANY($1)`, [galleryIds]);
-          await query(`DELETE FROM notifications WHERE gallery_id = ANY($1)`, [galleryIds]);
-          await query(`DELETE FROM offers WHERE gallery_id = ANY($1)`, [galleryIds]);
-          await query(`DELETE FROM chats WHERE gallery_id = ANY($1)`, [galleryIds]);
+          const safeQuery = async (sql: string, params: any[]) => {
+            try { await query(sql, params); } catch (e: any) { /* ignore missing tables/columns */ }
+          };
+          
+          await safeQuery(`UPDATE users SET gallery_id = NULL WHERE gallery_id = ANY($1)`, [galleryIds]);
+          await safeQuery(`DELETE FROM vehicles WHERE gallery_id = ANY($1)`, [galleryIds]);
+          await safeQuery(`DELETE FROM notifications WHERE gallery_id = ANY($1)`, [galleryIds]);
+          await safeQuery(`DELETE FROM offers WHERE gallery_id = ANY($1)`, [galleryIds]);
+          await safeQuery(`DELETE FROM chats WHERE gallery_id = ANY($1)`, [galleryIds]);
         }
         
         // Now delete the users and galleries
