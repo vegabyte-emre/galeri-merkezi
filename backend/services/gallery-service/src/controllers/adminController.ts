@@ -917,13 +917,10 @@ export class AdminController {
   // ===================== EMAIL SETTINGS =====================
   async getEmailSettings(req: AuthenticatedRequest, res: Response) {
     const user = getUserFromHeaders(req);
-    if (user.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can view email settings');
+    const allowedRoles = ['superadmin', 'admin'];
+    if (!allowedRoles.includes(user.role)) {
+      throw new ForbiddenError('Only superadmin or admin can view email settings');
     }
-
-    const result = await query(`
-      SELECT email_settings FROM system_settings WHERE id = 1
-    `);
 
     const defaultSettings = {
       provider: 'smtp',
@@ -945,29 +942,37 @@ export class AdminController {
       }
     };
 
-    if (result.rows[0]?.email_settings) {
-      const stored = result.rows[0].email_settings;
-      defaultSettings.provider = stored.provider || 'smtp';
-      if (stored.smtp) {
-        defaultSettings.smtp = {
-          ...defaultSettings.smtp,
-          host: stored.smtp.host || defaultSettings.smtp.host,
-          port: stored.smtp.port || defaultSettings.smtp.port,
-          secure: stored.smtp.secure || false,
-          user: stored.smtp.user || '',
-          fromEmail: stored.smtp.fromEmail || '',
-          fromName: stored.smtp.fromName || 'Otobia'
-        };
+    try {
+      const result = await query(`
+        SELECT email_settings FROM system_settings WHERE id = 1
+      `);
+
+      if (result.rows[0]?.email_settings) {
+        const stored = result.rows[0].email_settings;
+        defaultSettings.provider = stored.provider || 'smtp';
+        if (stored.smtp) {
+          defaultSettings.smtp = {
+            ...defaultSettings.smtp,
+            host: stored.smtp.host || defaultSettings.smtp.host,
+            port: stored.smtp.port || defaultSettings.smtp.port,
+            secure: stored.smtp.secure || false,
+            user: stored.smtp.user || '',
+            fromEmail: stored.smtp.fromEmail || '',
+            fromName: stored.smtp.fromName || 'Otobia'
+          };
+        }
+        if (stored.gmail) {
+          defaultSettings.gmail = {
+            clientId: stored.gmail.clientId ? '***configured***' : '',
+            clientSecret: stored.gmail.clientSecret ? '***configured***' : '',
+            fromEmail: stored.gmail.fromEmail || '',
+            fromName: stored.gmail.fromName || 'Otobia',
+            isConfigured: !!stored.gmail.refreshToken
+          };
+        }
       }
-      if (stored.gmail) {
-        defaultSettings.gmail = {
-          clientId: stored.gmail.clientId ? '***configured***' : '',
-          clientSecret: stored.gmail.clientSecret ? '***configured***' : '',
-          fromEmail: stored.gmail.fromEmail || '',
-          fromName: stored.gmail.fromName || 'Otobia',
-          isConfigured: !!stored.gmail.refreshToken
-        };
-      }
+    } catch (error: any) {
+      logger.warn('Could not load email settings from database, using defaults', { error: error.message });
     }
 
     res.json(defaultSettings);
