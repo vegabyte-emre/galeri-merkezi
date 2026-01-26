@@ -109,8 +109,18 @@ async function runStartupMigrations() {
 
     // Clean up old deleted data - permanently remove soft-deleted records
     try {
-      // First, remove gallery_id references from deleted users
+      // First, remove references from deleted users
       await query(`UPDATE users SET gallery_id = NULL WHERE status = 'deleted'`);
+      
+      // Remove vehicle references to deleted users
+      await query(`UPDATE vehicles SET created_by = NULL WHERE created_by IN (SELECT id FROM users WHERE status = 'deleted')`);
+      await query(`UPDATE vehicles SET updated_by = NULL WHERE updated_by IN (SELECT id FROM users WHERE status = 'deleted')`);
+      await query(`UPDATE vehicles SET submitted_by = NULL WHERE submitted_by IN (SELECT id FROM users WHERE status = 'deleted')`);
+      await query(`UPDATE vehicles SET approved_by = NULL WHERE approved_by IN (SELECT id FROM users WHERE status = 'deleted')`);
+      await query(`UPDATE vehicles SET rejected_by = NULL WHERE rejected_by IN (SELECT id FROM users WHERE status = 'deleted')`);
+      
+      // Remove notification references to deleted users
+      await query(`DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE status = 'deleted')`);
       
       // Delete all soft-deleted users permanently (except superadmin)
       const deletedUsers = await query(`
@@ -126,13 +136,13 @@ async function runStartupMigrations() {
         });
       }
 
+      // Delete vehicles from deleted galleries
+      await query(`DELETE FROM vehicles WHERE gallery_id IN (SELECT id FROM galleries WHERE status = 'deleted')`);
+      
       // Delete all soft-deleted galleries permanently
       const deletedGalleries = await query(`
         DELETE FROM galleries 
         WHERE status = 'deleted'
-        AND NOT EXISTS (
-          SELECT 1 FROM users u WHERE u.gallery_id = galleries.id AND u.status != 'deleted'
-        )
         RETURNING id, name
       `);
       if (deletedGalleries.rows.length > 0) {
