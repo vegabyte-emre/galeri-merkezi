@@ -107,47 +107,42 @@ async function runStartupMigrations() {
       logger.warn(`email_settings row creation: ${e.message}`);
     }
 
-    // Fix galleries with deleted status that have users
+    // Clean up old deleted data - permanently remove soft-deleted records
     try {
-      // First, reactivate galleries that have users
-      const galleriesResult = await query(`
-        UPDATE galleries g
-        SET status = 'active', updated_at = NOW()
-        WHERE g.status = 'deleted'
-        AND EXISTS (
-          SELECT 1 FROM users u 
-          WHERE u.gallery_id = g.id
-        )
-        RETURNING id, name
+      // First, remove gallery_id references from deleted users
+      await query(`UPDATE users SET gallery_id = NULL WHERE status = 'deleted'`);
+      
+      // Delete all soft-deleted users permanently (except superadmin)
+      const deletedUsers = await query(`
+        DELETE FROM users 
+        WHERE status = 'deleted' 
+        AND role != 'superadmin'
+        RETURNING id, email
       `);
-      if (galleriesResult.rows.length > 0) {
-        logger.info('Reactivated galleries with users', { 
-          count: galleriesResult.rows.length,
-          galleries: galleriesResult.rows.map((r: any) => r.name)
+      if (deletedUsers.rows.length > 0) {
+        logger.info('Permanently deleted old users', { 
+          count: deletedUsers.rows.length,
+          emails: deletedUsers.rows.map((r: any) => r.email)
         });
       }
 
-      // Also activate users that belong to active galleries but are not active
-      const usersResult = await query(`
-        UPDATE users u
-        SET status = 'active', updated_at = NOW()
-        WHERE u.status != 'active'
-        AND u.gallery_id IS NOT NULL
-        AND EXISTS (
-          SELECT 1 FROM galleries g 
-          WHERE g.id = u.gallery_id 
-          AND g.status = 'active'
+      // Delete all soft-deleted galleries permanently
+      const deletedGalleries = await query(`
+        DELETE FROM galleries 
+        WHERE status = 'deleted'
+        AND NOT EXISTS (
+          SELECT 1 FROM users u WHERE u.gallery_id = galleries.id AND u.status != 'deleted'
         )
-        RETURNING id, email
+        RETURNING id, name
       `);
-      if (usersResult.rows.length > 0) {
-        logger.info('Activated users with active galleries', { 
-          count: usersResult.rows.length,
-          users: usersResult.rows.map((r: any) => r.email)
+      if (deletedGalleries.rows.length > 0) {
+        logger.info('Permanently deleted old galleries', { 
+          count: deletedGalleries.rows.length,
+          galleries: deletedGalleries.rows.map((r: any) => r.name)
         });
       }
     } catch (e: any) {
-      logger.warn(`Gallery/User reactivation: ${e.message}`);
+      logger.warn(`Old data cleanup: ${e.message}`);
     }
 
     logger.info('Startup migrations completed');
