@@ -109,47 +109,58 @@ async function runStartupMigrations() {
 
     // Clean up old deleted data - permanently remove soft-deleted records
     try {
-      // First, remove references from deleted users
-      await query(`UPDATE users SET gallery_id = NULL WHERE status = 'deleted'`);
+      // Get list of deleted user IDs
+      const deletedUserIds = await query(`SELECT id FROM users WHERE status = 'deleted' AND role != 'superadmin'`);
+      const deletedGalleryIds = await query(`SELECT id FROM galleries WHERE status = 'deleted'`);
       
-      // Remove vehicle references to deleted users
-      await query(`UPDATE vehicles SET created_by = NULL WHERE created_by IN (SELECT id FROM users WHERE status = 'deleted')`);
-      await query(`UPDATE vehicles SET updated_by = NULL WHERE updated_by IN (SELECT id FROM users WHERE status = 'deleted')`);
-      await query(`UPDATE vehicles SET submitted_by = NULL WHERE submitted_by IN (SELECT id FROM users WHERE status = 'deleted')`);
-      await query(`UPDATE vehicles SET approved_by = NULL WHERE approved_by IN (SELECT id FROM users WHERE status = 'deleted')`);
-      await query(`UPDATE vehicles SET rejected_by = NULL WHERE rejected_by IN (SELECT id FROM users WHERE status = 'deleted')`);
-      
-      // Remove notification references to deleted users
-      await query(`DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE status = 'deleted')`);
-      
-      // Delete all soft-deleted users permanently (except superadmin)
-      const deletedUsers = await query(`
-        DELETE FROM users 
-        WHERE status = 'deleted' 
-        AND role != 'superadmin'
-        RETURNING id, email
-      `);
-      if (deletedUsers.rows.length > 0) {
-        logger.info('Permanently deleted old users', { 
-          count: deletedUsers.rows.length,
-          emails: deletedUsers.rows.map((r: any) => r.email)
-        });
-      }
-
-      // Delete vehicles from deleted galleries
-      await query(`DELETE FROM vehicles WHERE gallery_id IN (SELECT id FROM galleries WHERE status = 'deleted')`);
-      
-      // Delete all soft-deleted galleries permanently
-      const deletedGalleries = await query(`
-        DELETE FROM galleries 
-        WHERE status = 'deleted'
-        RETURNING id, name
-      `);
-      if (deletedGalleries.rows.length > 0) {
-        logger.info('Permanently deleted old galleries', { 
-          count: deletedGalleries.rows.length,
-          galleries: deletedGalleries.rows.map((r: any) => r.name)
-        });
+      if (deletedUserIds.rows.length > 0 || deletedGalleryIds.rows.length > 0) {
+        const userIds = deletedUserIds.rows.map((r: any) => r.id);
+        const galleryIds = deletedGalleryIds.rows.map((r: any) => r.id);
+        
+        // Remove all foreign key references to deleted users
+        if (userIds.length > 0) {
+          await query(`UPDATE users SET gallery_id = NULL WHERE status = 'deleted'`);
+          await query(`UPDATE vehicles SET created_by = NULL WHERE created_by = ANY($1)`, [userIds]);
+          await query(`UPDATE vehicles SET updated_by = NULL WHERE updated_by = ANY($1)`, [userIds]);
+          await query(`UPDATE vehicles SET submitted_by = NULL WHERE submitted_by = ANY($1)`, [userIds]);
+          await query(`UPDATE vehicles SET approved_by = NULL WHERE approved_by = ANY($1)`, [userIds]);
+          await query(`UPDATE vehicles SET rejected_by = NULL WHERE rejected_by = ANY($1)`, [userIds]);
+          await query(`UPDATE galleries SET approved_by = NULL WHERE approved_by = ANY($1)`, [userIds]);
+          await query(`UPDATE galleries SET rejected_by = NULL WHERE rejected_by = ANY($1)`, [userIds]);
+          await query(`DELETE FROM notifications WHERE user_id = ANY($1)`, [userIds]);
+          await query(`DELETE FROM favorites WHERE user_id = ANY($1)`, [userIds]);
+          await query(`DELETE FROM chat_messages WHERE sender_id = ANY($1)`, [userIds]);
+          await query(`UPDATE chat_messages SET read_by = array_remove(read_by, unnest) FROM unnest($1::uuid[]) WHERE read_by && $1`, [userIds]);
+          await query(`DELETE FROM chat_participants WHERE user_id = ANY($1)`, [userIds]);
+          await query(`DELETE FROM offers WHERE user_id = ANY($1)`, [userIds]);
+          await query(`DELETE FROM user_sessions WHERE user_id = ANY($1)`, [userIds]);
+        }
+        
+        // Remove all foreign key references to deleted galleries
+        if (galleryIds.length > 0) {
+          await query(`UPDATE users SET gallery_id = NULL WHERE gallery_id = ANY($1)`, [galleryIds]);
+          await query(`DELETE FROM vehicles WHERE gallery_id = ANY($1)`, [galleryIds]);
+          await query(`DELETE FROM notifications WHERE gallery_id = ANY($1)`, [galleryIds]);
+          await query(`DELETE FROM offers WHERE gallery_id = ANY($1)`, [galleryIds]);
+          await query(`DELETE FROM chats WHERE gallery_id = ANY($1)`, [galleryIds]);
+        }
+        
+        // Now delete the users and galleries
+        if (userIds.length > 0) {
+          const deletedUsers = await query(`DELETE FROM users WHERE id = ANY($1) RETURNING id, email`, [userIds]);
+          logger.info('Permanently deleted old users', { 
+            count: deletedUsers.rows.length,
+            emails: deletedUsers.rows.map((r: any) => r.email)
+          });
+        }
+        
+        if (galleryIds.length > 0) {
+          const deletedGalleries = await query(`DELETE FROM galleries WHERE id = ANY($1) RETURNING id, name`, [galleryIds]);
+          logger.info('Permanently deleted old galleries', { 
+            count: deletedGalleries.rows.length,
+            galleries: deletedGalleries.rows.map((r: any) => r.name)
+          });
+        }
       }
     } catch (e: any) {
       logger.warn(`Old data cleanup: ${e.message}`);
