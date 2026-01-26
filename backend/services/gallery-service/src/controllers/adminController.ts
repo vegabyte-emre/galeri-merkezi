@@ -682,6 +682,27 @@ export class AdminController {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
     `, [userId, firstName, lastName, email, phone || `+90${Date.now()}`, hashedPassword, role || 'gallery_owner', status || 'active', galleryId]);
 
+    // Send welcome email notification
+    try {
+      const { publishToQueue } = await import('@galeri/shared/utils/rabbitmq');
+      await publishToQueue('notifications_queue', {
+        id: uuidv4(),
+        userId: userId,
+        type: 'welcome',
+        title: 'Otobia\'ya Hoş Geldiniz',
+        body: `Merhaba ${firstName}, Otobia platformuna kaydınız oluşturuldu. Giriş bilgileriniz: E-posta: ${email}`,
+        channels: ['email'],
+        metadata: {
+          email: email,
+          password: password, // Include password in welcome email
+          galleryName: galleryName || null
+        }
+      });
+      logger.info('Welcome email notification queued', { userId, email });
+    } catch (notifyErr: any) {
+      logger.warn('Failed to send welcome notification', { error: notifyErr.message });
+    }
+
     res.json({
       success: true,
       id: userId,

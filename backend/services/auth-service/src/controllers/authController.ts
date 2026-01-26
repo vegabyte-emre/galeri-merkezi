@@ -323,15 +323,23 @@ export class AuthController {
 
     const user = userResult.rows[0];
 
-    // Check if gallery is active (for gallery users)
-    if (user.gallery_id && user.gallery_status !== 'active') {
-      console.log('Login failed - Gallery not active:', {
-        userId: user.id,
-        email: user.email,
-        galleryId: user.gallery_id,
-        galleryStatus: user.gallery_status
-      });
-      throw new UnauthorizedError('Gallery is not active');
+    // Check if gallery is suspended (for gallery users)
+    // Allow login for active, pending, pending_approval galleries
+    // Block only for suspended or deleted galleries
+    if (user.gallery_id) {
+      const blockedStatuses = ['suspended', 'deleted'];
+      if (blockedStatuses.includes(user.gallery_status)) {
+        console.log('Login failed - Gallery blocked:', {
+          userId: user.id,
+          email: user.email,
+          galleryId: user.gallery_id,
+          galleryStatus: user.gallery_status
+        });
+        if (user.gallery_status === 'deleted') {
+          throw new UnauthorizedError('Galeri silinmiş. Lütfen yönetici ile iletişime geçin.');
+        }
+        throw new UnauthorizedError('Galeri askıya alınmış. Lütfen yönetici ile iletişime geçin.');
+      }
     }
 
     // Check if user is active
