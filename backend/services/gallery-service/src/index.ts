@@ -45,6 +45,22 @@ async function runStartupMigrations() {
       logger.warn(`vehicles_status_check migration: ${e.message}`);
     }
 
+    // Add approval columns to vehicles if not exists
+    try {
+      await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP`);
+      await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS submitted_by UUID`);
+      await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP`);
+      await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS approved_by UUID`);
+      await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMP`);
+      await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS rejected_by UUID`);
+      await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS rejection_reason TEXT`);
+      await query(`CREATE INDEX IF NOT EXISTS idx_vehicles_pending_approval ON vehicles(status) WHERE status = 'pending_approval'`);
+      await query(`CREATE INDEX IF NOT EXISTS idx_vehicles_submitted_at ON vehicles(submitted_at) WHERE submitted_at IS NOT NULL`);
+      logger.info('Added vehicles approval columns');
+    } catch (e: any) {
+      logger.warn(`vehicles approval columns migration: ${e.message}`);
+    }
+
     // Add slug column to vehicles if not exists
     try {
       await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS slug VARCHAR(500)`);

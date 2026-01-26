@@ -427,9 +427,11 @@ export class VehicleController {
     const userInfo = getUserFromHeaders(req);
     const { page = 1, limit = 20 } = req.query;
 
-    // Sadece superadmin erişebilir
-    if (userInfo.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can access pending approvals');
+    // Superadmin ve admin erişebilir
+    const allowedRoles = ['superadmin', 'admin'];
+    if (!allowedRoles.includes(userInfo.role)) {
+      logger.warn('Pending approval access denied', { role: userInfo.role, userId: userInfo.sub });
+      throw new ForbiddenError('Only superadmin or admin can access pending approvals');
     }
 
     const offset = (Number(page) - 1) * Number(limit);
@@ -465,9 +467,10 @@ export class VehicleController {
     const { id } = req.params;
     const userInfo = getUserFromHeaders(req);
 
-    // Sadece superadmin onaylayabilir
-    if (userInfo.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can approve vehicles');
+    // Superadmin ve admin onaylayabilir
+    const allowedRoles = ['superadmin', 'admin'];
+    if (!allowedRoles.includes(userInfo.role)) {
+      throw new ForbiddenError('Only superadmin or admin can approve vehicles');
     }
 
     // Aracın mevcut durumunu kontrol et
@@ -505,9 +508,10 @@ export class VehicleController {
     const { reason } = req.body;
     const userInfo = getUserFromHeaders(req);
 
-    // Sadece superadmin reddedebilir
-    if (userInfo.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can reject vehicles');
+    // Superadmin ve admin reddedebilir
+    const allowedRoles = ['superadmin', 'admin'];
+    if (!allowedRoles.includes(userInfo.role)) {
+      throw new ForbiddenError('Only superadmin or admin can reject vehicles');
     }
 
     // Aracın mevcut durumunu kontrol et
