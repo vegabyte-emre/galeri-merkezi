@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { query } from '@galeri/shared/database/connection';
 import { v4 as uuidv4 } from 'uuid';
 import { ValidationError, ForbiddenError } from '@galeri/shared/utils/errors';
+import { logger } from '@galeri/shared/utils/logger';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
