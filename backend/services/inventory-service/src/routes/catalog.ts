@@ -1,5 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { query } from '@galeri/shared/database/connection';
+import { query, getClient } from '@galeri/shared/database/connection';
+import { uploadFile } from '@galeri/shared/utils/minio';
+import { logger } from '@galeri/shared/utils/logger';
+import multer from 'multer';
 
 const router = Router();
 
@@ -614,6 +617,278 @@ router.get('/colors', asyncHandler(async (req: Request, res: Response) => {
       { value: 'Bronz', label: 'Bronz' },
       { value: 'Diger', label: 'Diğer' }
     ]
+  });
+}));
+
+// ==================== CATALOG IMPORT ENDPOINTS ====================
+
+// Multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+/**
+ * POST /catalog/import
+ * Import catalog data from Google Sheets (JSON format)
+ * Requires X-Import-Key header for authentication
+ */
+router.post('/import', asyncHandler(async (req: Request, res: Response) => {
+  const importKey = req.headers['x-import-key'];
+  const expectedKey = process.env.CATALOG_IMPORT_KEY || 'otobia-catalog-import-2026';
+  
+  if (importKey !== expectedKey) {
+    return res.status(403).json({ success: false, message: 'Invalid import key' });
+  }
+  
+  const { brands } = req.body;
+  
+  if (!brands || !Array.isArray(brands)) {
+    return res.status(400).json({ success: false, message: 'brands array is required' });
+  }
+  
+  const client = await getClient();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Clear existing catalog data (in reverse order of dependencies)
+    await client.query('DELETE FROM vehicle_catalog_trims');
+    await client.query('DELETE FROM vehicle_catalog_alt_models');
+    await client.query('DELETE FROM vehicle_catalog_models');
+    await client.query('DELETE FROM vehicle_catalog_series');
+    await client.query('DELETE FROM vehicle_catalog_brands');
+    await client.query('DELETE FROM vehicle_catalog_classes');
+    
+    // Reset sequences
+    await client.query("ALTER SEQUENCE vehicle_catalog_classes_id_seq RESTART WITH 1");
+    await client.query("ALTER SEQUENCE vehicle_catalog_brands_id_seq RESTART WITH 1");
+    await client.query("ALTER SEQUENCE vehicle_catalog_series_id_seq RESTART WITH 1");
+    await client.query("ALTER SEQUENCE vehicle_catalog_models_id_seq RESTART WITH 1");
+    await client.query("ALTER SEQUENCE vehicle_catalog_alt_models_id_seq RESTART WITH 1");
+    await client.query("ALTER SEQUENCE vehicle_catalog_trims_id_seq RESTART WITH 1");
+    
+    // Insert default class
+    const classResult = await client.query(
+      "INSERT INTO vehicle_catalog_classes (name) VALUES ('Otomobil') RETURNING id"
+    );
+    const classId = classResult.rows[0].id;
+    
+    // Insert brands
+    let insertedBrands = 0;
+    for (const brand of brands) {
+      const brandName = brand.name || brand.Marka || brand;
+      const logoUrl = brand.logo_url || brand.logoUrl || null;
+      const isPopular = brand.is_popular || brand.isPopular || false;
+      
+      if (brandName && typeof brandName === 'string' && brandName.trim()) {
+        await client.query(
+          `INSERT INTO vehicle_catalog_brands (class_id, name, logo_url, is_popular, sort_order) 
+           VALUES ($1, $2, $3, $4, 999)
+           ON CONFLICT (class_id, name) DO UPDATE SET logo_url = EXCLUDED.logo_url`,
+          [classId, brandName.trim(), logoUrl, isPopular]
+        );
+        insertedBrands++;
+      }
+    }
+    
+    await client.query('COMMIT');
+    
+    logger.info('Catalog import completed', { brandsImported: insertedBrands });
+    
+    res.json({
+      success: true,
+      message: `Katalog başarıyla içe aktarıldı`,
+      data: {
+        brands: insertedBrands
+      }
+    });
+  } catch (error: any) {
+    await client.query('ROLLBACK');
+    logger.error('Catalog import failed', { error: error.message });
+    res.status(500).json({ success: false, message: error.message });
+  } finally {
+    client.release();
+  }
+}));
+
+/**
+ * POST /catalog/brands/:brandId/logo
+ * Upload logo for a specific brand
+ */
+router.post('/brands/:brandId/logo', upload.single('logo'), asyncHandler(async (req: Request, res: Response) => {
+  const { brandId } = req.params;
+  const file = req.file;
+  
+  if (!file) {
+    return res.status(400).json({ success: false, message: 'Logo file is required' });
+  }
+  
+  // Check if brand exists
+  const brandResult = await query('SELECT id, name FROM vehicle_catalog_brands WHERE id = $1', [brandId]);
+  if (brandResult.rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Brand not found' });
+  }
+  
+  const brandName = brandResult.rows[0].name;
+  const extension = file.originalname.split('.').pop() || 'svg';
+  const objectName = `brands/${brandName.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
+  
+  try {
+    const logoUrl = await uploadFile('galeri-media', objectName, file.buffer, file.mimetype);
+    
+    // Update brand with logo URL
+    await query('UPDATE vehicle_catalog_brands SET logo_url = $1 WHERE id = $2', [logoUrl, brandId]);
+    
+    res.json({
+      success: true,
+      message: 'Logo uploaded successfully',
+      data: { logo_url: logoUrl }
+    });
+  } catch (error: any) {
+    logger.error('Logo upload failed', { error: error.message, brandId });
+    res.status(500).json({ success: false, message: 'Logo upload failed' });
+  }
+}));
+
+/**
+ * POST /catalog/brands/bulk-logos
+ * Upload multiple brand logos at once
+ * Expects multipart form with files named as brand names
+ */
+router.post('/brands/bulk-logos', upload.array('logos', 100), asyncHandler(async (req: Request, res: Response) => {
+  const files = req.files as Express.Multer.File[];
+  
+  if (!files || files.length === 0) {
+    return res.status(400).json({ success: false, message: 'No files uploaded' });
+  }
+  
+  const results: { brand: string; success: boolean; logo_url?: string; error?: string }[] = [];
+  
+  for (const file of files) {
+    // Extract brand name from filename (e.g., "BMW.svg" -> "BMW")
+    const brandName = file.originalname.replace(/\.[^/.]+$/, '');
+    const extension = file.originalname.split('.').pop() || 'svg';
+    
+    // Find brand in database (case-insensitive)
+    const brandResult = await query(
+      'SELECT id, name FROM vehicle_catalog_brands WHERE LOWER(name) = LOWER($1)',
+      [brandName]
+    );
+    
+    if (brandResult.rows.length === 0) {
+      results.push({ brand: brandName, success: false, error: 'Brand not found in database' });
+      continue;
+    }
+    
+    const brand = brandResult.rows[0];
+    const objectName = `brands/${brand.name.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
+    
+    try {
+      const logoUrl = await uploadFile('galeri-media', objectName, file.buffer, file.mimetype);
+      await query('UPDATE vehicle_catalog_brands SET logo_url = $1 WHERE id = $2', [logoUrl, brand.id]);
+      results.push({ brand: brand.name, success: true, logo_url: logoUrl });
+    } catch (error: any) {
+      results.push({ brand: brand.name, success: false, error: error.message });
+    }
+  }
+  
+  const successCount = results.filter(r => r.success).length;
+  const failCount = results.filter(r => !r.success).length;
+  
+  logger.info('Bulk logo upload completed', { success: successCount, failed: failCount });
+  
+  res.json({
+    success: true,
+    message: `${successCount} logo yüklendi, ${failCount} başarısız`,
+    data: results
+  });
+}));
+
+/**
+ * DELETE /catalog/clear
+ * Clear all catalog data
+ */
+router.delete('/clear', asyncHandler(async (req: Request, res: Response) => {
+  const importKey = req.headers['x-import-key'];
+  const expectedKey = process.env.CATALOG_IMPORT_KEY || 'otobia-catalog-import-2026';
+  
+  if (importKey !== expectedKey) {
+    return res.status(403).json({ success: false, message: 'Invalid import key' });
+  }
+  
+  const client = await getClient();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Clear all catalog data
+    await client.query('DELETE FROM vehicle_catalog_trims');
+    await client.query('DELETE FROM vehicle_catalog_alt_models');
+    await client.query('DELETE FROM vehicle_catalog_models');
+    await client.query('DELETE FROM vehicle_catalog_series');
+    await client.query('DELETE FROM vehicle_catalog_brands');
+    await client.query('DELETE FROM vehicle_catalog_classes');
+    
+    await client.query('COMMIT');
+    
+    logger.info('Catalog cleared');
+    
+    res.json({
+      success: true,
+      message: 'Katalog verileri temizlendi'
+    });
+  } catch (error: any) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ success: false, message: error.message });
+  } finally {
+    client.release();
+  }
+}));
+
+/**
+ * PUT /catalog/brands/:brandId
+ * Update a specific brand (logo_url, is_popular, etc.)
+ */
+router.put('/brands/:brandId', asyncHandler(async (req: Request, res: Response) => {
+  const { brandId } = req.params;
+  const { logo_url, is_popular, sort_order } = req.body;
+  
+  const updates: string[] = [];
+  const params: any[] = [];
+  let paramCount = 1;
+  
+  if (logo_url !== undefined) {
+    updates.push(`logo_url = $${paramCount++}`);
+    params.push(logo_url);
+  }
+  if (is_popular !== undefined) {
+    updates.push(`is_popular = $${paramCount++}`);
+    params.push(is_popular);
+  }
+  if (sort_order !== undefined) {
+    updates.push(`sort_order = $${paramCount++}`);
+    params.push(sort_order);
+  }
+  
+  if (updates.length === 0) {
+    return res.status(400).json({ success: false, message: 'No fields to update' });
+  }
+  
+  params.push(brandId);
+  
+  const result = await query(
+    `UPDATE vehicle_catalog_brands SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+    params
+  );
+  
+  if (result.rows.length === 0) {
+    return res.status(404).json({ success: false, message: 'Brand not found' });
+  }
+  
+  res.json({
+    success: true,
+    data: result.rows[0]
   });
 }));
 

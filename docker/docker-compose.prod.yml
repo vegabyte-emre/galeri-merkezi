@@ -61,6 +61,14 @@ services:
       - minio_data:/data
     networks:
       - otobia-network
+    labels:
+      - "traefik.enable=true"
+      # Public storage access (read-only for public bucket)
+      - "traefik.http.routers.minio.rule=Host(`storage.otobia.com`)"
+      - "traefik.http.routers.minio.entrypoints=websecure"
+      - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio.service=minio"
+      - "traefik.http.services.minio.loadbalancer.server.port=9000"
     restart: unless-stopped
 
   # ==================== REVERSE PROXY ====================

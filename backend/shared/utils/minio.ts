@@ -31,13 +31,28 @@ export async function uploadFile(
     const exists = await client.bucketExists(bucket);
     if (!exists) {
       await client.makeBucket(bucket);
+      // Set bucket policy to public read
+      const policy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Principal: { AWS: ['*'] },
+            Action: ['s3:GetObject'],
+            Resource: [`arn:aws:s3:::${bucket}/*`]
+          }
+        ]
+      };
+      await client.setBucketPolicy(bucket, JSON.stringify(policy));
     }
     
     await client.putObject(bucket, objectName, buffer, buffer.length, {
       'Content-Type': contentType
     });
     
-    const url = `${config.minio.useSSL ? 'https' : 'http'}://${config.minio.endpoint}:${config.minio.port}/${bucket}/${objectName}`;
+    // Use public URL (storage.otobia.com) for production, internal URL for development
+    const publicUrl = process.env.STORAGE_PUBLIC_URL || 'https://storage.otobia.com';
+    const url = `${publicUrl}/${bucket}/${objectName}`;
     return url;
   } catch (error: any) {
     logger.error('MinIO upload failed', { error: error.message, bucket, objectName });
