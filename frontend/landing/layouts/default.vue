@@ -6,9 +6,11 @@
         <div class="flex items-center justify-between">
           <!-- Logo -->
           <NuxtLink to="/" class="flex items-center gap-2 group">
-            <span class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;">
-              Otobia
-            </span>
+            <img 
+              src="/otobia-logo.svg" 
+              alt="Otobia" 
+              class="h-7 sm:h-8 w-auto dark:invert"
+            />
           </NuxtLink>
 
           <!-- Desktop Navigation -->

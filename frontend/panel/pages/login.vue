@@ -4,9 +4,11 @@
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
         <!-- Header -->
         <div class="text-center mb-8">
-          <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Car class="w-8 h-8 text-white" />
-          </div>
+          <img 
+            src="/otobia-logo.svg" 
+            alt="Otobia" 
+            class="h-10 w-auto mx-auto mb-4 dark:invert"
+          />
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Galeri Paneline Giriş
           </h2>

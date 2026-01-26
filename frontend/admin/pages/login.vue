@@ -3,10 +3,11 @@
     <div class="w-full max-w-md">
       <!-- Logo -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg mb-4">
-          <Shield class="w-8 h-8 text-white" />
-        </div>
-        <h1 class="text-2xl font-bold text-white">Otobia Admin</h1>
+        <img 
+          src="/otobia-logo.svg" 
+          alt="Otobia" 
+          class="h-10 w-auto mx-auto mb-4 invert"
+        />
         <p class="text-gray-400 text-sm mt-1">Süperadmin Paneli</p>
       </div>
 

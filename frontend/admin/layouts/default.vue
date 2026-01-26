@@ -10,13 +10,11 @@
       <!-- Logo -->
       <div class="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
-            <Shield class="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 class="text-lg font-semibold text-gray-900 dark:text-white" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;">Otobia</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Süperadmin Paneli</p>
-          </div>
+          <img 
+            src="/otobia-logo.svg" 
+            alt="Otobia" 
+            class="h-8 w-auto dark:invert"
+          />
         </div>
         <button
           @click="isSidebarOpen = false"
