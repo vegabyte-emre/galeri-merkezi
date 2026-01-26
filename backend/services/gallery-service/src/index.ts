@@ -95,24 +95,16 @@ async function runStartupMigrations() {
       logger.warn(`galleries slug constraint migration: ${e.message}`);
     }
 
-    // Add email_settings column to system_settings table
-    try {
-      await query(`ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS email_settings JSONB DEFAULT '{}'::jsonb`);
-      logger.info('Added email_settings column to system_settings');
-    } catch (e: any) {
-      logger.warn(`email_settings column migration: ${e.message}`);
-    }
-
-    // Ensure system_settings row exists
+    // Ensure email_settings row exists in system_settings (key-value table)
     try {
       await query(`
-        INSERT INTO system_settings (id, email_settings, updated_at)
-        VALUES (1, '{}'::jsonb, NOW())
-        ON CONFLICT (id) DO NOTHING
+        INSERT INTO system_settings (key, value, description, updated_at)
+        VALUES ('email_settings', '{}'::jsonb, 'Email configuration', NOW())
+        ON CONFLICT (key) DO NOTHING
       `);
-      logger.info('Ensured system_settings row exists');
+      logger.info('Ensured email_settings row exists in system_settings');
     } catch (e: any) {
-      logger.warn(`system_settings row creation: ${e.message}`);
+      logger.warn(`email_settings row creation: ${e.message}`);
     }
 
     logger.info('Startup migrations completed');

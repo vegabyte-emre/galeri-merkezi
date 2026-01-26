@@ -945,11 +945,11 @@ export class AdminController {
 
     try {
       const result = await query(`
-        SELECT email_settings FROM system_settings WHERE id = 1
+        SELECT value FROM system_settings WHERE key = 'email_settings'
       `);
 
-      if (result.rows[0]?.email_settings) {
-        const stored = result.rows[0].email_settings;
+      if (result.rows[0]?.value) {
+        const stored = result.rows[0].value;
         defaultSettings.provider = stored.provider || 'smtp';
         if (stored.smtp) {
           defaultSettings.smtp = {
@@ -990,7 +990,7 @@ export class AdminController {
 
     // Get existing settings first
     const existingResult = await query(`
-      SELECT email_settings FROM system_settings WHERE id = 1
+      SELECT value as email_settings FROM system_settings WHERE key = 'email_settings'
     `);
     const existing = existingResult.rows[0]?.email_settings || {};
 
@@ -1028,10 +1028,10 @@ export class AdminController {
     }
 
     await query(`
-      INSERT INTO system_settings (id, email_settings, updated_at)
-      VALUES (1, $1, NOW())
-      ON CONFLICT (id) DO UPDATE SET
-        email_settings = $1,
+      INSERT INTO system_settings (key, value, description, updated_at)
+      VALUES ('email_settings', $1, 'Email configuration', NOW())
+      ON CONFLICT (key) DO UPDATE SET
+        value = $1,
         updated_at = NOW()
     `, [JSON.stringify(emailSettings)]);
 
@@ -1051,7 +1051,7 @@ export class AdminController {
 
     // Get email settings
     const result = await query(`
-      SELECT email_settings FROM system_settings WHERE id = 1
+      SELECT value as email_settings FROM system_settings WHERE key = 'email_settings'
     `);
     const settings = result.rows[0]?.email_settings;
 
@@ -1140,7 +1140,7 @@ export class AdminController {
     try {
       // Get Gmail settings
       const result = await query(`
-        SELECT email_settings FROM system_settings WHERE id = 1
+        SELECT value as email_settings FROM system_settings WHERE key = 'email_settings'
       `);
       
       if (result.rows.length === 0) {
@@ -1193,7 +1193,7 @@ export class AdminController {
     try {
       // Get Gmail settings
       const result = await query(`
-        SELECT email_settings FROM system_settings WHERE id = 1
+        SELECT value as email_settings FROM system_settings WHERE key = 'email_settings'
       `);
       const settings = result.rows[0]?.email_settings;
 
@@ -1215,7 +1215,7 @@ export class AdminController {
       settings.gmail.accessToken = tokens.access_token;
 
       await query(`
-        UPDATE system_settings SET email_settings = $1, updated_at = NOW() WHERE id = 1
+        UPDATE system_settings SET value = $1, updated_at = NOW() WHERE key = 'email_settings'
       `, [JSON.stringify(settings)]);
 
       // Redirect to admin panel with success message
@@ -1236,7 +1236,7 @@ export class AdminController {
 
     // Get existing settings
     const result = await query(`
-      SELECT email_settings FROM system_settings WHERE id = 1
+      SELECT value as email_settings FROM system_settings WHERE key = 'email_settings'
     `);
     const settings = result.rows[0]?.email_settings || {};
 
@@ -1250,7 +1250,7 @@ export class AdminController {
     settings.provider = 'smtp';
 
     await query(`
-      UPDATE system_settings SET email_settings = $1, updated_at = NOW() WHERE id = 1
+      UPDATE system_settings SET value = $1, updated_at = NOW() WHERE key = 'email_settings'
     `, [JSON.stringify(settings)]);
 
     res.json({ success: true, message: 'Gmail disconnected' });
