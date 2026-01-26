@@ -392,6 +392,18 @@ export class AuthController {
     // Store refresh token in Redis
     await redis.setex(`refresh:${user.id}:${refreshToken}`, 7 * 24 * 60 * 60, 'true');
 
+    // Get gallery info if user has a gallery
+    let galleryInfo = null;
+    if (user.gallery_id) {
+      const galleryResult = await query(
+        'SELECT name, logo_url, city, district FROM galleries WHERE id = $1',
+        [user.gallery_id]
+      );
+      if (galleryResult.rows.length > 0) {
+        galleryInfo = galleryResult.rows[0];
+      }
+    }
+
     res.json({
       success: true,
       accessToken,
@@ -399,10 +411,16 @@ export class AuthController {
       user: {
         id: user.id,
         email: user.email,
+        phone: user.phone,
         firstName: user.first_name,
         lastName: user.last_name,
         role: user.role,
-        galleryId: user.gallery_id
+        galleryId: user.gallery_id,
+        gallery_name: galleryInfo?.name || null,
+        logo: galleryInfo?.logo_url || null,
+        city: galleryInfo?.city || null,
+        district: galleryInfo?.district || null,
+        owner_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || null
       }
     });
   }

@@ -181,6 +181,20 @@ export class VehicleController {
       throw new ForbiddenError('Insufficient permissions');
     }
 
+    // Normalize field names - accept both camelCase and snake_case
+    const fuelType = vehicleData.fuelType || vehicleData.fuel_type;
+    const bodyType = vehicleData.bodyType || vehicleData.body_type;
+    const enginePower = vehicleData.enginePower || vehicleData.horsepower || vehicleData.engine_power;
+    const engineCc = vehicleData.engineCc || vehicleData.engine_cc || vehicleData.engine_size;
+    const vehicleCondition = vehicleData.vehicleCondition || vehicleData.vehicle_condition;
+    const hasWarranty = vehicleData.hasWarranty || vehicleData.has_warranty || false;
+    const warrantyDetails = vehicleData.warrantyDetails || vehicleData.warranty_details;
+    const heavyDamageRecord = vehicleData.heavyDamageRecord || vehicleData.heavy_damage_record || false;
+    const plateNumber = vehicleData.plateNumber || vehicleData.plate_number;
+    const sellerType = vehicleData.sellerType || vehicleData.seller_type || 'gallery';
+    const tradeInAcceptable = vehicleData.tradeInAcceptable || vehicleData.trade_in_acceptable || false;
+    const basePrice = vehicleData.basePrice || vehicleData.base_price || vehicleData.price;
+
     // Generate listing number
     const listingNo = `GM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
@@ -197,13 +211,13 @@ export class VehicleController {
       ) RETURNING *`,
       [
         galleryId, listingNo, vehicleData.brand, vehicleData.series, vehicleData.model,
-        vehicleData.year, vehicleData.fuelType, vehicleData.transmission,
-        vehicleData.bodyType, vehicleData.enginePower, vehicleData.engineCc,
-        vehicleData.drivetrain, vehicleData.color, vehicleData.vehicleCondition,
-        vehicleData.mileage, vehicleData.hasWarranty || false, vehicleData.warrantyDetails,
-        vehicleData.heavyDamageRecord || false, vehicleData.plateNumber,
-        vehicleData.sellerType, vehicleData.tradeInAcceptable || false,
-        vehicleData.basePrice, vehicleData.currency || 'TRY', vehicleData.description,
+        vehicleData.year, fuelType, vehicleData.transmission,
+        bodyType, enginePower, engineCc,
+        vehicleData.drivetrain, vehicleData.color, vehicleCondition,
+        vehicleData.mileage, hasWarranty, warrantyDetails,
+        heavyDamageRecord, plateNumber,
+        sellerType, tradeInAcceptable,
+        basePrice, vehicleData.currency || 'TRY', vehicleData.description,
         userInfo.sub
       ]
     );

@@ -412,7 +412,9 @@ export class UserController {
 
   async changePassword(req: AuthenticatedRequest, res: Response) {
     const userId = (req.headers['x-user-id'] as string) || req.user?.sub;
-    const { currentPassword, newPassword } = req.body;
+    // Accept both camelCase and snake_case
+    const currentPassword = req.body.currentPassword || req.body.current_password;
+    const newPassword = req.body.newPassword || req.body.new_password;
 
     if (!currentPassword || !newPassword) {
       throw new ValidationError('Current password and new password are required');
