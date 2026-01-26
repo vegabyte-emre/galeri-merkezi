@@ -107,27 +107,47 @@ async function runStartupMigrations() {
       logger.warn(`email_settings row creation: ${e.message}`);
     }
 
-    // Fix galleries with deleted status that have active users
+    // Fix galleries with deleted status that have users
     try {
-      const result = await query(`
+      // First, reactivate galleries that have users
+      const galleriesResult = await query(`
         UPDATE galleries g
         SET status = 'active', updated_at = NOW()
         WHERE g.status = 'deleted'
         AND EXISTS (
           SELECT 1 FROM users u 
-          WHERE u.gallery_id = g.id 
-          AND u.status = 'active'
+          WHERE u.gallery_id = g.id
         )
         RETURNING id, name
       `);
-      if (result.rows.length > 0) {
-        logger.info('Reactivated galleries with active users', { 
-          count: result.rows.length,
-          galleries: result.rows.map((r: any) => r.name)
+      if (galleriesResult.rows.length > 0) {
+        logger.info('Reactivated galleries with users', { 
+          count: galleriesResult.rows.length,
+          galleries: galleriesResult.rows.map((r: any) => r.name)
+        });
+      }
+
+      // Also activate users that belong to active galleries but are not active
+      const usersResult = await query(`
+        UPDATE users u
+        SET status = 'active', updated_at = NOW()
+        WHERE u.status != 'active'
+        AND u.gallery_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM galleries g 
+          WHERE g.id = u.gallery_id 
+          AND g.status = 'active'
+        )
+        RETURNING id, email
+      `);
+      if (usersResult.rows.length > 0) {
+        logger.info('Activated users with active galleries', { 
+          count: usersResult.rows.length,
+          users: usersResult.rows.map((r: any) => r.email)
         });
       }
     } catch (e: any) {
-      logger.warn(`Gallery reactivation: ${e.message}`);
+      logger.warn(`Gallery/User reactivation: ${e.message}`);
     }
 
     logger.info('Startup migrations completed');
