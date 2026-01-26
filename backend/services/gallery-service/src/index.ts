@@ -107,6 +107,29 @@ async function runStartupMigrations() {
       logger.warn(`email_settings row creation: ${e.message}`);
     }
 
+    // Fix galleries with deleted status that have active users
+    try {
+      const result = await query(`
+        UPDATE galleries g
+        SET status = 'active', updated_at = NOW()
+        WHERE g.status = 'deleted'
+        AND EXISTS (
+          SELECT 1 FROM users u 
+          WHERE u.gallery_id = g.id 
+          AND u.status = 'active'
+        )
+        RETURNING id, name
+      `);
+      if (result.rows.length > 0) {
+        logger.info('Reactivated galleries with active users', { 
+          count: result.rows.length,
+          galleries: result.rows.map((r: any) => r.name)
+        });
+      }
+    } catch (e: any) {
+      logger.warn(`Gallery reactivation: ${e.message}`);
+    }
+
     logger.info('Startup migrations completed');
   } catch (error: any) {
     logger.error('Startup migrations failed:', error.message);
