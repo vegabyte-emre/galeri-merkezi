@@ -325,6 +325,12 @@ export class AuthController {
 
     // Check if gallery is active (for gallery users)
     if (user.gallery_id && user.gallery_status !== 'active') {
+      console.log('Login failed - Gallery not active:', {
+        userId: user.id,
+        email: user.email,
+        galleryId: user.gallery_id,
+        galleryStatus: user.gallery_status
+      });
       throw new UnauthorizedError('Gallery is not active');
     }
 
