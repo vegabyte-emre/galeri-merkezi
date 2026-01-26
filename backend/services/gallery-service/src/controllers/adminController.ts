@@ -975,11 +975,12 @@ export class AdminController {
 
   async updateEmailSettings(req: AuthenticatedRequest, res: Response) {
     const user = getUserFromHeaders(req);
-    if (user.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can update email settings');
+    if (user.role !== 'superadmin' && user.role !== 'admin') {
+      throw new ForbiddenError('Only superadmin or admin can update email settings');
     }
 
     const { provider, smtp, gmail } = req.body;
+    logger.info('Updating email settings', { provider, hasSmtp: !!smtp, hasGmail: !!gmail });
 
     // Get existing settings first
     const existingResult = await query(`
@@ -1126,34 +1127,54 @@ export class AdminController {
 
   async getGmailAuthUrl(req: AuthenticatedRequest, res: Response) {
     const user = getUserFromHeaders(req);
-    if (user.role !== 'superadmin') {
-      throw new ForbiddenError('Only superadmin can configure Gmail');
+    if (user.role !== 'superadmin' && user.role !== 'admin') {
+      throw new ForbiddenError('Only superadmin or admin can configure Gmail');
     }
 
-    // Get Gmail settings
-    const result = await query(`
-      SELECT email_settings FROM system_settings WHERE id = 1
-    `);
-    const settings = result.rows[0]?.email_settings;
+    try {
+      // Get Gmail settings
+      const result = await query(`
+        SELECT email_settings FROM system_settings WHERE id = 1
+      `);
+      
+      if (result.rows.length === 0) {
+        throw new ValidationError('Email ayarları bulunamadı. Önce Client ID ve Secret kaydedin.');
+      }
+      
+      const settings = result.rows[0]?.email_settings;
+      logger.info('Gmail auth - settings:', { 
+        hasSettings: !!settings, 
+        hasGmail: !!settings?.gmail,
+        hasClientId: !!settings?.gmail?.clientId 
+      });
 
-    if (!settings?.gmail?.clientId || !settings?.gmail?.clientSecret) {
-      throw new ValidationError('Gmail Client ID and Client Secret are required');
+      if (!settings?.gmail?.clientId || !settings?.gmail?.clientSecret) {
+        throw new ValidationError('Gmail Client ID ve Client Secret gerekli. Önce bu bilgileri kaydedin.');
+      }
+
+      const { google } = require('googleapis');
+      const redirectUri = `${process.env.API_URL || 'https://api.otobia.com'}/api/v1/admin/settings/email/gmail/callback`;
+      
+      logger.info('Gmail auth - redirect URI:', { redirectUri });
+      
+      const oauth2Client = new google.auth.OAuth2(
+        settings.gmail.clientId,
+        settings.gmail.clientSecret,
+        redirectUri
+      );
+
+      const authUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: ['https://mail.google.com/'],
+        prompt: 'consent'
+      });
+
+      logger.info('Gmail auth URL generated successfully');
+      res.json({ authUrl });
+    } catch (error: any) {
+      logger.error('Gmail auth URL error:', { error: error.message, stack: error.stack });
+      throw error;
     }
-
-    const { google } = require('googleapis');
-    const oauth2Client = new google.auth.OAuth2(
-      settings.gmail.clientId,
-      settings.gmail.clientSecret,
-      `${process.env.API_URL || 'https://api.otobia.com'}/api/v1/admin/settings/email/gmail/callback`
-    );
-
-    const authUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: ['https://mail.google.com/'],
-      prompt: 'consent'
-    });
-
-    res.json({ authUrl });
   }
 
   async handleGmailCallback(req: AuthenticatedRequest, res: Response) {
@@ -1192,11 +1213,11 @@ export class AdminController {
       `, [JSON.stringify(settings)]);
 
       // Redirect to admin panel with success message
-      const adminUrl = process.env.ADMIN_URL || 'https://superadmin.otobia.com';
+      const adminUrl = process.env.ADMIN_URL || 'https://admin.otobia.com';
       res.redirect(`${adminUrl}/settings?tab=email&gmail=success`);
     } catch (error: any) {
       console.error('Gmail callback error:', error);
-      const adminUrl = process.env.ADMIN_URL || 'https://superadmin.otobia.com';
+      const adminUrl = process.env.ADMIN_URL || 'https://admin.otobia.com';
       res.redirect(`${adminUrl}/settings?tab=email&gmail=error&message=${encodeURIComponent(error.message)}`);
     }
   }
