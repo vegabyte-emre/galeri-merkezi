@@ -194,6 +194,10 @@ export class VehicleController {
     const sellerType = vehicleData.sellerType || vehicleData.seller_type || 'gallery';
     const tradeInAcceptable = vehicleData.tradeInAcceptable || vehicleData.trade_in_acceptable || false;
     const basePrice = vehicleData.basePrice || vehicleData.base_price || vehicleData.price;
+    
+    // Features and body damage (JSONB)
+    const features = vehicleData.features || vehicleData.vehicle_features || {};
+    const bodyDamage = vehicleData.bodyDamage || vehicleData.body_damage || {};
 
     // Generate listing number
     const listingNo = `GM-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -205,9 +209,10 @@ export class VehicleController {
         body_type, engine_power, engine_cc, drivetrain, color, vehicle_condition,
         mileage, has_warranty, warranty_details, heavy_damage_record, plate_number,
         seller_type, trade_in_acceptable, base_price, currency, description,
+        features, body_damage,
         status, submitted_at, submitted_by, created_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, 'pending_approval', NOW(), $25, $25
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, 'pending_approval', NOW(), $27, $27
       ) RETURNING *`,
       [
         galleryId, listingNo, vehicleData.brand, vehicleData.series, vehicleData.model,
@@ -218,6 +223,7 @@ export class VehicleController {
         heavyDamageRecord, plateNumber,
         sellerType, tradeInAcceptable,
         basePrice, vehicleData.currency || 'TRY', vehicleData.description,
+        JSON.stringify(features), JSON.stringify(bodyDamage),
         userInfo.sub
       ]
     );
@@ -259,8 +265,11 @@ export class VehicleController {
       'engine_power', 'engine_cc', 'drivetrain', 'color', 'vehicle_condition',
       'mileage', 'has_warranty', 'warranty_details', 'heavy_damage_record',
       'plate_number', 'seller_type', 'trade_in_acceptable', 'base_price',
-      'description'
+      'description', 'features', 'body_damage'
     ];
+    
+    // JSONB fields that need special handling
+    const jsonbFields = ['features', 'body_damage'];
 
     const updateFields: string[] = [];
     const values: any[] = [];
@@ -270,7 +279,12 @@ export class VehicleController {
       const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       if (allowedFields.includes(dbKey)) {
         updateFields.push(`${dbKey} = $${paramCount++}`);
-        values.push(value);
+        // Stringify JSONB fields
+        if (jsonbFields.includes(dbKey) && typeof value === 'object') {
+          values.push(JSON.stringify(value));
+        } else {
+          values.push(value);
+        }
       }
     }
 

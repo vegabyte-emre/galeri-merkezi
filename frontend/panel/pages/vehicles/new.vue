@@ -321,17 +321,35 @@
           </div>
         </div>
 
+        <!-- Vehicle Features -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Wrench class="w-5 h-5 text-primary-500" />
+            Araç Özellikleri
+          </h2>
+          <VehicleFeatures v-model="form.features" />
+        </div>
+
+        <!-- Body Damage / Paint -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <PaintBucket class="w-5 h-5 text-primary-500" />
+            Boya / Değişen Parça Durumu
+          </h2>
+          <VehicleBodyDamage v-model="form.bodyDamage" />
+        </div>
+
         <!-- Description -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <FileText class="w-5 h-5 text-primary-500" />
-            Aciklama
+            Açıklama
           </h2>
           <textarea
             v-model="form.description"
             rows="6"
             class="input-field"
-            placeholder="Arac hakkinda detayli aciklama yazin..."
+            placeholder="Araç hakkında detaylı açıklama yazın..."
           ></textarea>
         </div>
 
@@ -531,7 +549,9 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Upload, CheckCircle, Car, Settings, DollarSign, FileText, Image as ImageIcon, AlertCircle, Video, Play, X, Loader2 } from 'lucide-vue-next'
+import { ArrowLeft, Upload, CheckCircle, Car, Settings, DollarSign, FileText, Image as ImageIcon, AlertCircle, Video, Play, X, Loader2, Wrench, PaintBucket } from 'lucide-vue-next'
+import VehicleFeatures from '~/components/vehicle/VehicleFeatures.vue'
+import VehicleBodyDamage from '~/components/vehicle/VehicleBodyDamage.vue'
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '~/composables/useApi'
@@ -722,6 +742,17 @@ const formatDate = (date: Date) => {
   })
 }
 
+interface VehicleFeatures {
+  guvenlik: string[]
+  ic_donanim: string[]
+  dis_donanim: string[]
+  multimedya: string[]
+}
+
+interface BodyDamage {
+  [key: string]: 'orijinal' | 'lokal_boyali' | 'boyali' | 'degisen'
+}
+
 const form = reactive({
   listingNumber: generateListingNumber(),
   listingDate: formatDate(new Date()),
@@ -745,6 +776,15 @@ const form = reactive({
   tradeInAcceptable: false,
   heavyDamageRecord: false,
   description: '',
+  // Vehicle Features
+  features: {
+    guvenlik: [],
+    ic_donanim: [],
+    dis_donanim: [],
+    multimedya: []
+  } as VehicleFeatures,
+  // Body Damage
+  bodyDamage: {} as BodyDamage,
   // Video & Oto Shorts
   videoUrl: '' as string,
   publishToOtoShorts: true // Default olarak isaretli
