@@ -103,7 +103,12 @@
               class="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
             >
               <Bell class="w-5 h-5" />
-              <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span 
+                v-if="unreadNotificationCount > 0" 
+                class="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1"
+              >
+                {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
+              </span>
             </NuxtLink>
             <!-- Search -->
             <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
@@ -222,6 +227,7 @@ const handleLogout = async () => {
 const pendingApprovalCount = ref<number>(0)
 const galleryCount = ref<number>(0)
 const otoShortsCount = ref<number>(0)
+const unreadNotificationCount = ref<number>(0)
 const currentUser = ref<{ name: string; email: string; role: string } | null>(null)
 
 // Load current user from cookie
@@ -282,16 +288,31 @@ const loadOtoShortsCount = async () => {
   }
 }
 
+// Load unread notification count
+const loadUnreadNotificationCount = async () => {
+  try {
+    const api = useApi()
+    const response = await api.get<any>('/notifications/unread-count')
+    if (response.success) {
+      unreadNotificationCount.value = response.count || 0
+    }
+  } catch (e) {
+    console.error('Notification count error:', e)
+  }
+}
+
 onMounted(() => {
   loadCurrentUser()
   loadPendingCount()
   loadGalleryCount()
   loadOtoShortsCount()
+  loadUnreadNotificationCount()
   // Refresh every 30 seconds
   setInterval(() => {
     loadPendingCount()
     loadGalleryCount()
     loadOtoShortsCount()
+    loadUnreadNotificationCount()
   }, 30000)
 })
 

@@ -25,66 +25,113 @@ function getUserFromHeaders(req: AuthenticatedRequest) {
 export class NotificationController {
   async list(req: AuthenticatedRequest, res: Response) {
     const userInfo = getUserFromHeaders(req);
+    const userId = userInfo.sub;
     const galleryId = userInfo.gallery_id;
+    const isSuperadmin = userInfo.role === 'superadmin' || userInfo.role === 'admin';
 
-    if (!galleryId) {
-      throw new ValidationError('Gallery ID not found');
+    const { page = 1, limit = 50, offset, unread_only } = req.query;
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const offsetNum = offset !== undefined ? Number(offset) : (pageNum - 1) * limitNum;
+
+    let queryStr: string;
+    let countQueryStr: string;
+    let params: any[];
+
+    if (isSuperadmin && userId) {
+      // Superadmin: Get notifications by user_id
+      queryStr = `
+        SELECT 
+          n.id,
+          n.type,
+          n.title,
+          n.body,
+          n.data,
+          n.read_at,
+          n.created_at
+        FROM notifications n
+        WHERE n.user_id = $1
+      `;
+      countQueryStr = 'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1';
+      params = [userId];
+    } else if (galleryId) {
+      // Gallery users: Get notifications by gallery_id
+      queryStr = `
+        SELECT 
+          n.id,
+          n.type,
+          n.title,
+          n.body,
+          n.data,
+          n.read_at,
+          n.created_at
+        FROM notifications n
+        WHERE n.gallery_id = $1
+      `;
+      countQueryStr = 'SELECT COUNT(*) as count FROM notifications WHERE gallery_id = $1';
+      params = [galleryId];
+    } else {
+      throw new ValidationError('Gallery ID or User ID not found');
     }
 
-    const { limit = 50, offset = 0, unread_only } = req.query;
-
-    let queryStr = `
-      SELECT 
-        n.id,
-        n.type,
-        n.title,
-        n.message,
-        n.is_read,
-        n.created_at,
-        n.related_entity_type,
-        n.related_entity_id
-      FROM notifications n
-      WHERE n.gallery_id = $1
-    `;
-
-    const params: any[] = [galleryId];
-
     if (unread_only === 'true') {
-      queryStr += ' AND n.is_read = FALSE';
+      queryStr += ' AND n.read_at IS NULL';
+      countQueryStr += ' AND read_at IS NULL';
     }
 
     queryStr += ' ORDER BY n.created_at DESC LIMIT $2 OFFSET $3';
-    params.push(limit, offset);
+    params.push(limitNum, offsetNum);
 
     const result = await query(queryStr, params);
 
+    // Get total count
+    const totalResult = await query(countQueryStr, [params[0]]);
+    const total = parseInt(totalResult.rows[0].count);
+
     // Get unread count
-    const unreadResult = await query(
-      'SELECT COUNT(*) as count FROM notifications WHERE gallery_id = $1 AND is_read = FALSE',
-      [galleryId]
-    );
+    let unreadCountQuery: string;
+    if (isSuperadmin && userId) {
+      unreadCountQuery = 'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read_at IS NULL';
+    } else {
+      unreadCountQuery = 'SELECT COUNT(*) as count FROM notifications WHERE gallery_id = $1 AND read_at IS NULL';
+    }
+    const unreadResult = await query(unreadCountQuery, [params[0]]);
     const unreadCount = parseInt(unreadResult.rows[0].count);
 
     res.json({
       success: true,
       data: result.rows,
-      unreadCount
+      unreadCount,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
     });
   }
 
   async markRead(req: AuthenticatedRequest, res: Response) {
     const userInfo = getUserFromHeaders(req);
+    const userId = userInfo.sub;
     const galleryId = userInfo.gallery_id;
+    const isSuperadmin = userInfo.role === 'superadmin' || userInfo.role === 'admin';
     const { id } = req.params;
 
-    if (!galleryId) {
-      throw new ValidationError('Gallery ID not found');
+    let result;
+    if (isSuperadmin && userId) {
+      result = await query(
+        'UPDATE notifications SET read_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING *',
+        [id, userId]
+      );
+    } else if (galleryId) {
+      result = await query(
+        'UPDATE notifications SET read_at = NOW() WHERE id = $1 AND gallery_id = $2 RETURNING *',
+        [id, galleryId]
+      );
+    } else {
+      throw new ValidationError('Gallery ID or User ID not found');
     }
-
-    const result = await query(
-      'UPDATE notifications SET is_read = TRUE, updated_at = NOW() WHERE id = $1 AND gallery_id = $2 RETURNING *',
-      [id, galleryId]
-    );
 
     if (result.rows.length === 0) {
       throw new ValidationError('Notification not found');
@@ -99,16 +146,23 @@ export class NotificationController {
 
   async markAllRead(req: AuthenticatedRequest, res: Response) {
     const userInfo = getUserFromHeaders(req);
+    const userId = userInfo.sub;
     const galleryId = userInfo.gallery_id;
+    const isSuperadmin = userInfo.role === 'superadmin' || userInfo.role === 'admin';
 
-    if (!galleryId) {
-      throw new ValidationError('Gallery ID not found');
+    if (isSuperadmin && userId) {
+      await query(
+        'UPDATE notifications SET read_at = NOW() WHERE user_id = $1 AND read_at IS NULL',
+        [userId]
+      );
+    } else if (galleryId) {
+      await query(
+        'UPDATE notifications SET read_at = NOW() WHERE gallery_id = $1 AND read_at IS NULL',
+        [galleryId]
+      );
+    } else {
+      throw new ValidationError('Gallery ID or User ID not found');
     }
-
-    await query(
-      'UPDATE notifications SET is_read = TRUE, updated_at = NOW() WHERE gallery_id = $1 AND is_read = FALSE',
-      [galleryId]
-    );
 
     res.json({
       success: true,
@@ -118,16 +172,24 @@ export class NotificationController {
 
   async getUnreadCount(req: AuthenticatedRequest, res: Response) {
     const userInfo = getUserFromHeaders(req);
+    const userId = userInfo.sub;
     const galleryId = userInfo.gallery_id;
+    const isSuperadmin = userInfo.role === 'superadmin' || userInfo.role === 'admin';
 
-    if (!galleryId) {
-      throw new ValidationError('Gallery ID not found');
+    let result;
+    if (isSuperadmin && userId) {
+      result = await query(
+        'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read_at IS NULL',
+        [userId]
+      );
+    } else if (galleryId) {
+      result = await query(
+        'SELECT COUNT(*) as count FROM notifications WHERE gallery_id = $1 AND read_at IS NULL',
+        [galleryId]
+      );
+    } else {
+      throw new ValidationError('Gallery ID or User ID not found');
     }
-
-    const result = await query(
-      'SELECT COUNT(*) as count FROM notifications WHERE gallery_id = $1 AND is_read = FALSE',
-      [galleryId]
-    );
 
     res.json({
       success: true,
