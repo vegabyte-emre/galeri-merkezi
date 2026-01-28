@@ -637,13 +637,272 @@
             </div>
           </div>
         </div>
+
+        <!-- Catalog Settings -->
+        <div v-if="activeTab === 'catalog'" class="space-y-6">
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Car class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ catalogStats.brands }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Marka</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <Layers class="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ catalogStats.series }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Seri</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <Grid3x3 class="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ catalogStats.models }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Model</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <List class="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ catalogStats.altModels }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Alt Model</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                  <Settings class="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ catalogStats.trims }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Donanım</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Excel/CSV Import Section -->
+          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <FileSpreadsheet class="w-5 h-5 text-green-600" />
+                Excel/CSV ile Katalog Güncelleme
+              </h2>
+              <button 
+                @click="loadCatalogStats"
+                :disabled="catalogLoading"
+                class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+              >
+                <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': catalogLoading }" />
+                Yenile
+              </button>
+            </div>
+            
+            <div class="space-y-4">
+              <!-- Instructions -->
+              <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Desteklenen Formatlar</h3>
+                <p class="text-sm text-blue-700 dark:text-blue-300 mb-2">Excel (.xlsx, .xls) ve CSV dosyaları desteklenmektedir. Dosyanız aşağıdaki sütunları içermelidir:</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Ana Kategori</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Alt Kategori</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Marka</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Seri</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Model</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Alt Model</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Donanım</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Kasa Tipi</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Yakıt Tipi</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Vites</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Motor Gücü</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Motor Hacmi</span>
+                  <span class="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200">Çekiş</span>
+                </div>
+              </div>
+
+              <!-- Drop Zone -->
+              <div
+                @dragover.prevent="catalogIsDragging = true"
+                @dragleave.prevent="catalogIsDragging = false"
+                @drop.prevent="handleCatalogFileDrop"
+                class="border-2 border-dashed rounded-xl p-8 text-center transition-colors"
+                :class="catalogIsDragging 
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'border-gray-300 dark:border-gray-600 hover:border-primary-400'"
+              >
+                <input
+                  ref="catalogFileInput"
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  class="hidden"
+                  @change="handleCatalogFileSelect"
+                />
+                
+                <div v-if="!catalogSelectedFile">
+                  <Upload class="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <p class="text-gray-600 dark:text-gray-300 mb-2">
+                    Excel veya CSV dosyasını sürükleyip bırakın
+                  </p>
+                  <button
+                    @click="catalogFileInput?.click()"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Dosya Seç
+                  </button>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Desteklenen formatlar: .xlsx, .xls, .csv
+                  </p>
+                </div>
+
+                <div v-else class="space-y-4">
+                  <div class="flex items-center justify-center gap-3">
+                    <FileSpreadsheet class="w-10 h-10 text-green-600" />
+                    <div class="text-left">
+                      <p class="font-medium text-gray-900 dark:text-white">{{ catalogSelectedFile.name }}</p>
+                      <p class="text-sm text-gray-500">{{ formatCatalogFileSize(catalogSelectedFile.size) }}</p>
+                    </div>
+                    <button
+                      @click="clearCatalogFile"
+                      class="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <X class="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <!-- Preview Section -->
+                  <div v-if="catalogPreviewData" class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-left">
+                    <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Önizleme</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span class="text-gray-500">Toplam Satır:</span>
+                        <span class="font-bold text-gray-900 dark:text-white ml-2">{{ catalogPreviewData.totalRows }}</span>
+                      </div>
+                      <div>
+                        <span class="text-gray-500">Markalar:</span>
+                        <span class="font-bold text-gray-900 dark:text-white ml-2">{{ catalogPreviewData.brands }}</span>
+                      </div>
+                      <div>
+                        <span class="text-gray-500">Seriler:</span>
+                        <span class="font-bold text-gray-900 dark:text-white ml-2">{{ catalogPreviewData.series }}</span>
+                      </div>
+                      <div>
+                        <span class="text-gray-500">Modeller:</span>
+                        <span class="font-bold text-gray-900 dark:text-white ml-2">{{ catalogPreviewData.models }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-3 justify-center">
+                    <button
+                      @click="previewCatalogFile"
+                      :disabled="catalogPreviewing"
+                      class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      <Loader2 v-if="catalogPreviewing" class="w-4 h-4 animate-spin" />
+                      {{ catalogPreviewing ? 'Analiz Ediliyor...' : 'Önizle' }}
+                    </button>
+                    <button
+                      @click="importCatalogFile"
+                      :disabled="catalogImporting"
+                      class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                      <Loader2 v-if="catalogImporting" class="w-4 h-4 animate-spin" />
+                      {{ catalogImporting ? 'İçe Aktarılıyor...' : 'İçe Aktar' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Import Progress -->
+              <div v-if="catalogImporting" class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <div class="flex items-center gap-3 mb-2">
+                  <Loader2 class="w-5 h-5 animate-spin text-primary-600" />
+                  <span class="font-medium text-gray-900 dark:text-white">{{ catalogImportStatus }}</span>
+                </div>
+                <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                  <div 
+                    class="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                    :style="{ width: `${catalogImportProgress}%` }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Brand List -->
+          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Car class="w-5 h-5 text-purple-600" />
+                Markalar ({{ catalogBrands.length }})
+              </h2>
+              <input
+                v-model="catalogBrandSearch"
+                type="text"
+                placeholder="Marka ara..."
+                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              />
+            </div>
+            
+            <div v-if="catalogLoading" class="text-center py-8 text-gray-500">
+              <Loader2 class="w-8 h-8 animate-spin mx-auto mb-2" />
+              Yükleniyor...
+            </div>
+            
+            <div v-else-if="filteredCatalogBrands.length === 0" class="text-center py-8 text-gray-500">
+              Henüz marka bulunmuyor
+            </div>
+            
+            <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+              <div 
+                v-for="brand in filteredCatalogBrands" 
+                :key="brand.id"
+                class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                <div class="flex items-center gap-2">
+                  <img 
+                    v-if="brand.logo_url" 
+                    :src="brand.logo_url" 
+                    class="w-8 h-8 object-contain"
+                    :alt="brand.name"
+                  />
+                  <div v-else class="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center text-xs font-bold text-gray-500">
+                    {{ brand.name.charAt(0) }}
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900 dark:text-white text-sm">{{ brand.name }}</p>
+                    <p class="text-xs text-gray-500">{{ brand.series_count || 0 }} seri</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Settings, Shield, Bell, MessageSquare, Mail } from 'lucide-vue-next'
+import { Settings, Shield, Bell, MessageSquare, Mail, Car, Upload, X, FileSpreadsheet, Loader2, CheckCircle, XCircle, RefreshCw, Layers, Grid3x3, List } from 'lucide-vue-next'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
@@ -658,7 +917,8 @@ const tabs = [
   { id: 'security', label: 'Güvenlik', icon: Shield },
   { id: 'notifications', label: 'Bildirimler', icon: Bell },
   { id: 'email', label: 'E-posta', icon: Mail },
-  { id: 'netgsm', label: 'NetGSM', icon: MessageSquare }
+  { id: 'netgsm', label: 'NetGSM', icon: MessageSquare },
+  { id: 'catalog', label: 'Araç Kataloğu', icon: Car }
 ]
 
 const settings = ref({
@@ -716,6 +976,158 @@ const netgsmId = ref<string | null>(null)
 const netgsmUsername = ref('')
 const netgsmPassword = ref('')
 const netgsmMsgHeader = ref('GALERIPLATFORM')
+
+// ==================== CATALOG SETTINGS ====================
+interface CatalogStats {
+  brands: number
+  series: number
+  models: number
+  altModels: number
+  trims: number
+}
+
+interface CatalogBrand {
+  id: number
+  name: string
+  logo_url: string | null
+  series_count?: number
+}
+
+const catalogStats = ref<CatalogStats>({ brands: 0, series: 0, models: 0, altModels: 0, trims: 0 })
+const catalogBrands = ref<CatalogBrand[]>([])
+const catalogLoading = ref(false)
+const catalogBrandSearch = ref('')
+
+// File upload for catalog
+const catalogFileInput = ref<HTMLInputElement | null>(null)
+const catalogSelectedFile = ref<File | null>(null)
+const catalogIsDragging = ref(false)
+const catalogPreviewing = ref(false)
+const catalogImporting = ref(false)
+const catalogImportProgress = ref(0)
+const catalogImportStatus = ref('')
+const catalogPreviewData = ref<{ totalRows: number; brands: number; series: number; models: number } | null>(null)
+
+const filteredCatalogBrands = computed(() => {
+  if (!catalogBrandSearch.value) return catalogBrands.value
+  const search = catalogBrandSearch.value.toLowerCase()
+  return catalogBrands.value.filter(b => b.name.toLowerCase().includes(search))
+})
+
+const formatCatalogFileSize = (bytes: number): string => {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+const loadCatalogStats = async () => {
+  catalogLoading.value = true
+  try {
+    const statsResponse = await api.get<any>('/catalog/admin/stats')
+    if (statsResponse.data) {
+      catalogStats.value = statsResponse.data
+    }
+    
+    const brandsResponse = await api.get<any>('/catalog/admin/brands')
+    if (brandsResponse.data) {
+      catalogBrands.value = brandsResponse.data
+    }
+  } catch (error: any) {
+    console.error('Failed to load catalog stats:', error)
+  } finally {
+    catalogLoading.value = false
+  }
+}
+
+const handleCatalogFileDrop = (event: DragEvent) => {
+  catalogIsDragging.value = false
+  const files = event.dataTransfer?.files
+  if (files && files.length > 0) {
+    catalogSelectedFile.value = files[0]
+    catalogPreviewData.value = null
+  }
+}
+
+const handleCatalogFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    catalogSelectedFile.value = target.files[0]
+    catalogPreviewData.value = null
+  }
+}
+
+const clearCatalogFile = () => {
+  catalogSelectedFile.value = null
+  catalogPreviewData.value = null
+  if (catalogFileInput.value) {
+    catalogFileInput.value.value = ''
+  }
+}
+
+const previewCatalogFile = async () => {
+  if (!catalogSelectedFile.value) return
+  
+  catalogPreviewing.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', catalogSelectedFile.value)
+    formData.append('preview', 'true')
+    
+    const response = await api.post<any>('/catalog/admin/import', formData)
+    catalogPreviewData.value = response.data
+    toast.success('Dosya analizi tamamlandı')
+  } catch (error: any) {
+    toast.error('Dosya analizi başarısız: ' + error.message)
+  } finally {
+    catalogPreviewing.value = false
+  }
+}
+
+const importCatalogFile = async () => {
+  if (!catalogSelectedFile.value) return
+  
+  catalogImporting.value = true
+  catalogImportProgress.value = 0
+  catalogImportStatus.value = 'Dosya yükleniyor...'
+  
+  try {
+    const formData = new FormData()
+    formData.append('file', catalogSelectedFile.value)
+    
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      if (catalogImportProgress.value < 90) {
+        catalogImportProgress.value += 10
+        if (catalogImportProgress.value === 30) catalogImportStatus.value = 'Veriler işleniyor...'
+        if (catalogImportProgress.value === 60) catalogImportStatus.value = 'Veritabanı güncelleniyor...'
+        if (catalogImportProgress.value === 80) catalogImportStatus.value = 'Tamamlanıyor...'
+      }
+    }, 500)
+    
+    const response = await api.post<any>('/catalog/admin/import', formData)
+    
+    clearInterval(progressInterval)
+    catalogImportProgress.value = 100
+    catalogImportStatus.value = 'Tamamlandı!'
+    
+    toast.success('Katalog başarıyla içe aktarıldı: ' + (response.data?.totalRecords || 0) + ' kayıt')
+    
+    // Refresh stats
+    await loadCatalogStats()
+    
+    setTimeout(() => {
+      clearCatalogFile()
+      catalogImporting.value = false
+    }, 1500)
+  } catch (error: any) {
+    catalogImportStatus.value = 'İçe aktarma başarısız!'
+    toast.error('İçe aktarma hatası: ' + error.message)
+    
+    setTimeout(() => {
+      catalogImporting.value = false
+    }, 2000)
+  }
+}
 
 // SMS Test
 const smsTestPhone = ref('')
@@ -989,6 +1401,13 @@ const sendTestSms = async () => {
     smsTesting.value = false
   }
 }
+
+// Watch for catalog tab activation
+watch(activeTab, (newTab) => {
+  if (newTab === 'catalog' && catalogStats.value.brands === 0) {
+    loadCatalogStats()
+  }
+})
 
 onMounted(() => {
   loadSettings()
