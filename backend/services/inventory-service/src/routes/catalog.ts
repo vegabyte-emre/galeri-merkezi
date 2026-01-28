@@ -320,13 +320,14 @@ router.get('/models/:modelId/trims', asyncHandler(async (req: Request, res: Resp
 
 /**
  * GET /catalog/trims/:trimId
- * Get full specifications for a specific trim
+ * Get full specifications for a specific trim (including traction)
  */
 router.get('/trims/:trimId', asyncHandler(async (req: Request, res: Response) => {
   const { trimId } = req.params;
   
   const result = await query(`
-    SELECT t.*,
+    SELECT t.id, t.name, t.body_type, t.fuel_type, t.transmission, 
+           t.engine_power, t.engine_displacement, t.traction,
            COALESCE(am.name, '') as alt_model_name,
            m.name as model_name,
            s.name as series_name,
@@ -389,6 +390,7 @@ router.get('/specifications', asyncHandler(async (req: Request, res: Response) =
         t.transmission, 
         t.engine_power, 
         t.engine_displacement,
+        t.traction,
         am.name as alt_model_name, 
         m.name as model_name,
         s.name as series_name, 
@@ -419,6 +421,7 @@ router.get('/specifications', asyncHandler(async (req: Request, res: Response) =
         t.transmission, 
         t.engine_power, 
         t.engine_displacement,
+        t.traction,
         m.name as model_name, 
         s.name as series_name, 
         b.name as brand_name
@@ -449,7 +452,8 @@ router.get('/specifications', asyncHandler(async (req: Request, res: Response) =
       fuel_type: firstSpec.fuel_type,
       transmission: firstSpec.transmission,
       engine_power: firstSpec.engine_power,
-      engine_displacement: firstSpec.engine_displacement
+      engine_displacement: firstSpec.engine_displacement,
+      traction: firstSpec.traction
     };
   }
   
@@ -467,7 +471,8 @@ router.get('/specifications', asyncHandler(async (req: Request, res: Response) =
           fuel_type: row.fuel_type,
           transmission: row.transmission,
           engine_power: row.engine_power,
-          engine_displacement: row.engine_displacement
+          engine_displacement: row.engine_displacement,
+          traction: row.traction
         });
       }
     });
@@ -617,6 +622,70 @@ router.get('/colors', asyncHandler(async (req: Request, res: Response) => {
       { value: 'Bronz', label: 'Bronz' },
       { value: 'Diger', label: 'Diğer' }
     ]
+  });
+}));
+
+// ==================== ADMIN CATALOG ENDPOINTS ====================
+
+/**
+ * GET /catalog/admin/stats
+ * Get catalog statistics for admin panel
+ */
+router.get('/admin/stats', asyncHandler(async (req: Request, res: Response) => {
+  const result = await query(`
+    SELECT 
+      (SELECT COUNT(*) FROM vehicle_catalog_brands) as brands,
+      (SELECT COUNT(*) FROM vehicle_catalog_series) as series,
+      (SELECT COUNT(*) FROM vehicle_catalog_models) as models,
+      (SELECT COUNT(*) FROM vehicle_catalog_alt_models) as alt_models,
+      (SELECT COUNT(*) FROM vehicle_catalog_trims) as trims
+  `);
+  
+  res.json({
+    success: true,
+    data: {
+      brands: parseInt(result.rows[0].brands),
+      series: parseInt(result.rows[0].series),
+      models: parseInt(result.rows[0].models),
+      altModels: parseInt(result.rows[0].alt_models),
+      trims: parseInt(result.rows[0].trims)
+    }
+  });
+}));
+
+/**
+ * GET /catalog/admin/brands
+ * Get all brands with series count for admin panel
+ */
+router.get('/admin/brands', asyncHandler(async (req: Request, res: Response) => {
+  const result = await query(`
+    SELECT b.id, b.name, b.logo_url, b.is_popular, b.sort_order,
+           (SELECT COUNT(*) FROM vehicle_catalog_series WHERE brand_id = b.id) as series_count
+    FROM vehicle_catalog_brands b
+    ORDER BY b.is_popular DESC, b.sort_order ASC, b.name ASC
+  `);
+  
+  res.json({
+    success: true,
+    data: result.rows
+  });
+}));
+
+/**
+ * GET /catalog/tractions
+ * Get all unique traction types
+ */
+router.get('/tractions', asyncHandler(async (req: Request, res: Response) => {
+  const result = await query(`
+    SELECT DISTINCT traction 
+    FROM vehicle_catalog_trims 
+    WHERE traction IS NOT NULL AND traction != ''
+    ORDER BY traction ASC
+  `);
+  
+  res.json({
+    success: true,
+    data: result.rows.map(r => ({ value: r.traction, label: r.traction }))
   });
 }));
 

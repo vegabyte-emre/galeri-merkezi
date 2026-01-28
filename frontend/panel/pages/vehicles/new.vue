@@ -252,6 +252,15 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Çekiş Tipi
+              </label>
+              <select v-model="form.traction" class="input-field">
+                <option value="">Seçiniz</option>
+                <option v-for="t in tractions" :key="t.value" :value="t.value">{{ t.label }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Renk *
               </label>
               <select v-model="form.color" required class="input-field">
@@ -601,6 +610,7 @@ interface Trim {
   transmission: string | null
   engine_power: number | null
   engine_displacement: number | null
+  traction: string | null
 }
 
 interface SelectOption {
@@ -661,7 +671,15 @@ const fuelTypes = ref<SelectOption[]>([
 const transmissions = ref<SelectOption[]>([
   { value: 'Manuel', label: 'Manuel' },
   { value: 'Otomatik', label: 'Otomatik' },
-  { value: 'Yari Otomatik', label: 'Yari Otomatik' }
+  { value: 'Yarı Otomatik', label: 'Yarı Otomatik' }
+])
+
+const tractions = ref<SelectOption[]>([
+  { value: 'Önden', label: 'Önden Çekiş (FWD)' },
+  { value: 'Arkadan', label: 'Arkadan İtiş (RWD)' },
+  { value: '4WD (Sürekli)', label: '4WD (Sürekli)' },
+  { value: '4WD (Kesintili)', label: '4WD (Kesintili)' },
+  { value: 'AWD', label: 'AWD (Tüm Tekerlekler)' }
 ])
 
 const bodyTypes = ref<SelectOption[]>([
@@ -769,6 +787,7 @@ const form = reactive({
   color: '',
   enginePower: null as number | null,
   engineCc: null as number | null,
+  traction: '',
   vehicleCondition: '2. El',
   basePrice: null as number | null,
   sellerType: 'gallery',
@@ -1071,6 +1090,7 @@ const loadSpecifications = async () => {
             if (autoFill.transmission) form.transmission = autoFill.transmission
             if (autoFill.engine_power) form.enginePower = parseInt(String(autoFill.engine_power)) || null
             if (autoFill.engine_displacement) form.engineCc = parseInt(String(autoFill.engine_displacement)) || null
+            if (autoFill.traction) form.traction = autoFill.traction
             if (autoFill.trim_id) selectedTrimId.value = autoFill.trim_id
             if (autoFill.trim_name) {
               form.trim = autoFill.trim_name
@@ -1126,6 +1146,7 @@ const onTrimChange = () => {
   if (trim.transmission) form.transmission = trim.transmission
   if (trim.engine_power) form.enginePower = parseInt(String(trim.engine_power)) || null
   if (trim.engine_displacement) form.engineCc = parseInt(String(trim.engine_displacement)) || null
+  if (trim.traction) form.traction = trim.traction
   
   autoFilledSpecs.value = true
 }
