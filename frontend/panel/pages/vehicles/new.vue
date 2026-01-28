@@ -551,7 +551,7 @@
 <script setup lang="ts">
 import { ArrowLeft, Upload, CheckCircle, Car, Settings, DollarSign, FileText, Image as ImageIcon, AlertCircle, Video, Play, X, Loader2, Wrench, PaintBucket } from 'lucide-vue-next'
 import VehicleFeatures from '~/components/vehicle/VehicleFeatures.vue'
-import VehicleBodyDamage from '~/components/vehicle/VehicleBodyDamage.vue'
+import VehicleBodyDamage from '~/components/vehicle/VehicleBodyDamage3D.vue'
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '~/composables/useApi'
